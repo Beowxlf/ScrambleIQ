@@ -16,6 +16,9 @@ function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
     getMatch: async () => {
       throw new Error('getMatch was not mocked');
     },
+    updateMatch: async () => {
+      throw new Error('updateMatch was not mocked');
+    },
     ...overrides,
   };
 }
@@ -201,4 +204,128 @@ describe('App', () => {
 
     expect(await screen.findByText('Unable to load match details right now.')).toBeInTheDocument();
   });
+
+  it('enters edit mode from the match detail page', async () => {
+    const matchesApi = createMatchesApiMock({
+      listMatches: async () => [],
+      getMatch: async (id: string) => ({
+        id,
+        title: 'Open Finals',
+        date: '2026-03-10',
+        ruleset: 'Freestyle',
+        competitorA: 'Jordan Lee',
+        competitorB: 'Chris Park',
+        notes: 'Original notes',
+      }),
+    });
+
+    window.history.replaceState({}, '', '/matches/match-1');
+
+    render(<App matchesApi={matchesApi} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit Match' }));
+
+    expect(screen.getByRole('heading', { name: 'Edit Match' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save Changes' })).toBeInTheDocument();
+  });
+
+  it('renders edit form with existing match values', async () => {
+    const matchesApi = createMatchesApiMock({
+      listMatches: async () => [],
+      getMatch: async (id: string) => ({
+        id,
+        title: 'Open Finals',
+        date: '2026-03-10',
+        ruleset: 'Freestyle',
+        competitorA: 'Jordan Lee',
+        competitorB: 'Chris Park',
+        notes: 'Original notes',
+      }),
+    });
+
+    window.history.replaceState({}, '', '/matches/match-1');
+
+    render(<App matchesApi={matchesApi} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit Match' }));
+
+    expect(screen.getByLabelText('Title')).toHaveValue('Open Finals');
+    expect(screen.getByLabelText('Date')).toHaveValue('2026-03-10');
+    expect(screen.getByLabelText('Ruleset')).toHaveValue('Freestyle');
+    expect(screen.getByLabelText('Competitor A')).toHaveValue('Jordan Lee');
+    expect(screen.getByLabelText('Competitor B')).toHaveValue('Chris Park');
+    expect(screen.getByLabelText('Notes')).toHaveValue('Original notes');
+  });
+
+  it('updates a match successfully from edit mode', async () => {
+    const updateMatch = vi.fn(async (id: string, payload: Partial<MatchFormValues>): Promise<Match> => ({
+      id,
+      title: payload.title ?? 'Open Finals',
+      date: payload.date ?? '2026-03-10',
+      ruleset: payload.ruleset ?? 'Freestyle',
+      competitorA: payload.competitorA ?? 'Jordan Lee',
+      competitorB: payload.competitorB ?? 'Chris Park',
+      notes: payload.notes ?? '',
+    }));
+
+    const matchesApi = createMatchesApiMock({
+      listMatches: async () => [],
+      getMatch: async (id: string) => ({
+        id,
+        title: 'Open Finals',
+        date: '2026-03-10',
+        ruleset: 'Freestyle',
+        competitorA: 'Jordan Lee',
+        competitorB: 'Chris Park',
+        notes: 'Original notes',
+      }),
+      updateMatch,
+    });
+
+    window.history.replaceState({}, '', '/matches/match-1');
+
+    render(<App matchesApi={matchesApi} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit Match' }));
+
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Updated Finals' } });
+    fireEvent.change(screen.getByLabelText('Notes'), { target: { value: 'Updated notes' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => expect(updateMatch).toHaveBeenCalledTimes(1));
+    expect(screen.getByRole('heading', { name: 'Updated Finals' })).toBeInTheDocument();
+    expect(screen.getByText('Notes: Updated notes')).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/matches/match-1');
+  });
+
+  it('shows an error and preserves user input when update fails', async () => {
+    const matchesApi = createMatchesApiMock({
+      listMatches: async () => [],
+      getMatch: async (id: string) => ({
+        id,
+        title: 'Open Finals',
+        date: '2026-03-10',
+        ruleset: 'Freestyle',
+        competitorA: 'Jordan Lee',
+        competitorB: 'Chris Park',
+        notes: 'Original notes',
+      }),
+      updateMatch: async () => {
+        throw new Error('Server failure');
+      },
+    });
+
+    window.history.replaceState({}, '', '/matches/match-1');
+
+    render(<App matchesApi={matchesApi} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit Match' }));
+
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Unsaved Title' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    expect(await screen.findByText('Unable to update match. Please try again.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Title')).toHaveValue('Unsaved Title');
+  });
+
 });

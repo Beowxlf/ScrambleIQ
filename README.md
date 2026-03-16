@@ -46,7 +46,7 @@ npm run dev:api
 - `PORT` (optional): API port (default: `3000`).
 - `WEB_ORIGIN` (optional): CORS origin (default: `http://localhost:5173`).
 
-## Phase-one feature: Match creation, listing, and detail view
+## Phase-one feature: Match creation, listing, detail view, and editing
 
 ### Frontend (`apps/web`)
 
@@ -67,6 +67,8 @@ The web app includes a **Create Match** form with required-field validation for:
 
 The form is connected to the backend API. On submit, the frontend calls `POST /matches`, shows success or failure feedback, prepends the created match into a basic match list loaded from `GET /matches`, and supports loading match details from `GET /matches/:id`.
 
+From `/matches/:id`, users can enter **edit mode**, update match metadata (`title`, `date`, `ruleset`, `competitorA`, `competitorB`, `notes`), and submit changes without leaving the detail route. On failed updates, the UI shows an error message and keeps form input intact.
+
 ### Backend (`apps/api`)
 
 The API exposes match endpoints backed by an in-memory store:
@@ -75,10 +77,13 @@ The API exposes match endpoints backed by an in-memory store:
 - `POST http://localhost:3000/matches`
 - `GET http://localhost:3000/matches`
 - `GET http://localhost:3000/matches/:id`
+- `PATCH http://localhost:3000/matches/:id`
 
-`POST /matches` uses global backend validation for required and optional fields.
+`POST /matches` and `PATCH /matches/:id` enforce backend validation for required/optional fields, valid date format, and allowed properties.
 
 `GET /matches` returns matches sorted by newest `date` first.
+
+`PATCH /matches/:id` supports partial updates of existing match fields and returns the updated match. Unknown IDs return `404`.
 
 Example POST body:
 

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { CreateMatchDto, Match } from '@scrambleiq/shared';
+import type { CreateMatchDto, Match, UpdateMatchDto } from '@scrambleiq/shared';
 
 import { MatchStore } from './match-store';
 
@@ -29,4 +29,23 @@ export class InMemoryMatchStore implements MatchStore {
   findById(id: string): Match | undefined {
     return this.matches.find((match) => match.id === id);
   }
+
+  update(id: string, input: UpdateMatchDto): Match | undefined {
+    const index = this.matches.findIndex((match) => match.id === id);
+
+    if (index < 0) {
+      return undefined;
+    }
+
+    const current = this.matches[index];
+    const updated: Match = {
+      ...current,
+      ...input,
+      notes: input.notes ?? current.notes,
+    };
+
+    this.matches[index] = updated;
+    return updated;
+  }
 }
+
