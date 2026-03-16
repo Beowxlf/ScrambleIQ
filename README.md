@@ -65,6 +65,14 @@ The web app includes a **Create Match** form with required-field validation for:
 
 `notes` is optional.
 
+The UI also mirrors backend field-length constraints for safer submissions:
+
+- title: max 120
+- ruleset: max 60
+- competitor names: max 80
+- event type: max 80
+- notes: max 2000
+
 Position form validation requires:
 
 - `position` from the supported position list
@@ -140,10 +148,15 @@ The API exposes match and timeline endpoints backed by in-memory stores:
 Validation behavior:
 
 - `timestamp` must be a non-negative integer
+- `timestamp` values are capped to one day (`<= 86400`)
 - `eventType` is required and non-empty
 - `competitor` must be `A` or `B`
+- route IDs must be valid UUIDs
+- match `date` must be strict calendar-valid `YYYY-MM-DD`
 - `notes` is optional
+- max lengths are enforced for title/ruleset/competitor names/event type/notes
 - unknown payload fields are rejected
+- position segments cannot overlap within a match timeline
 
 `GET /matches/:id/events` returns timeline events sorted by ascending `timestamp`.
 
