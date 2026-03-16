@@ -1,15 +1,15 @@
-import { ReactElement, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
-import { MatchListPage } from '../pages/MatchListPage';
 import type { MatchesApi } from '../matches-api';
+import { MatchDetailPage } from '../pages/MatchDetailPage';
+import { MatchListPage } from '../pages/MatchListPage';
 import { navigateTo, parseRoute } from './router';
 
 interface AppShellProps {
   api: MatchesApi;
-  renderMatchDetail: (matchId: string) => ReactElement;
 }
 
-export function AppShell({ api, renderMatchDetail }: AppShellProps) {
+export function AppShell({ api }: AppShellProps) {
   const [route, setRoute] = useState(() => parseRoute(window.location.pathname));
 
   useEffect(() => {
@@ -25,7 +25,7 @@ export function AppShell({ api, renderMatchDetail }: AppShellProps) {
   }, []);
 
   if (route.page === 'detail') {
-    return renderMatchDetail(route.matchId);
+    return <MatchDetailPage api={api} matchId={route.matchId} />;
   }
 
   return <MatchListPage api={api} onOpenMatch={(matchId) => navigateTo(`/matches/${matchId}`)} />;
