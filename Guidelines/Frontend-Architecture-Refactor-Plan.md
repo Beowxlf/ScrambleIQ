@@ -221,6 +221,12 @@ Recommended small abstractions:
 - optional tiny reducer for complex feature state if hook state transitions become difficult to reason about
 - no Redux/Zustand/XState introduction at this stage unless complexity materially increases
 
+## Implementation status update
+
+- ✅ Slice 1 completed: routing primitives are extracted into `app/router.ts` and page orchestration now flows through `app/AppShell.tsx`.
+- ✅ Slice 1 completed: match list + create flow extracted into `pages/MatchListPage.tsx`, `components/MatchCreateForm.tsx`, `components/MatchList.tsx`, and `hooks/useMatches.ts`.
+- ⏳ Match detail orchestration intentionally remains in `App.tsx` until later slices.
+
 ## Incremental migration plan (ordered, small slices)
 
 1. **Baseline safety checks**
