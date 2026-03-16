@@ -68,6 +68,7 @@ Current extraction status:
 - Match detail orchestration is now extracted into `apps/web/src/pages/MatchDetailPage.tsx`, with `App.tsx` acting as a thin composition root.
 - Event annotation UI/state is extracted into `apps/web/src/features/events/` (`EventPanel`, `EventForm`, `EventList`, `useMatchEvents`), while `MatchDetailPage` remains the page-level orchestrator.
 - Position timeline UI/state is extracted into `apps/web/src/features/positions/` (`PositionPanel`, `PositionForm`, `PositionList`, `useMatchPositions`), while `MatchDetailPage` remains the page-level orchestrator.
+- Video review UI/state is extracted into `apps/web/src/features/video/` (`VideoPanel`, `VideoMetadataForm`, `useMatchVideo`), while `MatchDetailPage` remains the page-level orchestrator for cross-feature synchronization.
 
 ## Phase-one feature: Match management, timeline events, position tracking, and synchronized video review
 

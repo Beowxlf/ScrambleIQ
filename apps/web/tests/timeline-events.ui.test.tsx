@@ -148,7 +148,8 @@ describe('Timeline events UI', () => {
 
     render(<App matchesApi={matchesApi} />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Add Event' }));
+    await screen.findByText('No timeline events yet.');
+    fireEvent.click(screen.getByRole('button', { name: 'Add Event' }));
     fireEvent.change(screen.getByLabelText('Timestamp (seconds)'), { target: { value: '12' } });
     fireEvent.change(screen.getByLabelText('Event Type'), { target: { value: 'takedown_attempt' } });
     fireEvent.change(screen.getByLabelText('Competitor'), { target: { value: 'A' } });
@@ -195,7 +196,8 @@ describe('Timeline events UI', () => {
 
     render(<App matchesApi={matchesApi} />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Add Event' }));
+    await screen.findByText('No timeline events yet.');
+    fireEvent.click(screen.getByRole('button', { name: 'Add Event' }));
     fireEvent.click(screen.getByRole('button', { name: 'Create Event' }));
 
     expect(await screen.findByText('Timestamp is required.')).toBeInTheDocument();
