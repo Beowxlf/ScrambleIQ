@@ -6,6 +6,8 @@ import { CreateTimelineEventDto } from '../../matches/create-timeline-event.dto'
 import { UpdateMatchDto } from '../../matches/update-match.dto';
 import { UpdatePositionStateDto } from '../../matches/update-position-state.dto';
 import { UpdateTimelineEventDto } from '../../matches/update-timeline-event.dto';
+import { CreateMatchVideoDto } from '../../matches/create-match-video.dto';
+import { UpdateMatchVideoDto } from '../../matches/update-match-video.dto';
 import { validateCreateMatchPayload, validateUpdateMatchPayload } from '../../matches/match-validation';
 import {
   validateCreatePositionStatePayload,
@@ -15,6 +17,7 @@ import {
   validateCreateTimelineEventPayload,
   validateUpdateTimelineEventPayload,
 } from '../../matches/timeline-event-validation';
+import { validateCreateMatchVideoPayload, validateUpdateMatchVideoPayload } from '../../matches/match-video-validation';
 
 type PayloadValidator = (value: unknown) => string[];
 
@@ -25,6 +28,8 @@ const validatorsByMetatype = new Map<Type<unknown>, PayloadValidator>([
   [UpdateTimelineEventDto, (value) => validateUpdateTimelineEventPayload(value as UpdateTimelineEventDto)],
   [CreatePositionStateDto, (value) => validateCreatePositionStatePayload(value as CreatePositionStateDto)],
   [UpdatePositionStateDto, (value) => validateUpdatePositionStatePayload(value as UpdatePositionStateDto)],
+  [CreateMatchVideoDto, (value) => validateCreateMatchVideoPayload(value as CreateMatchVideoDto)],
+  [UpdateMatchVideoDto, (value) => validateUpdateMatchVideoPayload(value as UpdateMatchVideoDto)],
 ]);
 
 @Injectable()

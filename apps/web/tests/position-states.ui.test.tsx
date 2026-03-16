@@ -40,6 +40,16 @@ function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
       throw new Error('updatePositionState was not mocked');
     },
     deletePositionState: async () => undefined,
+    createMatchVideo: async () => {
+      throw new Error('createMatchVideo was not mocked');
+    },
+    getMatchVideo: async () => {
+      throw new Error('Match video not found');
+    },
+    updateMatchVideo: async () => {
+      throw new Error('updateMatchVideo was not mocked');
+    },
+    deleteMatchVideo: async () => undefined,
     ...overrides,
   };
 }

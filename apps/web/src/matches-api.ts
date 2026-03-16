@@ -1,11 +1,14 @@
 import type {
   CreateMatchDto,
   CreatePositionStateDto,
+  CreateMatchVideoDto,
   CreateTimelineEventDto,
   Match,
+  MatchVideo,
   PositionState,
   TimelineEvent,
   UpdateMatchDto,
+  UpdateMatchVideoDto,
   UpdatePositionStateDto,
   UpdateTimelineEventDto,
 } from '@scrambleiq/shared';
@@ -31,6 +34,13 @@ export class PositionStateNotFoundError extends Error {
   }
 }
 
+
+export class MatchVideoNotFoundError extends Error {
+  constructor(videoIdOrMatchId: string) {
+    super(`Match video resource was not found for id ${videoIdOrMatchId}.`);
+    this.name = 'MatchVideoNotFoundError';
+  }
+}
 export interface MatchesApi {
   createMatch(payload: CreateMatchDto): Promise<Match>;
   listMatches(): Promise<Match[]>;
@@ -45,6 +55,10 @@ export interface MatchesApi {
   listPositionStates(matchId: string): Promise<PositionState[]>;
   updatePositionState(id: string, payload: UpdatePositionStateDto): Promise<PositionState>;
   deletePositionState(id: string): Promise<void>;
+  createMatchVideo(matchId: string, payload: CreateMatchVideoDto): Promise<MatchVideo>;
+  getMatchVideo(matchId: string): Promise<MatchVideo>;
+  updateMatchVideo(id: string, payload: UpdateMatchVideoDto): Promise<MatchVideo>;
+  deleteMatchVideo(id: string): Promise<void>;
 }
 
 interface HttpMatchesApiOptions {
@@ -272,6 +286,74 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
 
       if (!response.ok) {
         throw new Error('Failed to delete position state.');
+      }
+    },
+
+    async createMatchVideo(matchId, payload) {
+      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(matchId)}/video`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.status === 404) {
+        throw new MatchNotFoundError(matchId);
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to attach match video.');
+      }
+
+      return (await response.json()) as MatchVideo;
+    },
+
+    async getMatchVideo(matchId) {
+      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(matchId)}/video`);
+
+      if (response.status === 404) {
+        throw new MatchVideoNotFoundError(matchId);
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to load match video.');
+      }
+
+      return (await response.json()) as MatchVideo;
+    },
+
+    async updateMatchVideo(id, payload) {
+      const response = await fetchImpl(`${baseUrl}/video/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.status === 404) {
+        throw new MatchVideoNotFoundError(id);
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to update match video.');
+      }
+
+      return (await response.json()) as MatchVideo;
+    },
+
+    async deleteMatchVideo(id) {
+      const response = await fetchImpl(`${baseUrl}/video/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+
+      if (response.status === 404) {
+        throw new MatchVideoNotFoundError(id);
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to delete match video.');
       }
     },
   };

@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
-import type { Match, PositionState, TimelineEvent } from '@scrambleiq/shared';
+import type { Match, MatchVideo, PositionState, TimelineEvent } from '@scrambleiq/shared';
 
 import { hasValidationErrors, MatchFormValues, MatchValidationErrors, validateMatchForm } from './match';
 import { createHttpMatchesApi, MatchNotFoundError, MatchesApi } from './matches-api';
@@ -22,6 +22,15 @@ import {
   toCreatePositionStateDto,
   validatePositionStateForm,
 } from './position-state';
+import {
+  hasMatchVideoValidationErrors,
+  initialMatchVideoValues,
+  MATCH_VIDEO_SOURCE_TYPES,
+  MatchVideoFormValues,
+  MatchVideoValidationErrors,
+  toCreateMatchVideoDto,
+  validateMatchVideoForm,
+} from './match-video';
 
 const initialValues: MatchFormValues = {
   title: '',
@@ -76,6 +85,7 @@ function MatchListPage({ api }: { api: MatchesApi }) {
   const [submissionMessage, setSubmissionMessage] = useState<string | null>(null);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [matchesError, setMatchesError] = useState<string | null>(null);
+
 
   useEffect(() => {
     let isMounted = true;
@@ -267,6 +277,28 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
   const [isSubmittingPosition, setIsSubmittingPosition] = useState(false);
   const [positionSubmissionError, setPositionSubmissionError] = useState<string | null>(null);
   const [editingPositionId, setEditingPositionId] = useState<string | null>(null);
+  const [video, setVideo] = useState<MatchVideo | null>(null);
+  const [isLoadingVideo, setIsLoadingVideo] = useState(true);
+  const [videoError, setVideoError] = useState<string | null>(null);
+  const [isVideoFormVisible, setIsVideoFormVisible] = useState(false);
+  const [videoFormValues, setVideoFormValues] = useState<MatchVideoFormValues>(initialMatchVideoValues);
+  const [videoFormErrors, setVideoFormErrors] = useState<MatchVideoValidationErrors>({});
+  const [isSubmittingVideo, setIsSubmittingVideo] = useState(false);
+  const [videoSubmissionError, setVideoSubmissionError] = useState<string | null>(null);
+  const [isEditingVideo, setIsEditingVideo] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [selectedPositionId, setSelectedPositionId] = useState<string | null>(null);
+  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
+
+  const seekToTimestamp = (timestamp: number, selection: { eventId?: string; positionId?: string }) => {
+    if (videoElement) {
+      videoElement.currentTime = timestamp;
+      void videoElement.play().catch(() => undefined);
+    }
+
+    setSelectedEventId(selection.eventId ?? null);
+    setSelectedPositionId(selection.positionId ?? null);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -351,6 +383,33 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
     void loadMatch();
     void loadEvents();
 
+    const loadVideo = async () => {
+      setIsLoadingVideo(true);
+      setVideoError(null);
+      setVideo(null);
+      setVideoSubmissionError(null);
+      setVideoFormErrors({});
+      setVideoFormValues(initialMatchVideoValues);
+      setIsVideoFormVisible(false);
+      setIsEditingVideo(false);
+
+      try {
+        const fetchedVideo = await api.getMatchVideo(matchId);
+
+        if (isMounted) {
+          setVideo(fetchedVideo);
+        }
+      } catch {
+        if (isMounted) {
+          setVideoError(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingVideo(false);
+        }
+      }
+    };
+
     const loadPositions = async () => {
       setIsLoadingPositions(true);
       setPositionsError(null);
@@ -385,6 +444,7 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
     };
 
     void loadPositions();
+    void loadVideo();
 
     return () => {
       isMounted = false;
@@ -559,6 +619,70 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
     setIsPositionFormVisible(true);
   };
 
+  const submitVideo = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const validationErrors = validateMatchVideoForm(videoFormValues);
+    setVideoFormErrors(validationErrors);
+
+    if (hasMatchVideoValidationErrors(validationErrors)) {
+      return;
+    }
+
+    setIsSubmittingVideo(true);
+    setVideoSubmissionError(null);
+
+    try {
+      const payload = toCreateMatchVideoDto(videoFormValues);
+      const savedVideo = video ? await api.updateMatchVideo(video.id, payload) : await api.createMatchVideo(matchId, payload);
+      setVideo(savedVideo);
+      setIsVideoFormVisible(false);
+      setIsEditingVideo(false);
+      setVideoFormErrors({});
+      setVideoFormValues(initialMatchVideoValues);
+    } catch {
+      setVideoSubmissionError('Unable to save match video metadata. Please try again.');
+    } finally {
+      setIsSubmittingVideo(false);
+    }
+  };
+
+  const startEditVideo = () => {
+    if (!video) {
+      return;
+    }
+
+    setIsEditingVideo(true);
+    setIsVideoFormVisible(true);
+    setVideoFormValues({
+      title: video.title,
+      sourceType: video.sourceType,
+      sourceUrl: video.sourceUrl,
+      durationSeconds: video.durationSeconds !== undefined ? String(video.durationSeconds) : '',
+      notes: video.notes ?? '',
+    });
+    setVideoFormErrors({});
+    setVideoSubmissionError(null);
+  };
+
+  const deleteVideo = async () => {
+    if (!video) {
+      return;
+    }
+
+    setVideoSubmissionError(null);
+
+    try {
+      await api.deleteMatchVideo(video.id);
+      setVideo(null);
+      setIsEditingVideo(false);
+      setVideoFormValues(initialMatchVideoValues);
+      setIsVideoFormVisible(false);
+    } catch {
+      setVideoSubmissionError('Unable to remove match video metadata. Please try again.');
+    }
+  };
+
   const deleteMatch = async () => {
     setIsDeleting(true);
     setDeleteError(null);
@@ -726,6 +850,127 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
       </section>
 
       {!isLoadingMatch && !isMatchNotFound && !matchError ? (
+        <section aria-labelledby="video-review-heading">
+          <h2 id="video-review-heading">Video Review</h2>
+
+          {isLoadingVideo ? <p>Loading video metadata...</p> : null}
+          {videoError ? <p>{videoError}</p> : null}
+
+          {!isLoadingVideo && !video ? <p>No video attached yet.</p> : null}
+
+          {!isLoadingVideo && video ? (
+            <>
+              <video
+                controls
+                src={video.sourceUrl}
+                onLoadedMetadata={(event) => setVideoElement(event.currentTarget)}
+                data-testid="match-video-player"
+              />
+              <p>Title: {video.title}</p>
+              <p>Source type: {video.sourceType}</p>
+              <p>Source URL: {video.sourceUrl}</p>
+              {video.durationSeconds !== undefined ? <p>Duration (seconds): {video.durationSeconds}</p> : null}
+              {video.notes ? <p>Notes: {video.notes}</p> : null}
+              {!isVideoFormVisible ? (
+                <p>
+                  <button type="button" onClick={() => startEditVideo()}>
+                    Edit Video
+                  </button>{' '}
+                  <button type="button" onClick={() => void deleteVideo()}>
+                    Remove Video
+                  </button>
+                </p>
+              ) : null}
+            </>
+          ) : null}
+
+          {!isVideoFormVisible ? (
+            <button type="button" onClick={() => setIsVideoFormVisible(true)}>
+              {video ? 'Update Video Metadata' : 'Attach Video'}
+            </button>
+          ) : null}
+
+          {isVideoFormVisible ? (
+            <form onSubmit={(event) => void submitVideo(event)} noValidate>
+              <h3>{isEditingVideo ? 'Edit Video' : 'Attach Video'}</h3>
+
+              <label htmlFor="video-title">Title</label>
+              <input
+                id="video-title"
+                name="title"
+                value={videoFormValues.title}
+                onChange={(event) => setVideoFormValues({ ...videoFormValues, title: event.target.value })}
+              />
+              {videoFormErrors.title ? <p>{videoFormErrors.title}</p> : null}
+
+              <label htmlFor="video-source-type">Source Type</label>
+              <select
+                id="video-source-type"
+                name="sourceType"
+                value={videoFormValues.sourceType}
+                onChange={(event) =>
+                  setVideoFormValues({ ...videoFormValues, sourceType: event.target.value as MatchVideoFormValues['sourceType'] })
+                }
+              >
+                <option value="">Select source type</option>
+                {MATCH_VIDEO_SOURCE_TYPES.map((sourceType) => (
+                  <option key={sourceType} value={sourceType}>
+                    {sourceType}
+                  </option>
+                ))}
+              </select>
+              {videoFormErrors.sourceType ? <p>{videoFormErrors.sourceType}</p> : null}
+
+              <label htmlFor="video-source-url">Source URL</label>
+              <input
+                id="video-source-url"
+                name="sourceUrl"
+                value={videoFormValues.sourceUrl}
+                onChange={(event) => setVideoFormValues({ ...videoFormValues, sourceUrl: event.target.value })}
+              />
+              {videoFormErrors.sourceUrl ? <p>{videoFormErrors.sourceUrl}</p> : null}
+
+              <label htmlFor="video-duration">Duration (seconds)</label>
+              <input
+                id="video-duration"
+                name="durationSeconds"
+                value={videoFormValues.durationSeconds}
+                onChange={(event) => setVideoFormValues({ ...videoFormValues, durationSeconds: event.target.value })}
+              />
+              {videoFormErrors.durationSeconds ? <p>{videoFormErrors.durationSeconds}</p> : null}
+
+              <label htmlFor="video-notes">Notes</label>
+              <textarea
+                id="video-notes"
+                name="notes"
+                value={videoFormValues.notes}
+                onChange={(event) => setVideoFormValues({ ...videoFormValues, notes: event.target.value })}
+              />
+
+              <p>
+                <button type="submit" disabled={isSubmittingVideo}>
+                  {isSubmittingVideo ? 'Saving...' : isEditingVideo ? 'Save Video' : 'Attach Video'}
+                </button>{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsVideoFormVisible(false);
+                    setIsEditingVideo(false);
+                    setVideoFormValues(initialMatchVideoValues);
+                    setVideoFormErrors({});
+                    setVideoSubmissionError(null);
+                  }}
+                >
+                  Cancel
+                </button>
+              </p>
+              {videoSubmissionError ? <p>{videoSubmissionError}</p> : null}
+            </form>
+          ) : null}
+        </section>
+      ) : null}
+
+      {!isLoadingMatch && !isMatchNotFound && !matchError ? (
         <section aria-labelledby="event-timeline-heading">
           <h2 id="event-timeline-heading">Event Timeline</h2>
 
@@ -812,9 +1057,13 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
             <ul>
               {events.map((event) => (
                 <li key={event.id}>
-                  <span>
+                  <button
+                    type="button"
+                    onClick={() => seekToTimestamp(event.timestamp, { eventId: event.id })}
+                    aria-pressed={selectedEventId === event.id}
+                  >
                     {formatTimestamp(event.timestamp)} {event.eventType} {event.competitor}
-                  </span>{' '}
+                  </button>{' '}
                   <button type="button" onClick={() => startEditEvent(event)}>
                     Edit Event
                   </button>{' '}
@@ -944,10 +1193,14 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
             <ul>
               {positions.map((position) => (
                 <li key={position.id}>
-                  <span>
+                  <button
+                    type="button"
+                    onClick={() => seekToTimestamp(position.timestampStart, { positionId: position.id })}
+                    aria-pressed={selectedPositionId === position.id}
+                  >
                     {formatTimestamp(position.timestampStart)} - {formatTimestamp(position.timestampEnd)} {position.position} top:{' '}
                     {position.competitorTop}
-                  </span>{' '}
+                  </button>{' '}
                   <button type="button" onClick={() => startEditPosition(position)}>
                     Edit Position
                   </button>{' '}
