@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
-import type { Match, MatchVideo, PositionState, TimelineEvent } from '@scrambleiq/shared';
+import type { Match, MatchAnalyticsSummary, MatchVideo, PositionState, TimelineEvent } from '@scrambleiq/shared';
 
 import { hasValidationErrors, MatchFormValues, MatchValidationErrors, validateMatchForm } from './match';
 import { createHttpMatchesApi, MatchNotFoundError, MatchesApi } from './matches-api';
@@ -271,6 +271,9 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
   const [positions, setPositions] = useState<PositionState[]>([]);
   const [positionsError, setPositionsError] = useState<string | null>(null);
   const [isLoadingPositions, setIsLoadingPositions] = useState(true);
+  const [analytics, setAnalytics] = useState<MatchAnalyticsSummary | null>(null);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+  const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(true);
   const [isPositionFormVisible, setIsPositionFormVisible] = useState(false);
   const [positionFormValues, setPositionFormValues] = useState<PositionStateFormValues>(initialPositionStateValues);
   const [positionFormErrors, setPositionFormErrors] = useState<PositionStateValidationErrors>({});
@@ -410,6 +413,34 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
       }
     };
 
+    const loadAnalytics = async () => {
+      setIsLoadingAnalytics(true);
+      setAnalyticsError(null);
+      setAnalytics(null);
+
+      try {
+        const fetchedAnalytics = await api.getMatchAnalytics(matchId);
+
+        if (isMounted) {
+          setAnalytics(fetchedAnalytics);
+        }
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        if (error instanceof MatchNotFoundError) {
+          return;
+        }
+
+        setAnalyticsError('Unable to load analytics summary right now.');
+      } finally {
+        if (isMounted) {
+          setIsLoadingAnalytics(false);
+        }
+      }
+    };
+
     const loadPositions = async () => {
       setIsLoadingPositions(true);
       setPositionsError(null);
@@ -445,6 +476,7 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
 
     void loadPositions();
     void loadVideo();
+    void loadAnalytics();
 
     return () => {
       isMounted = false;
@@ -484,6 +516,18 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
     }
   };
 
+  const refreshAnalytics = async () => {
+    try {
+      const fetchedAnalytics = await api.getMatchAnalytics(matchId);
+      setAnalytics(fetchedAnalytics);
+      setAnalyticsError(null);
+    } catch {
+      setAnalyticsError('Unable to load analytics summary right now.');
+    } finally {
+      setIsLoadingAnalytics(false);
+    }
+  };
+
   const submitEvent = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -514,6 +558,7 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
       setEventFormErrors({});
       setEditingEventId(null);
       setIsEventFormVisible(false);
+      await refreshAnalytics();
     } catch {
       setEventSubmissionError('Unable to save timeline event. Please try again.');
     } finally {
@@ -527,6 +572,8 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
     try {
       await api.deleteTimelineEvent(eventId);
       setEvents((previousEvents) => previousEvents.filter((event) => event.id !== eventId));
+
+      await refreshAnalytics();
 
       if (editingEventId === eventId) {
         setEditingEventId(null);
@@ -581,6 +628,7 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
       setPositionFormErrors({});
       setEditingPositionId(null);
       setIsPositionFormVisible(false);
+      await refreshAnalytics();
     } catch {
       setPositionSubmissionError('Unable to save position state. Please try again.');
     } finally {
@@ -594,6 +642,8 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
     try {
       await api.deletePositionState(positionId);
       setPositions((previous) => previous.filter((position) => position.id !== positionId));
+
+      await refreshAnalytics();
 
       if (editingPositionId === positionId) {
         setEditingPositionId(null);
@@ -848,6 +898,64 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
           )
         ) : null}
       </section>
+
+
+      {!isLoadingMatch && !isMatchNotFound && !matchError ? (
+        <section aria-labelledby="analytics-summary-heading">
+          <h2 id="analytics-summary-heading">Analytics Summary</h2>
+
+          {isLoadingAnalytics ? <p>Loading analytics summary...</p> : null}
+          {analyticsError ? <p>{analyticsError}</p> : null}
+
+          {!isLoadingAnalytics && !analyticsError && analytics && analytics.totalEventCount === 0 && analytics.totalPositionCount === 0 ? (
+            <p>Not enough annotation data yet. Add events or position states to generate analytics.</p>
+          ) : null}
+
+          {!isLoadingAnalytics && !analyticsError && analytics && (analytics.totalEventCount > 0 || analytics.totalPositionCount > 0) ? (
+            <>
+              <p>Total events: {analytics.totalEventCount}</p>
+              <p>Total positions: {analytics.totalPositionCount}</p>
+              <p>Total tracked position time (seconds): {analytics.totalTrackedPositionTimeSeconds}</p>
+
+              <h3>Event counts by type</h3>
+              {Object.keys(analytics.eventCountsByType).length === 0 ? (
+                <p>No event counts available.</p>
+              ) : (
+                <ul>
+                  {Object.entries(analytics.eventCountsByType).map(([eventType, count]) => (
+                    <li key={eventType}>
+                      {eventType}: {count}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <h3>Time in each position (seconds)</h3>
+              <ul>
+                {Object.entries(analytics.timeInPositionByTypeSeconds).map(([positionType, seconds]) => (
+                  <li key={positionType}>
+                    {positionType}: {seconds}
+                  </li>
+                ))}
+              </ul>
+
+              <h3>Top-time by competitor and position (seconds)</h3>
+              {(['A', 'B'] as const).map((competitor) => (
+                <div key={competitor}>
+                  <h4>Competitor {competitor}</h4>
+                  <ul>
+                    {Object.entries(analytics.competitorTopTimeByPositionSeconds[competitor]).map(([positionType, seconds]) => (
+                      <li key={`${competitor}-${positionType}`}>
+                        {positionType}: {seconds}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </>
+          ) : null}
+        </section>
+      ) : null}
 
       {!isLoadingMatch && !isMatchNotFound && !matchError ? (
         <section aria-labelledby="video-review-heading">

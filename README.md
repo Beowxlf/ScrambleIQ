@@ -112,6 +112,7 @@ Current limitations (demo stage):
 - no cloud storage integration
 - no file upload or transcoding pipeline
 - no ML/automatic analysis
+- analytics are derived only from currently stored manual annotations (no inferred or predictive metrics)
 - in-memory persistence only (all data resets when API restarts)
 
 The detail page also includes a **Position Timeline** section for positional state tracking.
@@ -152,6 +153,7 @@ The API exposes match and timeline endpoints backed by in-memory stores:
 - `POST http://localhost:3000/matches`
 - `GET http://localhost:3000/matches`
 - `GET http://localhost:3000/matches/:id`
+- `GET http://localhost:3000/matches/:id/analytics`
 - `PATCH http://localhost:3000/matches/:id`
 - `DELETE http://localhost:3000/matches/:id`
 - `POST http://localhost:3000/matches/:id/events`
@@ -183,6 +185,19 @@ Validation behavior:
 `GET /matches/:id/events` returns timeline events sorted by ascending `timestamp`.
 
 `GET /matches/:id/positions` returns position states sorted by ascending `timestampStart`.
+
+
+`GET /matches/:id/analytics` returns a derived `MatchAnalyticsSummary` computed from current manual annotations:
+
+- `totalEventCount`
+- `eventCountsByType`
+- `totalPositionCount`
+- `timeInPositionByTypeSeconds`
+- `competitorTopTimeByPositionSeconds`
+- `totalTrackedPositionTimeSeconds`
+
+Analytics are computed on read from current timeline events and position states in memory and are **not persisted**.
+These analytics are based only on manual annotations and are **not ML-generated**.
 
 Deleting a match also removes all timeline events, position states, and attached video metadata for that match.
 

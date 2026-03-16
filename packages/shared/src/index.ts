@@ -74,6 +74,16 @@ export interface CreatePositionStateDto {
 
 export type UpdatePositionStateDto = Partial<CreatePositionStateDto>;
 
+export interface MatchAnalyticsSummary {
+  matchId: string;
+  totalEventCount: number;
+  eventCountsByType: Record<string, number>;
+  totalPositionCount: number;
+  timeInPositionByTypeSeconds: Record<PositionType, number>;
+  competitorTopTimeByPositionSeconds: Record<CompetitorSide, Record<PositionType, number>>;
+  totalTrackedPositionTimeSeconds: number;
+}
+
 export const MATCH_VIDEO_SOURCE_TYPES = ['remote_url', 'local_demo'] as const;
 export type MatchVideoSourceType = (typeof MATCH_VIDEO_SOURCE_TYPES)[number];
 

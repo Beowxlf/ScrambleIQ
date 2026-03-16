@@ -4,6 +4,7 @@ import type {
   CreateMatchVideoDto,
   CreateTimelineEventDto,
   Match,
+  MatchAnalyticsSummary,
   MatchVideo,
   PositionState,
   TimelineEvent,
@@ -56,6 +57,7 @@ export interface MatchesApi {
   updatePositionState(id: string, payload: UpdatePositionStateDto): Promise<PositionState>;
   deletePositionState(id: string): Promise<void>;
   createMatchVideo(matchId: string, payload: CreateMatchVideoDto): Promise<MatchVideo>;
+  getMatchAnalytics(matchId: string): Promise<MatchAnalyticsSummary>;
   getMatchVideo(matchId: string): Promise<MatchVideo>;
   updateMatchVideo(id: string, payload: UpdateMatchVideoDto): Promise<MatchVideo>;
   deleteMatchVideo(id: string): Promise<void>;
@@ -287,6 +289,20 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       if (!response.ok) {
         throw new Error('Failed to delete position state.');
       }
+    },
+
+    async getMatchAnalytics(matchId) {
+      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(matchId)}/analytics`);
+
+      if (response.status === 404) {
+        throw new MatchNotFoundError(matchId);
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to load match analytics.');
+      }
+
+      return (await response.json()) as MatchAnalyticsSummary;
     },
 
     async createMatchVideo(matchId, payload) {
