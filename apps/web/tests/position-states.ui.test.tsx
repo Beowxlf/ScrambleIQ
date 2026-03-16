@@ -149,12 +149,16 @@ describe('Position states UI', () => {
 
     render(<App matchesApi={matchesApi} />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Add Position' }));
+    await waitFor(() => expect(screen.queryByText('Loading position states...')).not.toBeInTheDocument());
+    await waitFor(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Add Position' }));
+      expect(screen.getByLabelText('Position')).toBeInTheDocument();
+    });
     fireEvent.change(screen.getByLabelText('Position'), { target: { value: 'closed_guard' } });
     fireEvent.change(screen.getByLabelText('Top Competitor'), { target: { value: 'A' } });
     fireEvent.change(screen.getByLabelText('Start Timestamp (seconds)'), { target: { value: '12' } });
     fireEvent.change(screen.getByLabelText('End Timestamp (seconds)'), { target: { value: '20' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Create Position' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Create Position' }));
 
     await waitFor(() => expect(createPositionState).toHaveBeenCalledTimes(1));
     expect(await screen.findByText('00:12 - 00:20 closed_guard top: A')).toBeInTheDocument();
@@ -197,7 +201,11 @@ describe('Position states UI', () => {
 
     render(<App matchesApi={matchesApi} />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Add Position' }));
+    await waitFor(() => expect(screen.queryByText('Loading position states...')).not.toBeInTheDocument());
+    await waitFor(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Add Position' }));
+      expect(screen.getByRole('button', { name: 'Create Position' })).toBeInTheDocument();
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Create Position' }));
 
     expect(await screen.findByText('Position is required.')).toBeInTheDocument();
