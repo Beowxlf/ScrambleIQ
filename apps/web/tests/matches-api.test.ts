@@ -41,4 +41,14 @@ describe('createHttpMatchesApi path parameter encoding', () => {
 
     expect(fetchImpl).toHaveBeenCalledWith('http://localhost:3000/matches/match%2Fwith%20spaces/export');
   });
+
+  it('encodes validation path params', async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ matchId: 'ok', isValid: true, issueCount: 0, issues: [] }), { status: 200 }));
+    const api = createHttpMatchesApi({ baseUrl: 'http://localhost:3000', fetchImpl });
+
+    await api.validateMatchDataset('match/with spaces');
+
+    expect(fetchImpl).toHaveBeenCalledWith('http://localhost:3000/matches/match%2Fwith%20spaces/validate');
+  });
+
 });

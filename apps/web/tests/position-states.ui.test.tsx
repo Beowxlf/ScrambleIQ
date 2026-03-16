@@ -91,6 +91,12 @@ function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
     exportMatchDataset: async () => {
       throw new Error('exportMatchDataset was not mocked');
     },
+    validateMatchDataset: async (matchId: string) => ({
+      matchId,
+      isValid: true,
+      issueCount: 0,
+      issues: [],
+    }),
     getMatchVideo: async () => {
       throw new Error('Match video not found');
     },

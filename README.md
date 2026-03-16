@@ -156,6 +156,7 @@ The API exposes match and timeline endpoints backed by in-memory stores:
 - `GET http://localhost:3000/matches/:id`
 - `GET http://localhost:3000/matches/:id/analytics`
 - `GET http://localhost:3000/matches/:id/export`
+- `GET http://localhost:3000/matches/:id/validate`
 - `PATCH http://localhost:3000/matches/:id`
 - `DELETE http://localhost:3000/matches/:id`
 - `POST http://localhost:3000/matches/:id/events`
@@ -213,6 +214,35 @@ These analytics are based only on manual annotations and are **not ML-generated*
   "analytics": { "matchId": "...", "totalEventCount": 1, "eventCountsByType": { "takedown_attempt": 1 }, "totalPositionCount": 1, "timeInPositionByTypeSeconds": {}, "competitorTopTimeByPositionSeconds": {}, "totalTrackedPositionTimeSeconds": 14 }
 }
 ```
+
+
+`GET /matches/:id/validate` returns a `DatasetValidationReport` for pre-export integrity checks.
+
+Validation issue types in this phase:
+
+- `EVENT_OUT_OF_RANGE`
+- `POSITION_OVERLAP`
+- `MISSING_VIDEO`
+- `EMPTY_MATCH`
+- `INVALID_TIMESTAMP_ORDER`
+- `NEGATIVE_TIMESTAMP`
+- `ANALYTICS_MISMATCH`
+
+Validation severity levels:
+
+- `INFO`
+- `WARNING`
+- `ERROR`
+
+Any `ERROR` issue marks `isValid` as `false`.
+
+Recommended workflow before exporting datasets:
+
+1. Finish manual annotations (events and/or position states).
+2. Attach match video metadata when available.
+3. Run `GET /matches/:id/validate` (or use **Validate Dataset** in the UI).
+4. Resolve `ERROR` issues first, then review `WARNING`/`INFO` context.
+5. Export via `GET /matches/:id/export` once the validation status is acceptable for your downstream analysis.
 
 Dataset export guarantees in this phase:
 

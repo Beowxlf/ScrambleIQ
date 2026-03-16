@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { DatasetValidationService } from './dataset-validation.service';
 import { EventsController } from './events.controller';
 import { EventsService } from './events.service';
 import { MatchesController } from './matches.controller';
@@ -17,6 +18,7 @@ import { VIDEO_STORE } from './store/video-store.token';
 @Module({
   controllers: [MatchesController, EventsController, PositionsController, VideosController],
   providers: [
+    DatasetValidationService,
     MatchesService,
     EventsService,
     PositionsService,

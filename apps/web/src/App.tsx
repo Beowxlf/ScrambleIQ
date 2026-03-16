@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
-import type { Match, MatchAnalyticsSummary, MatchDatasetExport, MatchVideo, PositionState, TimelineEvent } from '@scrambleiq/shared';
+import type { DatasetValidationIssue, DatasetValidationReport, Match, MatchAnalyticsSummary, MatchDatasetExport, MatchVideo, PositionState, TimelineEvent } from '@scrambleiq/shared';
 
 import { hasValidationErrors, MatchFormValues, MatchValidationErrors, validateMatchForm } from './match';
 import { createHttpMatchesApi, MatchNotFoundError, MatchesApi } from './matches-api';
@@ -270,6 +270,9 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isExportingDataset, setIsExportingDataset] = useState(false);
   const [datasetExportError, setDatasetExportError] = useState<string | null>(null);
+  const [validationReport, setValidationReport] = useState<DatasetValidationReport | null>(null);
+  const [isValidatingDataset, setIsValidatingDataset] = useState(false);
+  const [datasetValidationError, setDatasetValidationError] = useState<string | null>(null);
 
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [eventsError, setEventsError] = useState<string | null>(null);
@@ -759,6 +762,21 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
     }
   };
 
+
+  const validateDataset = async () => {
+    setIsValidatingDataset(true);
+    setDatasetValidationError(null);
+
+    try {
+      const report = await api.validateMatchDataset(matchId);
+      setValidationReport(report);
+    } catch {
+      setDatasetValidationError('Unable to validate dataset right now. Please try again.');
+    } finally {
+      setIsValidatingDataset(false);
+    }
+  };
+
   const deleteMatch = async () => {
     setIsDeleting(true);
     setDeleteError(null);
@@ -890,6 +908,10 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
                 <button type="button" onClick={() => void exportDataset()} disabled={isExportingDataset}>
                   {isExportingDataset ? 'Exporting...' : 'Export Dataset'}
                 </button>
+                {' '}
+                <button type="button" onClick={() => void validateDataset()} disabled={isValidatingDataset}>
+                  {isValidatingDataset ? 'Validating...' : 'Validate Dataset'}
+                </button>
               </p>
               {datasetExportError ? <p>{datasetExportError}</p> : null}
               <div>
@@ -929,6 +951,49 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
         ) : null}
       </section>
 
+      {!isLoadingMatch && !isMatchNotFound && !matchError ? (
+        <section aria-labelledby="dataset-validation-heading">
+          <h2 id="dataset-validation-heading">Dataset Validation</h2>
+
+          {isValidatingDataset ? <p>Validating dataset...</p> : null}
+          {datasetValidationError ? <p>{datasetValidationError}</p> : null}
+
+          {!isValidatingDataset && !datasetValidationError && !validationReport ? (
+            <p>Run validation to inspect dataset integrity before exporting.</p>
+          ) : null}
+
+          {!isValidatingDataset && !datasetValidationError && validationReport ? (
+            <>
+              <p>Validation status: {validationReport.isValid ? 'Valid' : 'Invalid'}</p>
+              <p>Total issues: {validationReport.issueCount}</p>
+
+              {validationReport.issues.length === 0 ? <p>No issues found. Dataset is ready for export.</p> : null}
+
+              {(['ERROR', 'WARNING', 'INFO'] as const).map((severity) => {
+                const issuesForSeverity = validationReport.issues.filter((issue) => issue.severity === severity);
+
+                if (issuesForSeverity.length === 0) {
+                  return null;
+                }
+
+                return (
+                  <div key={severity}>
+                    <h3>{severity}</h3>
+                    <ul>
+                      {issuesForSeverity.map((issue: DatasetValidationIssue, index: number) => (
+                        <li key={`${severity}-${issue.type}-${index}`}>
+                          <strong>{issue.type}</strong>: {issue.message}
+                          {issue.context ? <pre>{JSON.stringify(issue.context, null, 2)}</pre> : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+            </>
+          ) : null}
+        </section>
+      ) : null}
 
       {!isLoadingMatch && !isMatchNotFound && !matchError ? (
         <section aria-labelledby="analytics-summary-heading">
