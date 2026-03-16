@@ -22,6 +22,16 @@ function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
     deleteMatch: async () => {
       throw new Error('deleteMatch was not mocked');
     },
+    createTimelineEvent: async () => {
+      throw new Error('createTimelineEvent was not mocked');
+    },
+    listTimelineEvents: async () => [],
+    updateTimelineEvent: async () => {
+      throw new Error('updateTimelineEvent was not mocked');
+    },
+    deleteTimelineEvent: async () => {
+      throw new Error('deleteTimelineEvent was not mocked');
+    },
     ...overrides,
   };
 }

@@ -4,12 +4,17 @@ import type { Match } from '@scrambleiq/shared';
 import { CreateMatchDto } from './create-match.dto';
 import { UpdateMatchDto } from './update-match.dto';
 import { validateCreateMatchPayload, validateUpdateMatchPayload } from './match-validation';
+import { EventStore } from './store/event-store';
+import { EVENT_STORE } from './store/event-store.token';
 import { MatchStore } from './store/match-store';
 import { MATCH_STORE } from './store/match-store.token';
 
 @Injectable()
 export class MatchesService {
-  constructor(@Inject(MATCH_STORE) private readonly matchStore: MatchStore) {}
+  constructor(
+    @Inject(MATCH_STORE) private readonly matchStore: MatchStore,
+    @Inject(EVENT_STORE) private readonly eventStore: EventStore,
+  ) {}
 
   create(input: CreateMatchDto): Match {
     const errors = validateCreateMatchPayload(input);
@@ -57,5 +62,7 @@ export class MatchesService {
     if (!isDeleted) {
       throw new NotFoundException(`Match with id ${id} was not found.`);
     }
+
+    this.eventStore.deleteByMatchId(id);
   }
 }
