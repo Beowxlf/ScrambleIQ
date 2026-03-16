@@ -1,4 +1,5 @@
 import type { CreateTimelineEventDto } from '@scrambleiq/shared';
+import { MAX_EVENT_TYPE_LENGTH, MAX_NOTES_LENGTH } from '@scrambleiq/shared';
 
 export type TimelineEventFormValues = {
   timestamp: string;
@@ -11,6 +12,7 @@ export interface TimelineEventValidationErrors {
   timestamp?: string;
   eventType?: string;
   competitor?: string;
+  notes?: string;
 }
 
 export const initialTimelineEventValues: TimelineEventFormValues = {
@@ -35,10 +37,16 @@ export function validateTimelineEventForm(values: TimelineEventFormValues): Time
 
   if (!values.eventType.trim()) {
     errors.eventType = 'Event type is required.';
+  } else if (values.eventType.length > MAX_EVENT_TYPE_LENGTH) {
+    errors.eventType = `Event type must be ${MAX_EVENT_TYPE_LENGTH} characters or fewer.`;
   }
 
   if (values.competitor !== 'A' && values.competitor !== 'B') {
     errors.competitor = 'Competitor is required.';
+  }
+
+  if (values.notes.length > MAX_NOTES_LENGTH) {
+    errors.notes = `Notes must be ${MAX_NOTES_LENGTH} characters or fewer.`;
   }
 
   return errors;

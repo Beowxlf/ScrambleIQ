@@ -73,3 +73,11 @@ export interface CreatePositionStateDto {
 }
 
 export type UpdatePositionStateDto = Partial<CreatePositionStateDto>;
+
+export {
+  MAX_COMPETITOR_NAME_LENGTH,
+  MAX_EVENT_TYPE_LENGTH,
+  MAX_NOTES_LENGTH,
+  MAX_RULESET_LENGTH,
+  MAX_TITLE_LENGTH,
+} from './security-constraints';

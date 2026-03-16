@@ -40,6 +40,10 @@ export class MatchesService {
       throw new BadRequestException(errors);
     }
 
+    if (Object.keys(input).length === 0) {
+      throw new BadRequestException(['At least one field must be provided for update']);
+    }
+
     const updatedMatch = this.matchStore.update(id, input);
 
     if (!updatedMatch) {

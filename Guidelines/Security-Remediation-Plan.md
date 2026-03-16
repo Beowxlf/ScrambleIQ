@@ -26,6 +26,7 @@ This plan converts the baseline findings into concrete, scoped engineering work 
 - **Complexity:** Medium
 - **Should be done before next feature?** Yes
 - **Sprint candidate:** Can start before sprint; complete in hardening sprint if feature pressure exists.
+- **Status:** ✅ Completed
 
 ### R-02: Add server-side max-length constraints to all user text fields
 - **Finding source:** F-04 (low, abuse-prevention baseline)
@@ -38,6 +39,7 @@ This plan converts the baseline findings into concrete, scoped engineering work 
 - **Complexity:** Small-Medium
 - **Should be done before next feature?** Yes
 - **Sprint candidate:** Yes
+- **Status:** ✅ Completed
 
 ### R-03: Tighten date validation semantics
 - **Finding source:** F-05 (low)
@@ -49,6 +51,7 @@ This plan converts the baseline findings into concrete, scoped engineering work 
 - **Complexity:** Small
 - **Should be done before next feature?** Yes
 - **Sprint candidate:** Yes
+- **Status:** ✅ Completed
 
 ### R-04: URL-encode all frontend API path params
 - **Finding source:** F-07 (low)
@@ -59,6 +62,7 @@ This plan converts the baseline findings into concrete, scoped engineering work 
 - **Complexity:** Small
 - **Should be done before next feature?** Yes
 - **Sprint candidate:** Yes
+- **Status:** ✅ Completed
 
 ## Fix before auth/multi-user support
 

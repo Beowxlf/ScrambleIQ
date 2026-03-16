@@ -1,4 +1,4 @@
-import { POSITION_TYPES, type CreatePositionStateDto } from '@scrambleiq/shared';
+import { MAX_NOTES_LENGTH, POSITION_TYPES, type CreatePositionStateDto } from '@scrambleiq/shared';
 
 export type PositionStateFormValues = {
   position: '' | CreatePositionStateDto['position'];
@@ -13,6 +13,7 @@ export interface PositionStateValidationErrors {
   competitorTop?: string;
   timestampStart?: string;
   timestampEnd?: string;
+  notes?: string;
 }
 
 export const initialPositionStateValues: PositionStateFormValues = {
@@ -63,6 +64,10 @@ export function validatePositionStateForm(values: PositionStateFormValues): Posi
     if (end <= start) {
       errors.timestampEnd = 'End timestamp must be greater than start timestamp.';
     }
+  }
+
+  if (values.notes.length > MAX_NOTES_LENGTH) {
+    errors.notes = `Notes must be ${MAX_NOTES_LENGTH} characters or fewer.`;
   }
 
   return errors;
