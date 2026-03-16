@@ -1,5 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+/* @vitest-environment jsdom */
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MatchDetailPage } from '../src/pages/MatchDetailPage';
 import type { MatchesApi } from '../src/matches-api';
@@ -108,6 +109,9 @@ function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
 }
 
 describe('MatchDetailPage', () => {
+  afterEach(() => {
+    cleanup();
+  });
   beforeEach(() => {
     window.history.replaceState({}, '', '/matches/match-1');
   });
