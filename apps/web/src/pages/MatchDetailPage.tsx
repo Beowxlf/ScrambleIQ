@@ -1,12 +1,13 @@
 import { FormEvent, useEffect, useState } from 'react';
 
-import type { DatasetValidationIssue, DatasetValidationReport, Match, MatchAnalyticsSummary, MatchDatasetExport } from '@scrambleiq/shared';
+import type { DatasetValidationIssue, DatasetValidationReport, Match, MatchDatasetExport } from '@scrambleiq/shared';
 
 import { hasValidationErrors, MatchFormValues, MatchValidationErrors, validateMatchForm } from '../match';
 import { MatchNotFoundError } from '../matches-api';
 import type { MatchesApi } from '../matches-api';
 import { navigateTo } from '../app/router';
 import { EventPanel } from '../features/events/EventPanel';
+import { AnalyticsPanel } from '../features/analytics/AnalyticsPanel';
 import { PositionPanel } from '../features/positions/PositionPanel';
 import { VideoPanel } from '../features/video/VideoPanel';
 import type { VideoSeekRequest } from '../features/video/useMatchVideo';
@@ -49,9 +50,7 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
   const [isValidatingDataset, setIsValidatingDataset] = useState(false);
   const [datasetValidationError, setDatasetValidationError] = useState<string | null>(null);
 
-  const [analytics, setAnalytics] = useState<MatchAnalyticsSummary | null>(null);
-  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
-  const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(true);
+  const [analyticsRefreshTrigger, setAnalyticsRefreshTrigger] = useState(0);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [selectedPositionId, setSelectedPositionId] = useState<string | null>(null);
   const [videoSeekRequest, setVideoSeekRequest] = useState<VideoSeekRequest | null>(null);
@@ -112,36 +111,6 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
 
     void loadMatch();
 
-    const loadAnalytics = async () => {
-      setIsLoadingAnalytics(true);
-      setAnalyticsError(null);
-      setAnalytics(null);
-
-      try {
-        const fetchedAnalytics = await api.getMatchAnalytics(matchId);
-
-        if (isMounted) {
-          setAnalytics(fetchedAnalytics);
-        }
-      } catch (error) {
-        if (!isMounted) {
-          return;
-        }
-
-        if (error instanceof MatchNotFoundError) {
-          return;
-        }
-
-        setAnalyticsError('Unable to load analytics summary right now.');
-      } finally {
-        if (isMounted) {
-          setIsLoadingAnalytics(false);
-        }
-      }
-    };
-
-    void loadAnalytics();
-
     return () => {
       isMounted = false;
     };
@@ -181,15 +150,7 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
   };
 
   const refreshAnalytics = async () => {
-    try {
-      const fetchedAnalytics = await api.getMatchAnalytics(matchId);
-      setAnalytics(fetchedAnalytics);
-      setAnalyticsError(null);
-    } catch {
-      setAnalyticsError('Unable to load analytics summary right now.');
-    } finally {
-      setIsLoadingAnalytics(false);
-    }
+    setAnalyticsRefreshTrigger((currentValue) => currentValue + 1);
   };
 
   const exportDataset = async () => {
@@ -439,62 +400,7 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
         </section>
       ) : null}
 
-      {!isLoadingMatch && !isMatchNotFound && !matchError ? (
-        <section aria-labelledby="analytics-summary-heading">
-          <h2 id="analytics-summary-heading">Analytics Summary</h2>
-
-          {isLoadingAnalytics ? <p>Loading analytics summary...</p> : null}
-          {analyticsError ? <p>{analyticsError}</p> : null}
-
-          {!isLoadingAnalytics && !analyticsError && analytics && analytics.totalEventCount === 0 && analytics.totalPositionCount === 0 ? (
-            <p>Not enough annotation data yet. Add events or position states to generate analytics.</p>
-          ) : null}
-
-          {!isLoadingAnalytics && !analyticsError && analytics && (analytics.totalEventCount > 0 || analytics.totalPositionCount > 0) ? (
-            <>
-              <p>Total events: {analytics.totalEventCount}</p>
-              <p>Total positions: {analytics.totalPositionCount}</p>
-              <p>Total tracked position time (seconds): {analytics.totalTrackedPositionTimeSeconds}</p>
-
-              <h3>Event counts by type</h3>
-              {Object.keys(analytics.eventCountsByType).length === 0 ? (
-                <p>No event counts available.</p>
-              ) : (
-                <ul>
-                  {Object.entries(analytics.eventCountsByType).map(([eventType, count]) => (
-                    <li key={eventType}>
-                      {eventType}: {count}
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              <h3>Time in each position (seconds)</h3>
-              <ul>
-                {Object.entries(analytics.timeInPositionByTypeSeconds).map(([positionType, seconds]) => (
-                  <li key={positionType}>
-                    {positionType}: {seconds}
-                  </li>
-                ))}
-              </ul>
-
-              <h3>Top-time by competitor and position (seconds)</h3>
-              {(['A', 'B'] as const).map((competitor) => (
-                <div key={competitor}>
-                  <h4>Competitor {competitor}</h4>
-                  <ul>
-                    {Object.entries(analytics.competitorTopTimeByPositionSeconds[competitor]).map(([positionType, seconds]) => (
-                      <li key={`${competitor}-${positionType}`}>
-                        {positionType}: {seconds}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </>
-          ) : null}
-        </section>
-      ) : null}
+      {!isLoadingMatch && !isMatchNotFound && !matchError ? <AnalyticsPanel api={api} matchId={matchId} refreshTrigger={analyticsRefreshTrigger} /> : null}
 
       {!isLoadingMatch && !isMatchNotFound && !matchError ? <VideoPanel api={api} matchId={matchId} seekRequest={videoSeekRequest} /> : null}
 

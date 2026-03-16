@@ -229,6 +229,7 @@ Recommended small abstractions:
 - ✅ Slice 3 completed: event timeline annotation feature is extracted into `features/events` (`EventPanel`, `EventForm`, `EventList`, `useMatchEvents`) and wired through `MatchDetailPage` as a delegated module.
 - ✅ Slice 4 completed: position timeline feature is extracted into `features/positions` (`PositionPanel`, `PositionForm`, `PositionList`, `useMatchPositions`) and wired through `MatchDetailPage` as a delegated module.
 - ✅ Slice 5 completed: video review feature is extracted into `features/video` (`VideoPanel`, `VideoMetadataForm`, `useMatchVideo`) and wired through `MatchDetailPage` for seek coordination with events and positions.
+- ✅ Slice 6 completed: analytics summary feature is extracted into `features/analytics` (`AnalyticsPanel`, `AnalyticsSummary`, `useMatchAnalytics`) and wired through `MatchDetailPage` for mutation-driven refresh behavior.
 
 ## Incremental migration plan (ordered, small slices)
 
@@ -258,16 +259,19 @@ Recommended small abstractions:
 
 7. **Extract video review module**
    - ✅ completed: video metadata/player UI + CRUD orchestration moved into `features/video`
-   - ✅ completed: seek handling is coordinated through `MatchDetailPage` and delegated to `useMatchVideo`
 
-8. **Extract analytics and dataset tools modules**
-   - isolate analytics panel and dataset export/validation panel
+8. **Extract analytics summary module**
+   - ✅ completed: analytics summary fetch/render behavior moved into `features/analytics`
+   - ✅ completed: event/position mutation flows continue to refresh analytics through `MatchDetailPage` orchestration
+
+9. **Extract dataset tools module**
+   - isolate dataset export/validation panel and keep current behavior unchanged
    - keep API signatures unchanged
 
-9. **Consolidate shared UI primitives**
+10. **Consolidate shared UI primitives**
    - introduce tiny shared components/hooks for repeated async/error/form patterns
 
-10. **Stabilization pass**
+11. **Stabilization pass**
    - remove dead code, align naming, update tests/docs, verify root scripts
 
 ## Regression risks and mitigations
