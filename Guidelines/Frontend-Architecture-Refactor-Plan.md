@@ -228,6 +228,7 @@ Recommended small abstractions:
 - ✅ Slice 2 completed: match detail orchestration is extracted into `pages/MatchDetailPage.tsx`, and `App.tsx` remains a thin composition root.
 - ✅ Slice 3 completed: event timeline annotation feature is extracted into `features/events` (`EventPanel`, `EventForm`, `EventList`, `useMatchEvents`) and wired through `MatchDetailPage` as a delegated module.
 - ✅ Slice 4 completed: position timeline feature is extracted into `features/positions` (`PositionPanel`, `PositionForm`, `PositionList`, `useMatchPositions`) and wired through `MatchDetailPage` as a delegated module.
+- ✅ Slice 5 completed: video review feature is extracted into `features/video` (`VideoPanel`, `VideoMetadataForm`, `useMatchVideo`) and wired through `MatchDetailPage` for seek coordination with events and positions.
 
 ## Incremental migration plan (ordered, small slices)
 
@@ -256,7 +257,8 @@ Recommended small abstractions:
    - ✅ completed: created `useMatchPositions` for position CRUD/form state
 
 7. **Extract video review module**
-   - isolate metadata form/player + seek-selection logic via `useVideoSeekSelection`
+   - ✅ completed: video metadata/player UI + CRUD orchestration moved into `features/video`
+   - ✅ completed: seek handling is coordinated through `MatchDetailPage` and delegated to `useMatchVideo`
 
 8. **Extract analytics and dataset tools modules**
    - isolate analytics panel and dataset export/validation panel
