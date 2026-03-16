@@ -10,23 +10,23 @@ export class PositionsController {
   constructor(@Inject(PositionsService) private readonly positionsService: PositionsService) {}
 
   @Post('matches/:id/positions')
-  create(@Param('id', ParseUUIDPipe) matchId: string, @Body() payload: CreatePositionStateDto): PositionState {
+  create(@Param('id', ParseUUIDPipe) matchId: string, @Body() payload: CreatePositionStateDto): Promise<PositionState> {
     return this.positionsService.create(matchId, payload);
   }
 
   @Get('matches/:id/positions')
-  findByMatch(@Param('id', ParseUUIDPipe) matchId: string): PositionState[] {
+  findByMatch(@Param('id', ParseUUIDPipe) matchId: string): Promise<PositionState[]> {
     return this.positionsService.findByMatch(matchId);
   }
 
   @Patch('positions/:id')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() payload: UpdatePositionStateDto): PositionState {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() payload: UpdatePositionStateDto): Promise<PositionState> {
     return this.positionsService.update(id, payload);
   }
 
   @Delete('positions/:id')
   @HttpCode(204)
-  delete(@Param('id', ParseUUIDPipe) id: string): void {
-    this.positionsService.delete(id);
+  delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    return this.positionsService.delete(id);
   }
 }

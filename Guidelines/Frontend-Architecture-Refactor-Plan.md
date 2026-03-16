@@ -442,3 +442,33 @@ Phase-1 features now follow one consistent convention:
 - Events and positions now use the same mutation callback contract (`() => void`) to trigger page-level analytics refresh without unnecessary async wrappers.
 - Analytics fetch behavior is normalized into a single effect keyed by `matchId` and `refreshTrigger`, removing duplicated load/refresh paths.
 - `MatchDetailPage` remains the only cross-feature coordinator (analytics refresh trigger + video seek selection), preserving page-orchestrates/features-encapsulate boundaries.
+
+---
+
+## Backend persistence follow-up (PostgreSQL repositories)
+
+Phase-1 frontend modularization is complete, and backend persistence has now been refactored behind repository interfaces.
+
+### Database schema summary
+
+Implemented SQL migration (`apps/api/migrations/001_initial_schema.sql`) defines relational tables for:
+
+- matches
+- events
+- positions
+- videos
+- dataset validation results
+
+All domain tables include `id`, `created_at`, and `updated_at`, and child entities maintain referential integrity to `matches` with `ON DELETE CASCADE`.
+
+### Repository pattern summary
+
+API services in `apps/api/src/matches/*` now consume repository contracts in `apps/api/src/repositories/*`.
+
+This keeps domain/application logic independent from persistence details and preserves existing API response contracts.
+
+### Migration strategy summary
+
+Migrations are SQL files executed by a lightweight Node migration runner (`apps/api/src/database/database.migrations.ts`) that uses `psql` with `DATABASE_URL`.
+
+This keeps dependency footprint small while providing deterministic schema evolution.

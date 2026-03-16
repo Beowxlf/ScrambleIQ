@@ -3,10 +3,10 @@ import { describe, expect, it } from 'vitest';
 import type { Match, MatchAnalyticsSummary, MatchVideo, PositionState, TimelineEvent } from '@scrambleiq/shared';
 
 import { DatasetValidationService } from '../src/matches/dataset-validation.service';
-import type { EventStore } from '../src/matches/store/event-store';
-import type { MatchStore } from '../src/matches/store/match-store';
-import type { PositionStore } from '../src/matches/store/position-store';
-import type { VideoStore } from '../src/matches/store/video-store';
+import type { EventRepository } from '../src/repositories/event.repository';
+import type { MatchRepository } from '../src/repositories/match.repository';
+import type { PositionRepository } from '../src/repositories/position.repository';
+import type { VideoRepository } from '../src/repositories/video.repository';
 
 function createServiceFixture(params: {
   match: Match | undefined;
@@ -17,50 +17,47 @@ function createServiceFixture(params: {
   const events = params.events ?? [];
   const positions = params.positions ?? [];
 
-  const matchStore: MatchStore = {
-    create: () => {
+  const matchRepository: MatchRepository = {
+    create: async () => {
       throw new Error('unused');
     },
-    findAll: () => [],
-    findById: () => params.match,
-    update: () => undefined,
-    delete: () => false,
+    findAll: async () => [],
+    findById: async () => params.match,
+    update: async () => undefined,
+    delete: async () => false,
   };
 
-  const eventStore: EventStore = {
-    create: () => {
+  const eventRepository: EventRepository = {
+    create: async () => {
       throw new Error('unused');
     },
-    findByMatchId: () => events,
-    findEventById: () => undefined,
-    update: () => undefined,
-    delete: () => false,
-    deleteByMatchId: () => undefined,
+    findByMatchId: async () => events,
+    findById: async () => undefined,
+    update: async () => undefined,
+    delete: async () => false,
   };
 
-  const positionStore: PositionStore = {
-    create: () => {
+  const positionRepository: PositionRepository = {
+    create: async () => {
       throw new Error('unused');
     },
-    findPositionsByMatchId: () => positions,
-    findPositionById: () => undefined,
-    update: () => undefined,
-    delete: () => false,
-    deleteByMatchId: () => undefined,
+    findByMatchId: async () => positions,
+    findById: async () => undefined,
+    update: async () => undefined,
+    delete: async () => false,
   };
 
-  const videoStore: VideoStore = {
-    create: () => {
+  const videoRepository: VideoRepository = {
+    create: async () => {
       throw new Error('unused');
     },
-    findVideoByMatchId: () => params.video,
-    findVideoById: () => undefined,
-    update: () => undefined,
-    delete: () => false,
-    deleteByMatchId: () => undefined,
+    findByMatchId: async () => params.video,
+    findById: async () => undefined,
+    update: async () => undefined,
+    delete: async () => false,
   };
 
-  return new DatasetValidationService(matchStore, eventStore, positionStore, videoStore);
+  return new DatasetValidationService(matchRepository, eventRepository, positionRepository, videoRepository);
 }
 
 function emptyAnalytics(matchId: string): MatchAnalyticsSummary {
@@ -101,16 +98,16 @@ describe('DatasetValidationService', () => {
     notes: '',
   };
 
-  it('returns a validation report', () => {
+  it('returns a validation report', async () => {
     const service = createServiceFixture({ match });
 
-    const report = service.validateMatchDataset(matchId, emptyAnalytics(matchId));
+    const report = await service.validateMatchDataset(matchId, emptyAnalytics(matchId));
 
     expect(report.matchId).toBe(matchId);
     expect(report.issueCount).toBeGreaterThan(0);
   });
 
-  it('detects overlapping position segments', () => {
+  it('detects overlapping position segments', async () => {
     const service = createServiceFixture({
       match,
       positions: [
@@ -119,39 +116,39 @@ describe('DatasetValidationService', () => {
       ],
     });
 
-    const report = service.validateMatchDataset(matchId, emptyAnalytics(matchId));
+    const report = await service.validateMatchDataset(matchId, emptyAnalytics(matchId));
 
     expect(report.issues.some((issue) => issue.type === 'POSITION_OVERLAP')).toBe(true);
     expect(report.isValid).toBe(false);
   });
 
-  it('detects invalid timestamps', () => {
+  it('detects invalid timestamps', async () => {
     const service = createServiceFixture({
       match,
       events: [{ id: 'e1', matchId, timestamp: -3, eventType: 'takedown_attempt', competitor: 'A' }],
       positions: [{ id: 'p1', matchId, position: 'standing', competitorTop: 'A', timestampStart: 30, timestampEnd: 10 }],
     });
 
-    const report = service.validateMatchDataset(matchId, emptyAnalytics(matchId));
+    const report = await service.validateMatchDataset(matchId, emptyAnalytics(matchId));
 
     expect(report.issues.some((issue) => issue.type === 'NEGATIVE_TIMESTAMP')).toBe(true);
     expect(report.issues.some((issue) => issue.type === 'INVALID_TIMESTAMP_ORDER')).toBe(true);
     expect(report.isValid).toBe(false);
   });
 
-  it('detects empty matches', () => {
+  it('detects empty matches', async () => {
     const service = createServiceFixture({ match });
 
-    const report = service.validateMatchDataset(matchId, emptyAnalytics(matchId));
+    const report = await service.validateMatchDataset(matchId, emptyAnalytics(matchId));
 
     expect(report.issues.some((issue) => issue.type === 'EMPTY_MATCH')).toBe(true);
     expect(report.isValid).toBe(false);
   });
 
-  it('throws for unknown matches', () => {
+  it('throws for unknown matches', async () => {
     const service = createServiceFixture({ match: undefined });
 
-    expect(() => service.validateMatchDataset(matchId, emptyAnalytics(matchId))).toThrow(
+    await expect(service.validateMatchDataset(matchId, emptyAnalytics(matchId))).rejects.toThrow(
       `Match with id ${matchId} was not found.`,
     );
   });

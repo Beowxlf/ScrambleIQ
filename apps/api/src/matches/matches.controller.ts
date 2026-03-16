@@ -12,12 +12,12 @@ export class MatchesController {
   constructor(@Inject(MatchesService) private readonly matchesService: MatchesService) {}
 
   @Post()
-  create(@Body() createMatchDto: CreateMatchDto): Match {
+  create(@Body() createMatchDto: CreateMatchDto): Promise<Match> {
     return this.matchesService.create(createMatchDto);
   }
 
   @Get()
-  findAll(@Query() query: ListMatchesQueryDto): MatchListResponse {
+  findAll(@Query() query: ListMatchesQueryDto): Promise<MatchListResponse> {
     const { value, errors } = validateAndNormalizeListMatchesQuery(query);
 
     if (!value || errors.length > 0) {
@@ -29,33 +29,33 @@ export class MatchesController {
 
 
   @Patch(':id')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateMatchDto: UpdateMatchDto): Match {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateMatchDto: UpdateMatchDto): Promise<Match> {
     return this.matchesService.update(id, updateMatchDto);
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string): Match {
+  findOne(@Param('id', ParseUUIDPipe) id: string): Promise<Match> {
     return this.matchesService.findOne(id);
   }
 
   @Get(':id/analytics')
-  getAnalytics(@Param('id', ParseUUIDPipe) id: string): MatchAnalyticsSummary {
+  getAnalytics(@Param('id', ParseUUIDPipe) id: string): Promise<MatchAnalyticsSummary> {
     return this.matchesService.getAnalytics(id);
   }
 
   @Get(':id/export')
-  exportDataset(@Param('id', ParseUUIDPipe) id: string): MatchDatasetExport {
+  exportDataset(@Param('id', ParseUUIDPipe) id: string): Promise<MatchDatasetExport> {
     return this.matchesService.exportDataset(id);
   }
 
   @Get(':id/validate')
-  validateDataset(@Param('id', ParseUUIDPipe) id: string): DatasetValidationReport {
+  validateDataset(@Param('id', ParseUUIDPipe) id: string): Promise<DatasetValidationReport> {
     return this.matchesService.validateDataset(id);
   }
 
   @Delete(':id')
   @HttpCode(204)
-  delete(@Param('id', ParseUUIDPipe) id: string): void {
-    this.matchesService.delete(id);
+  delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    return this.matchesService.delete(id);
   }
 }

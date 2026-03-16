@@ -1,48 +1,46 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { TimelineEvent } from '@scrambleiq/shared';
 
+import { EventRepository, EVENT_REPOSITORY } from '../repositories/event.repository';
+import { MatchRepository, MATCH_REPOSITORY } from '../repositories/match.repository';
 import { CreateTimelineEventDto } from './create-timeline-event.dto';
 import { validateCreateTimelineEventPayload, validateUpdateTimelineEventPayload } from './timeline-event-validation';
 import { UpdateTimelineEventDto } from './update-timeline-event.dto';
-import { EventStore } from './store/event-store';
-import { EVENT_STORE } from './store/event-store.token';
-import { MatchStore } from './store/match-store';
-import { MATCH_STORE } from './store/match-store.token';
 
 @Injectable()
 export class EventsService {
   constructor(
-    @Inject(EVENT_STORE) private readonly eventStore: EventStore,
-    @Inject(MATCH_STORE) private readonly matchStore: MatchStore,
+    @Inject(EVENT_REPOSITORY) private readonly eventRepository: EventRepository,
+    @Inject(MATCH_REPOSITORY) private readonly matchRepository: MatchRepository,
   ) {}
 
-  create(matchId: string, input: CreateTimelineEventDto): TimelineEvent {
+  async create(matchId: string, input: CreateTimelineEventDto): Promise<TimelineEvent> {
     const errors = validateCreateTimelineEventPayload(input);
 
     if (errors.length > 0) {
       throw new BadRequestException(errors);
     }
 
-    const match = this.matchStore.findById(matchId);
+    const match = await this.matchRepository.findById(matchId);
 
     if (!match) {
       throw new NotFoundException(`Match with id ${matchId} was not found.`);
     }
 
-    return this.eventStore.create(matchId, input);
+    return this.eventRepository.create(matchId, input);
   }
 
-  findByMatch(matchId: string): TimelineEvent[] {
-    const match = this.matchStore.findById(matchId);
+  async findByMatch(matchId: string): Promise<TimelineEvent[]> {
+    const match = await this.matchRepository.findById(matchId);
 
     if (!match) {
       throw new NotFoundException(`Match with id ${matchId} was not found.`);
     }
 
-    return this.eventStore.findByMatchId(matchId);
+    return this.eventRepository.findByMatchId(matchId);
   }
 
-  update(id: string, input: UpdateTimelineEventDto): TimelineEvent {
+  async update(id: string, input: UpdateTimelineEventDto): Promise<TimelineEvent> {
     const errors = validateUpdateTimelineEventPayload(input);
 
     if (errors.length > 0) {
@@ -53,13 +51,13 @@ export class EventsService {
       throw new BadRequestException(['At least one field must be provided for update']);
     }
 
-    const existingEvent = this.eventStore.findEventById(id);
+    const existingEvent = await this.eventRepository.findById(id);
 
     if (!existingEvent) {
       throw new NotFoundException(`Timeline event with id ${id} was not found.`);
     }
 
-    const updatedEvent = this.eventStore.update(id, input);
+    const updatedEvent = await this.eventRepository.update(id, input);
 
     if (!updatedEvent) {
       throw new NotFoundException(`Timeline event with id ${id} was not found.`);
@@ -68,14 +66,14 @@ export class EventsService {
     return updatedEvent;
   }
 
-  delete(id: string): void {
-    const existingEvent = this.eventStore.findEventById(id);
+  async delete(id: string): Promise<void> {
+    const existingEvent = await this.eventRepository.findById(id);
 
     if (!existingEvent) {
       throw new NotFoundException(`Timeline event with id ${id} was not found.`);
     }
 
-    const isDeleted = this.eventStore.delete(id);
+    const isDeleted = await this.eventRepository.delete(id);
 
     if (!isDeleted) {
       throw new NotFoundException(`Timeline event with id ${id} was not found.`);
