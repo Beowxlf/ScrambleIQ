@@ -33,6 +33,8 @@ Backend (NestJS):
 npm run dev:api
 ```
 
+The API enables CORS for `http://localhost:5173` by default (or `WEB_ORIGIN` if set).
+
 ## Phase-one feature: Match creation
 
 ### Frontend (`apps/web`)
@@ -46,6 +48,8 @@ The web app includes a **Create Match** form with required-field validation for:
 - competitor B
 
 `notes` is optional.
+
+The form is connected to the backend API. On submit, the frontend calls `POST /matches`, shows success or failure feedback, and prepends the created match into a basic match list loaded from `GET /matches`.
 
 ### Backend (`apps/api`)
 
