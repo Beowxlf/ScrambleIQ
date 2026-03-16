@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { Match } from '@scrambleiq/shared';
+import type { DatasetValidationReport, Match } from '@scrambleiq/shared';
 
 import { App } from '../src/App';
 import { MatchFormValues } from '../src/match';
@@ -126,6 +126,12 @@ function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
         },
         totalTrackedPositionTimeSeconds: 0,
       },
+    }),
+    validateMatchDataset: async (matchId: string): Promise<DatasetValidationReport> => ({
+      matchId,
+      isValid: true,
+      issueCount: 0,
+      issues: [],
     }),
     getMatchVideo: async () => {
       throw new Error('Match video not found');
@@ -767,6 +773,119 @@ describe('App', () => {
     render(<App matchesApi={matchesApi} />);
 
     expect(await screen.findByText('Not enough annotation data yet. Add events or position states to generate analytics.')).toBeInTheDocument();
+  });
+
+
+  it('triggers dataset validation request from button', async () => {
+    const validateMatchDataset = vi.fn(async (matchId: string): Promise<DatasetValidationReport> => ({
+      matchId,
+      isValid: true,
+      issueCount: 0,
+      issues: [],
+    }));
+
+    const matchesApi = createMatchesApiMock({
+      listMatches: async () => [],
+      validateMatchDataset,
+      getMatch: async (id: string) => ({
+        id,
+        title: 'Open Finals',
+        date: '2026-03-10',
+        ruleset: 'Freestyle',
+        competitorA: 'Jordan Lee',
+        competitorB: 'Chris Park',
+        notes: '',
+      }),
+    });
+
+    window.history.replaceState({}, '', '/matches/match-1');
+    render(<App matchesApi={matchesApi} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Validate Dataset' }));
+
+    await waitFor(() => expect(validateMatchDataset).toHaveBeenCalledWith('match-1'));
+  });
+
+  it('renders grouped validation issues', async () => {
+    const matchesApi = createMatchesApiMock({
+      listMatches: async () => [],
+      validateMatchDataset: async (matchId: string): Promise<DatasetValidationReport> => ({
+        matchId,
+        isValid: false,
+        issueCount: 2,
+        issues: [
+          { type: 'POSITION_OVERLAP', severity: 'ERROR', message: 'Overlap found', context: { currentPositionId: 'p2' } },
+          { type: 'MISSING_VIDEO', severity: 'WARNING', message: 'Missing video', context: { matchId } },
+        ],
+      }),
+      getMatch: async (id: string) => ({
+        id,
+        title: 'Open Finals',
+        date: '2026-03-10',
+        ruleset: 'Freestyle',
+        competitorA: 'Jordan Lee',
+        competitorB: 'Chris Park',
+        notes: '',
+      }),
+    });
+
+    window.history.replaceState({}, '', '/matches/match-1');
+    render(<App matchesApi={matchesApi} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Validate Dataset' }));
+
+    expect(await screen.findByText('Validation status: Invalid')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'ERROR' })).toBeInTheDocument();
+    expect(screen.getByText('POSITION_OVERLAP')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'WARNING' })).toBeInTheDocument();
+    expect(screen.getByText('MISSING_VIDEO')).toBeInTheDocument();
+  });
+
+  it('shows validation empty state when no issues exist', async () => {
+    const matchesApi = createMatchesApiMock({
+      listMatches: async () => [],
+      getMatch: async (id: string) => ({
+        id,
+        title: 'Open Finals',
+        date: '2026-03-10',
+        ruleset: 'Freestyle',
+        competitorA: 'Jordan Lee',
+        competitorB: 'Chris Park',
+        notes: '',
+      }),
+    });
+
+    window.history.replaceState({}, '', '/matches/match-1');
+    render(<App matchesApi={matchesApi} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Validate Dataset' }));
+
+    expect(await screen.findByText('No issues found. Dataset is ready for export.')).toBeInTheDocument();
+  });
+
+  it('shows validation error state when request fails', async () => {
+    const matchesApi = createMatchesApiMock({
+      listMatches: async () => [],
+      validateMatchDataset: async () => {
+        throw new Error('validate failed');
+      },
+      getMatch: async (id: string) => ({
+        id,
+        title: 'Open Finals',
+        date: '2026-03-10',
+        ruleset: 'Freestyle',
+        competitorA: 'Jordan Lee',
+        competitorB: 'Chris Park',
+        notes: '',
+      }),
+    });
+
+    window.history.replaceState({}, '', '/matches/match-1');
+    render(<App matchesApi={matchesApi} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Validate Dataset' }));
+
+    expect(await screen.findByText('Unable to validate dataset right now. Please try again.')).toBeInTheDocument();
   });
 
 });

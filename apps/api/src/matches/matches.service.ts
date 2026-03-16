@@ -3,6 +3,7 @@ import type {
   CompetitorSide,
   Match,
   MatchAnalyticsSummary,
+  DatasetValidationReport,
   MatchDatasetEvent,
   MatchDatasetExport,
   MatchDatasetPosition,
@@ -22,6 +23,7 @@ import { PositionStore } from './store/position-store';
 import { POSITION_STORE } from './store/position-store.token';
 import { VideoStore } from './store/video-store';
 import { VIDEO_STORE } from './store/video-store.token';
+import { DatasetValidationService } from './dataset-validation.service';
 
 @Injectable()
 export class MatchesService {
@@ -30,6 +32,7 @@ export class MatchesService {
     @Inject(EVENT_STORE) private readonly eventStore: EventStore,
     @Inject(POSITION_STORE) private readonly positionStore: PositionStore,
     @Inject(VIDEO_STORE) private readonly videoStore: VideoStore,
+    @Inject(DatasetValidationService) private readonly datasetValidationService: DatasetValidationService,
   ) {}
 
   create(input: CreateMatchDto): Match {
@@ -69,6 +72,11 @@ export class MatchesService {
 
 
 
+
+  validateDataset(id: string): DatasetValidationReport {
+    const analytics = this.getAnalytics(id);
+    return this.datasetValidationService.validateMatchDataset(id, analytics);
+  }
 
   exportDataset(id: string): MatchDatasetExport {
     const match = this.matchStore.findById(id);

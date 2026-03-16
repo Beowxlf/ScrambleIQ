@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, Inject, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
-import type { Match, MatchAnalyticsSummary, MatchDatasetExport } from '@scrambleiq/shared';
+import type { DatasetValidationReport, Match, MatchAnalyticsSummary, MatchDatasetExport } from '@scrambleiq/shared';
 
 import { CreateMatchDto } from './create-match.dto';
 import { MatchesService } from './matches.service';
@@ -38,6 +38,11 @@ export class MatchesController {
   @Get(':id/export')
   exportDataset(@Param('id', ParseUUIDPipe) id: string): MatchDatasetExport {
     return this.matchesService.exportDataset(id);
+  }
+
+  @Get(':id/validate')
+  validateDataset(@Param('id', ParseUUIDPipe) id: string): DatasetValidationReport {
+    return this.matchesService.validateDataset(id);
   }
 
   @Delete(':id')

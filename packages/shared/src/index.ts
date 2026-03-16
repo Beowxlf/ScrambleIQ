@@ -119,6 +119,36 @@ export interface MatchDatasetExport {
   analytics: MatchAnalyticsSummary;
 }
 
+export const DATASET_VALIDATION_ISSUE_TYPES = [
+  'EVENT_OUT_OF_RANGE',
+  'POSITION_OVERLAP',
+  'MISSING_VIDEO',
+  'EMPTY_MATCH',
+  'INVALID_TIMESTAMP_ORDER',
+  'NEGATIVE_TIMESTAMP',
+  'ANALYTICS_MISMATCH',
+] as const;
+
+export type DatasetValidationIssueType = (typeof DATASET_VALIDATION_ISSUE_TYPES)[number];
+
+export const DATASET_VALIDATION_SEVERITIES = ['INFO', 'WARNING', 'ERROR'] as const;
+
+export type DatasetValidationSeverity = (typeof DATASET_VALIDATION_SEVERITIES)[number];
+
+export interface DatasetValidationIssue {
+  type: DatasetValidationIssueType;
+  severity: DatasetValidationSeverity;
+  message: string;
+  context?: Record<string, string | number | boolean | null>;
+}
+
+export interface DatasetValidationReport {
+  matchId: string;
+  isValid: boolean;
+  issueCount: number;
+  issues: DatasetValidationIssue[];
+}
+
 export interface CreateMatchVideoDto {
   title: string;
   sourceType: MatchVideoSourceType;

@@ -3,6 +3,7 @@ import type {
   CreatePositionStateDto,
   CreateMatchVideoDto,
   CreateTimelineEventDto,
+  DatasetValidationReport,
   Match,
   MatchAnalyticsSummary,
   MatchDatasetExport,
@@ -60,6 +61,7 @@ export interface MatchesApi {
   createMatchVideo(matchId: string, payload: CreateMatchVideoDto): Promise<MatchVideo>;
   getMatchAnalytics(matchId: string): Promise<MatchAnalyticsSummary>;
   exportMatchDataset(matchId: string): Promise<MatchDatasetExport>;
+  validateMatchDataset(matchId: string): Promise<DatasetValidationReport>;
   getMatchVideo(matchId: string): Promise<MatchVideo>;
   updateMatchVideo(id: string, payload: UpdateMatchVideoDto): Promise<MatchVideo>;
   deleteMatchVideo(id: string): Promise<void>;
@@ -340,6 +342,21 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       return (await response.json()) as MatchDatasetExport;
+    },
+
+
+    async validateMatchDataset(matchId) {
+      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(matchId)}/validate`);
+
+      if (response.status === 404) {
+        throw new MatchNotFoundError(matchId);
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to validate match dataset.');
+      }
+
+      return (await response.json()) as DatasetValidationReport;
     },
 
     async getMatchVideo(matchId) {

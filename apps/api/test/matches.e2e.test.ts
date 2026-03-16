@@ -546,6 +546,31 @@ describe('MatchesController', () => {
       });
   });
 
+
+  it('returns a dataset validation report for a match', async () => {
+    const matchId = await createMatch();
+
+    await request(app.getHttpServer())
+      .post(`/matches/${matchId}/events`)
+      .send({ timestamp: 12, eventType: 'takedown_attempt', competitor: 'A' })
+      .expect(201);
+
+    const response = await request(app.getHttpServer()).get(`/matches/${matchId}/validate`).expect(200);
+
+    expect(response.body.matchId).toBe(matchId);
+    expect(response.body.issueCount).toBeGreaterThanOrEqual(1);
+    expect(Array.isArray(response.body.issues)).toBe(true);
+  });
+
+  it('returns 404 for validation of an unknown match', async () => {
+    await request(app.getHttpServer())
+      .get(`/matches/${missingMatchId}/validate`)
+      .expect(404)
+      .expect(({ body }: { body: { message: string } }) => {
+        expect(body.message).toBe(`Match with id ${missingMatchId} was not found.`);
+      });
+  });
+
   it('returns 404 for analytics of an unknown match', async () => {
     await request(app.getHttpServer())
       .get(`/matches/${missingMatchId}/analytics`)
