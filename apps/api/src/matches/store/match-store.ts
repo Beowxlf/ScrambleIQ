@@ -1,5 +1,4 @@
-import { CreateMatchDto } from '../create-match.dto';
-import { Match } from '../match.model';
+import type { CreateMatchDto, Match } from '@scrambleiq/shared';
 
 export interface MatchStore {
   create(input: CreateMatchDto): Match;

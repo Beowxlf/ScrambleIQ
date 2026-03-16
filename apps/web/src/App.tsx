@@ -1,6 +1,8 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
-import { hasValidationErrors, Match, MatchFormValues, MatchValidationErrors, validateMatchForm } from './match';
+import type { Match } from '@scrambleiq/shared';
+
+import { hasValidationErrors, MatchFormValues, MatchValidationErrors, validateMatchForm } from './match';
 import { createHttpMatchesApi, MatchNotFoundError, MatchesApi } from './matches-api';
 
 const initialValues: MatchFormValues = {
