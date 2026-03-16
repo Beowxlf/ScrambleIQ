@@ -1,4 +1,11 @@
-import type { CreateMatchDto, UpdateMatchDto } from '@scrambleiq/shared';
+import {
+  MAX_COMPETITOR_NAME_LENGTH,
+  MAX_NOTES_LENGTH,
+  MAX_RULESET_LENGTH,
+  MAX_TITLE_LENGTH,
+  type CreateMatchDto,
+  type UpdateMatchDto,
+} from '@scrambleiq/shared';
 
 const requiredStringFields = ['title', 'date', 'ruleset', 'competitorA', 'competitorB'] as const;
 const optionalStringFields = ['notes'] as const;
@@ -57,14 +64,35 @@ function validateStringField(
     return;
   }
 
-  if (field === 'date' && !isValidDate(value)) {
-    errors.push('date must be a valid date');
+  if (field === 'date' && !isStrictIsoDate(value)) {
+    errors.push('date must be a valid date in YYYY-MM-DD format');
+    return;
+  }
+
+  const maxLengths: Record<string, number> = {
+    title: MAX_TITLE_LENGTH,
+    ruleset: MAX_RULESET_LENGTH,
+    competitorA: MAX_COMPETITOR_NAME_LENGTH,
+    competitorB: MAX_COMPETITOR_NAME_LENGTH,
+  };
+
+  const maxLength = maxLengths[field];
+
+  if (maxLength !== undefined && value.length > maxLength) {
+    errors.push(`${field} must be shorter than or equal to ${maxLength} characters`);
   }
 }
 
 function validateOptionalStringField(payload: Record<string, unknown>, errors: string[]): void {
-  if ('notes' in payload && payload.notes !== undefined && typeof payload.notes !== 'string') {
-    errors.push('notes must be a string');
+  if ('notes' in payload) {
+    if (payload.notes !== undefined && typeof payload.notes !== 'string') {
+      errors.push('notes must be a string');
+      return;
+    }
+
+    if (typeof payload.notes === 'string' && payload.notes.length > MAX_NOTES_LENGTH) {
+      errors.push(`notes must be shorter than or equal to ${MAX_NOTES_LENGTH} characters`);
+    }
   }
 }
 
@@ -76,6 +104,15 @@ function validateAllowedFields(payload: Record<string, unknown>, errors: string[
   }
 }
 
-function isValidDate(value: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isNaN(Date.parse(value)) === false;
+function isStrictIsoDate(value: string): boolean {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value) === false) {
+    return false;
+  }
+
+  const [year, month, day] = value.split('-').map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+
+  return parsed.getUTCFullYear() === year
+    && parsed.getUTCMonth() + 1 === month
+    && parsed.getUTCDate() === day;
 }
