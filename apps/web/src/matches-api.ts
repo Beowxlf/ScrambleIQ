@@ -1,4 +1,4 @@
-import { Match, MatchFormValues } from './match';
+import type { CreateMatchDto, Match } from '@scrambleiq/shared';
 
 export class MatchNotFoundError extends Error {
   constructor(matchId: string) {
@@ -8,7 +8,7 @@ export class MatchNotFoundError extends Error {
 }
 
 export interface MatchesApi {
-  createMatch(payload: MatchFormValues): Promise<Match>;
+  createMatch(payload: CreateMatchDto): Promise<Match>;
   listMatches(): Promise<Match[]>;
   getMatch(id: string): Promise<Match>;
 }
@@ -18,12 +18,20 @@ interface HttpMatchesApiOptions {
   fetchImpl?: typeof fetch;
 }
 
+function resolveApiBaseUrl(override?: string): string {
+  if (override) {
+    return override;
+  }
+
+  return import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
+}
+
 export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): MatchesApi {
-  const baseUrl = options.baseUrl ?? 'http://localhost:3000';
+  const baseUrl = resolveApiBaseUrl(options.baseUrl);
   const fetchImpl = options.fetchImpl ?? fetch;
 
   return {
-    async createMatch(payload) {
+    async createMatch(payload: CreateMatchDto) {
       const response = await fetchImpl(`${baseUrl}/matches`, {
         method: 'POST',
         headers: {

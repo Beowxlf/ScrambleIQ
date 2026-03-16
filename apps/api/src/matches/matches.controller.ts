@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Inject, Param, Post } from '@nestjs/common';
+import type { Match } from '@scrambleiq/shared';
 
 import { CreateMatchDto } from './create-match.dto';
-import { Match } from './match.model';
 import { MatchesService } from './matches.service';
 
 @Controller('matches')

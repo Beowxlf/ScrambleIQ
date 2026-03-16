@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import type { CreateMatchDto, Match } from '@scrambleiq/shared';
 
-import { CreateMatchDto } from '../create-match.dto';
-import { Match } from '../match.model';
 import { MatchStore } from './match-store';
 
 @Injectable()
@@ -24,7 +23,7 @@ export class InMemoryMatchStore implements MatchStore {
   }
 
   findAll(): Match[] {
-    return [...this.matches];
+    return [...this.matches].sort((a, b) => Date.parse(b.date) - Date.parse(a.date));
   }
 
   findById(id: string): Match | undefined {
