@@ -222,6 +222,11 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
   const [isLoadingMatch, setIsLoadingMatch] = useState(true);
   const [matchError, setMatchError] = useState<string | null>(null);
   const [isMatchNotFound, setIsMatchNotFound] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editValues, setEditValues] = useState<MatchFormValues>(initialValues);
+  const [editErrors, setEditErrors] = useState<MatchValidationErrors>({});
+  const [editSubmissionError, setEditSubmissionError] = useState<string | null>(null);
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -231,12 +236,23 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
       setMatch(null);
       setMatchError(null);
       setIsMatchNotFound(false);
+      setIsEditMode(false);
+      setEditSubmissionError(null);
+      setEditErrors({});
 
       try {
         const fetchedMatch = await api.getMatch(matchId);
 
         if (isMounted) {
           setMatch(fetchedMatch);
+          setEditValues({
+            title: fetchedMatch.title,
+            date: fetchedMatch.date,
+            ruleset: fetchedMatch.ruleset,
+            competitorA: fetchedMatch.competitorA,
+            competitorB: fetchedMatch.competitorB,
+            notes: fetchedMatch.notes,
+          });
         }
       } catch (error) {
         if (!isMounted) {
@@ -263,6 +279,39 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
     };
   }, [api, matchId]);
 
+  const submitEdit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const validationErrors = validateMatchForm(editValues);
+    setEditErrors(validationErrors);
+
+    if (hasValidationErrors(validationErrors)) {
+      return;
+    }
+
+    setIsSubmittingEdit(true);
+    setEditSubmissionError(null);
+
+    try {
+      const updatedMatch = await api.updateMatch(matchId, editValues);
+      setMatch(updatedMatch);
+      setEditValues({
+        title: updatedMatch.title,
+        date: updatedMatch.date,
+        ruleset: updatedMatch.ruleset,
+        competitorA: updatedMatch.competitorA,
+        competitorB: updatedMatch.competitorB,
+        notes: updatedMatch.notes,
+      });
+      setEditErrors({});
+      setIsEditMode(false);
+    } catch {
+      setEditSubmissionError('Unable to update match. Please try again.');
+    } finally {
+      setIsSubmittingEdit(false);
+    }
+  };
+
   return (
     <main>
       <h1>ScrambleIQ</h1>
@@ -280,15 +329,106 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
         {!isLoadingMatch && matchError ? <p>{matchError}</p> : null}
 
         {!isLoadingMatch && match ? (
-          <article>
-            <h3>{match.title}</h3>
-            <p>ID: {match.id}</p>
-            <p>Date: {match.date}</p>
-            <p>Ruleset: {match.ruleset}</p>
-            <p>Competitor A: {match.competitorA}</p>
-            <p>Competitor B: {match.competitorB}</p>
-            <p>Notes: {match.notes || 'No notes provided.'}</p>
-          </article>
+          isEditMode ? (
+            <form onSubmit={(event) => void submitEdit(event)} noValidate>
+              <h3>Edit Match</h3>
+
+              <label htmlFor="edit-title">Title</label>
+              <input
+                id="edit-title"
+                name="title"
+                value={editValues.title}
+                onChange={(event) => setEditValues({ ...editValues, title: event.target.value })}
+              />
+              {editErrors.title ? <p>{editErrors.title}</p> : null}
+
+              <label htmlFor="edit-date">Date</label>
+              <input
+                id="edit-date"
+                name="date"
+                type="date"
+                value={editValues.date}
+                onChange={(event) => setEditValues({ ...editValues, date: event.target.value })}
+              />
+              {editErrors.date ? <p>{editErrors.date}</p> : null}
+
+              <label htmlFor="edit-ruleset">Ruleset</label>
+              <input
+                id="edit-ruleset"
+                name="ruleset"
+                value={editValues.ruleset}
+                onChange={(event) => setEditValues({ ...editValues, ruleset: event.target.value })}
+              />
+              {editErrors.ruleset ? <p>{editErrors.ruleset}</p> : null}
+
+              <label htmlFor="edit-competitorA">Competitor A</label>
+              <input
+                id="edit-competitorA"
+                name="competitorA"
+                value={editValues.competitorA}
+                onChange={(event) => setEditValues({ ...editValues, competitorA: event.target.value })}
+              />
+              {editErrors.competitorA ? <p>{editErrors.competitorA}</p> : null}
+
+              <label htmlFor="edit-competitorB">Competitor B</label>
+              <input
+                id="edit-competitorB"
+                name="competitorB"
+                value={editValues.competitorB}
+                onChange={(event) => setEditValues({ ...editValues, competitorB: event.target.value })}
+              />
+              {editErrors.competitorB ? <p>{editErrors.competitorB}</p> : null}
+
+              <label htmlFor="edit-notes">Notes</label>
+              <textarea
+                id="edit-notes"
+                name="notes"
+                value={editValues.notes}
+                onChange={(event) => setEditValues({ ...editValues, notes: event.target.value })}
+              />
+
+              <p>
+                <button type="submit" disabled={isSubmittingEdit}>
+                  {isSubmittingEdit ? 'Saving...' : 'Save Changes'}
+                </button>{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditMode(false);
+                    setEditSubmissionError(null);
+                    setEditErrors({});
+                    setEditValues({
+                      title: match.title,
+                      date: match.date,
+                      ruleset: match.ruleset,
+                      competitorA: match.competitorA,
+                      competitorB: match.competitorB,
+                      notes: match.notes,
+                    });
+                  }}
+                >
+                  Cancel
+                </button>
+              </p>
+
+              {editSubmissionError ? <p>{editSubmissionError}</p> : null}
+            </form>
+          ) : (
+            <article>
+              <h3>{match.title}</h3>
+              <p>ID: {match.id}</p>
+              <p>Date: {match.date}</p>
+              <p>Ruleset: {match.ruleset}</p>
+              <p>Competitor A: {match.competitorA}</p>
+              <p>Competitor B: {match.competitorB}</p>
+              <p>Notes: {match.notes || 'No notes provided.'}</p>
+              <p>
+                <button type="button" onClick={() => setIsEditMode(true)}>
+                  Edit Match
+                </button>
+              </p>
+            </article>
+          )
         ) : null}
       </section>
     </main>

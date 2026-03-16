@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Inject, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Patch, Post } from '@nestjs/common';
 import type { Match } from '@scrambleiq/shared';
 
 import { CreateMatchDto } from './create-match.dto';
 import { MatchesService } from './matches.service';
+import { UpdateMatchDto } from './update-match.dto';
 
 @Controller('matches')
 export class MatchesController {
@@ -16,6 +17,12 @@ export class MatchesController {
   @Get()
   findAll(): Match[] {
     return this.matchesService.findAll();
+  }
+
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateMatchDto: UpdateMatchDto): Match {
+    return this.matchesService.update(id, updateMatchDto);
   }
 
   @Get(':id')

@@ -16,3 +16,5 @@ export interface CreateMatchDto {
   competitorB: string;
   notes?: string;
 }
+
+export type UpdateMatchDto = Partial<CreateMatchDto>;
