@@ -1,5 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { Match } from '@scrambleiq/shared';
+import type { CompetitorSide, Match, MatchAnalyticsSummary, PositionType } from '@scrambleiq/shared';
+import { POSITION_TYPES } from '@scrambleiq/shared';
 
 import { CreateMatchDto } from './create-match.dto';
 import { UpdateMatchDto } from './update-match.dto';
@@ -54,6 +55,57 @@ export class MatchesService {
     }
 
     return updatedMatch;
+  }
+
+
+
+  getAnalytics(id: string): MatchAnalyticsSummary {
+    const match = this.matchStore.findById(id);
+
+    if (!match) {
+      throw new NotFoundException(`Match with id ${id} was not found.`);
+    }
+
+    const events = this.eventStore.findByMatchId(id);
+    const positions = this.positionStore.findPositionsByMatchId(id);
+
+    const eventCountsByType = events.reduce<Record<string, number>>((acc, event) => {
+      acc[event.eventType] = (acc[event.eventType] ?? 0) + 1;
+      return acc;
+    }, {});
+
+    const initPositionDurations = (): Record<PositionType, number> =>
+      POSITION_TYPES.reduce<Record<PositionType, number>>((acc, positionType) => {
+        acc[positionType] = 0;
+        return acc;
+      }, {} as Record<PositionType, number>);
+
+    const initCompetitorBreakdown = (): Record<CompetitorSide, Record<PositionType, number>> => ({
+      A: initPositionDurations(),
+      B: initPositionDurations(),
+    });
+
+    const timeInPositionByTypeSeconds = initPositionDurations();
+    const competitorTopTimeByPositionSeconds = initCompetitorBreakdown();
+
+    let totalTrackedPositionTimeSeconds = 0;
+
+    for (const position of positions) {
+      const durationSeconds = position.timestampEnd - position.timestampStart;
+      timeInPositionByTypeSeconds[position.position] += durationSeconds;
+      competitorTopTimeByPositionSeconds[position.competitorTop][position.position] += durationSeconds;
+      totalTrackedPositionTimeSeconds += durationSeconds;
+    }
+
+    return {
+      matchId: id,
+      totalEventCount: events.length,
+      eventCountsByType,
+      totalPositionCount: positions.length,
+      timeInPositionByTypeSeconds,
+      competitorTopTimeByPositionSeconds,
+      totalTrackedPositionTimeSeconds,
+    };
   }
 
   findOne(id: string): Match {

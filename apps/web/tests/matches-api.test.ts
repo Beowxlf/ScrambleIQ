@@ -20,4 +20,14 @@ describe('createHttpMatchesApi path parameter encoding', () => {
 
     expect(fetchImpl).toHaveBeenCalledWith('http://localhost:3000/matches/match%2F123/events');
   });
+
+  it('encodes analytics path params', async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ matchId: 'ok' }), { status: 200 }));
+    const api = createHttpMatchesApi({ baseUrl: 'http://localhost:3000', fetchImpl });
+
+    await api.getMatchAnalytics('match/with spaces');
+
+    expect(fetchImpl).toHaveBeenCalledWith('http://localhost:3000/matches/match%2Fwith%20spaces/analytics');
+  });
+
 });

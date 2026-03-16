@@ -43,6 +43,51 @@ function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
     createMatchVideo: async () => {
       throw new Error('createMatchVideo was not mocked');
     },
+    getMatchAnalytics: async (matchId: string) => ({
+      matchId,
+      totalEventCount: 0,
+      eventCountsByType: {},
+      totalPositionCount: 0,
+      timeInPositionByTypeSeconds: {
+        standing: 0,
+        closed_guard: 0,
+        open_guard: 0,
+        half_guard: 0,
+        side_control: 0,
+        mount: 0,
+        back_control: 0,
+        north_south: 0,
+        leg_entanglement: 0,
+        scramble: 0,
+      },
+      competitorTopTimeByPositionSeconds: {
+        A: {
+          standing: 0,
+          closed_guard: 0,
+          open_guard: 0,
+          half_guard: 0,
+          side_control: 0,
+          mount: 0,
+          back_control: 0,
+          north_south: 0,
+          leg_entanglement: 0,
+          scramble: 0,
+        },
+        B: {
+          standing: 0,
+          closed_guard: 0,
+          open_guard: 0,
+          half_guard: 0,
+          side_control: 0,
+          mount: 0,
+          back_control: 0,
+          north_south: 0,
+          leg_entanglement: 0,
+          scramble: 0,
+        },
+      },
+      totalTrackedPositionTimeSeconds: 0,
+    }),
     getMatchVideo: async () => {
       throw new Error('Match video not found');
     },

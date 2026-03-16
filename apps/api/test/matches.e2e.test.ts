@@ -445,4 +445,62 @@ describe('MatchesController', () => {
     expect(response.body.message).toContain('Position state timestamps must not overlap existing segments');
   });
 
+  it('returns analytics for a valid match', async () => {
+    const matchId = await createMatch();
+
+    await request(app.getHttpServer())
+      .post(`/matches/${matchId}/events`)
+      .send({ timestamp: 5, eventType: 'takedown_attempt', competitor: 'A' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/matches/${matchId}/events`)
+      .send({ timestamp: 15, eventType: 'takedown_attempt', competitor: 'B' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/matches/${matchId}/events`)
+      .send({ timestamp: 25, eventType: 'guard_pass', competitor: 'A' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/matches/${matchId}/positions`)
+      .send({ position: 'closed_guard', competitorTop: 'A', timestampStart: 10, timestampEnd: 20 })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/matches/${matchId}/positions`)
+      .send({ position: 'mount', competitorTop: 'A', timestampStart: 20, timestampEnd: 28 })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/matches/${matchId}/positions`)
+      .send({ position: 'mount', competitorTop: 'B', timestampStart: 28, timestampEnd: 33 })
+      .expect(201);
+
+    const response = await request(app.getHttpServer()).get(`/matches/${matchId}/analytics`).expect(200);
+
+    expect(response.body.matchId).toBe(matchId);
+    expect(response.body.totalEventCount).toBe(3);
+    expect(response.body.eventCountsByType).toEqual({
+      takedown_attempt: 2,
+      guard_pass: 1,
+    });
+    expect(response.body.totalPositionCount).toBe(3);
+    expect(response.body.totalTrackedPositionTimeSeconds).toBe(23);
+    expect(response.body.timeInPositionByTypeSeconds.closed_guard).toBe(10);
+    expect(response.body.timeInPositionByTypeSeconds.mount).toBe(13);
+    expect(response.body.competitorTopTimeByPositionSeconds.A.mount).toBe(8);
+    expect(response.body.competitorTopTimeByPositionSeconds.B.mount).toBe(5);
+  });
+
+  it('returns 404 for analytics of an unknown match', async () => {
+    await request(app.getHttpServer())
+      .get(`/matches/${missingMatchId}/analytics`)
+      .expect(404)
+      .expect(({ body }: { body: { message: string } }) => {
+        expect(body.message).toBe(`Match with id ${missingMatchId} was not found.`);
+      });
+  });
+
 });

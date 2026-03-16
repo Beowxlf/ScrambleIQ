@@ -45,6 +45,51 @@ function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
     createMatchVideo: async () => {
       throw new Error('createMatchVideo was not mocked');
     },
+    getMatchAnalytics: async (matchId: string) => ({
+      matchId,
+      totalEventCount: 0,
+      eventCountsByType: {},
+      totalPositionCount: 0,
+      timeInPositionByTypeSeconds: {
+        standing: 0,
+        closed_guard: 0,
+        open_guard: 0,
+        half_guard: 0,
+        side_control: 0,
+        mount: 0,
+        back_control: 0,
+        north_south: 0,
+        leg_entanglement: 0,
+        scramble: 0,
+      },
+      competitorTopTimeByPositionSeconds: {
+        A: {
+          standing: 0,
+          closed_guard: 0,
+          open_guard: 0,
+          half_guard: 0,
+          side_control: 0,
+          mount: 0,
+          back_control: 0,
+          north_south: 0,
+          leg_entanglement: 0,
+          scramble: 0,
+        },
+        B: {
+          standing: 0,
+          closed_guard: 0,
+          open_guard: 0,
+          half_guard: 0,
+          side_control: 0,
+          mount: 0,
+          back_control: 0,
+          north_south: 0,
+          leg_entanglement: 0,
+          scramble: 0,
+        },
+      },
+      totalTrackedPositionTimeSeconds: 0,
+    }),
     getMatchVideo: async () => {
       throw new Error('Match video not found');
     },
@@ -463,6 +508,164 @@ describe('App', () => {
 
     expect(await screen.findByText('Unable to delete match. Please try again.')).toBeInTheDocument();
     expect(window.location.pathname).toBe('/matches/match-1');
+  });
+
+
+  it('renders analytics section on match detail page', async () => {
+    const matchesApi = createMatchesApiMock({
+      listMatches: async () => [],
+      getMatch: async (id: string) => ({
+        id,
+        title: 'Open Finals',
+        date: '2026-03-10',
+        ruleset: 'Freestyle',
+        competitorA: 'Jordan Lee',
+        competitorB: 'Chris Park',
+        notes: '',
+      }),
+    });
+
+    window.history.replaceState({}, '', '/matches/match-1');
+
+    render(<App matchesApi={matchesApi} />);
+
+    expect(await screen.findByRole('heading', { name: 'Analytics Summary' })).toBeInTheDocument();
+  });
+
+  it('shows analytics loading state', async () => {
+    const matchesApi = createMatchesApiMock({
+      listMatches: async () => [],
+      getMatch: async (id: string) => ({
+        id,
+        title: 'Open Finals',
+        date: '2026-03-10',
+        ruleset: 'Freestyle',
+        competitorA: 'Jordan Lee',
+        competitorB: 'Chris Park',
+        notes: '',
+      }),
+      getMatchAnalytics: async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        return createMatchesApiMock().getMatchAnalytics('match-1');
+      },
+    });
+
+    window.history.replaceState({}, '', '/matches/match-1');
+    render(<App matchesApi={matchesApi} />);
+
+    expect(await screen.findByText('Loading analytics summary...')).toBeInTheDocument();
+  });
+
+  it('shows analytics error state', async () => {
+    const matchesApi = createMatchesApiMock({
+      listMatches: async () => [],
+      getMatch: async (id: string) => ({
+        id,
+        title: 'Open Finals',
+        date: '2026-03-10',
+        ruleset: 'Freestyle',
+        competitorA: 'Jordan Lee',
+        competitorB: 'Chris Park',
+        notes: '',
+      }),
+      getMatchAnalytics: async () => {
+        throw new Error('analytics failed');
+      },
+    });
+
+    window.history.replaceState({}, '', '/matches/match-1');
+    render(<App matchesApi={matchesApi} />);
+
+    expect(await screen.findByText('Unable to load analytics summary right now.')).toBeInTheDocument();
+  });
+
+  it('renders analytics values from fetched data', async () => {
+    const matchesApi = createMatchesApiMock({
+      listMatches: async () => [],
+      getMatch: async (id: string) => ({
+        id,
+        title: 'Open Finals',
+        date: '2026-03-10',
+        ruleset: 'Freestyle',
+        competitorA: 'Jordan Lee',
+        competitorB: 'Chris Park',
+        notes: '',
+      }),
+      getMatchAnalytics: async () => ({
+        matchId: 'match-1',
+        totalEventCount: 2,
+        eventCountsByType: { guard_pass: 1, sweep: 1 },
+        totalPositionCount: 2,
+        timeInPositionByTypeSeconds: {
+          standing: 0,
+          closed_guard: 12,
+          open_guard: 0,
+          half_guard: 0,
+          side_control: 8,
+          mount: 0,
+          back_control: 0,
+          north_south: 0,
+          leg_entanglement: 0,
+          scramble: 0,
+        },
+        competitorTopTimeByPositionSeconds: {
+          A: {
+            standing: 0,
+            closed_guard: 12,
+            open_guard: 0,
+            half_guard: 0,
+            side_control: 0,
+            mount: 0,
+            back_control: 0,
+            north_south: 0,
+            leg_entanglement: 0,
+            scramble: 0,
+          },
+          B: {
+            standing: 0,
+            closed_guard: 0,
+            open_guard: 0,
+            half_guard: 0,
+            side_control: 8,
+            mount: 0,
+            back_control: 0,
+            north_south: 0,
+            leg_entanglement: 0,
+            scramble: 0,
+          },
+        },
+        totalTrackedPositionTimeSeconds: 20,
+      }),
+    });
+
+    window.history.replaceState({}, '', '/matches/match-1');
+    render(<App matchesApi={matchesApi} />);
+
+    expect(await screen.findByText('Total events: 2')).toBeInTheDocument();
+    expect(screen.getByText('guard_pass: 1')).toBeInTheDocument();
+    expect(screen.getByText('Total tracked position time (seconds): 20')).toBeInTheDocument();
+    expect(screen.getAllByText('closed_guard: 12').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('side_control: 8').length).toBeGreaterThan(0);
+  });
+
+  it('shows analytics empty state when annotation data is minimal', async () => {
+    const matchesApi = createMatchesApiMock({
+      listMatches: async () => [],
+      getMatch: async (id: string) => ({
+        id,
+        title: 'Open Finals',
+        date: '2026-03-10',
+        ruleset: 'Freestyle',
+        competitorA: 'Jordan Lee',
+        competitorB: 'Chris Park',
+        notes: '',
+      }),
+    });
+
+    window.history.replaceState({}, '', '/matches/match-1');
+    render(<App matchesApi={matchesApi} />);
+
+    expect(await screen.findByText('Not enough annotation data yet. Add events or position states to generate analytics.')).toBeInTheDocument();
   });
 
 });

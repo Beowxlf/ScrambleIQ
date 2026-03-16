@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, Inject, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
-import type { Match } from '@scrambleiq/shared';
+import type { Match, MatchAnalyticsSummary } from '@scrambleiq/shared';
 
 import { CreateMatchDto } from './create-match.dto';
 import { MatchesService } from './matches.service';
@@ -28,6 +28,11 @@ export class MatchesController {
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string): Match {
     return this.matchesService.findOne(id);
+  }
+
+  @Get(':id/analytics')
+  getAnalytics(@Param('id', ParseUUIDPipe) id: string): MatchAnalyticsSummary {
+    return this.matchesService.getAnalytics(id);
   }
 
   @Delete(':id')
