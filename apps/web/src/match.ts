@@ -1,11 +1,6 @@
-export interface MatchFormValues {
-  title: string;
-  date: string;
-  ruleset: string;
-  competitorA: string;
-  competitorB: string;
-  notes: string;
-}
+import type { CreateMatchDto } from '@scrambleiq/shared';
+
+export type MatchFormValues = Required<CreateMatchDto>;
 
 export interface MatchValidationErrors {
   title?: string;
@@ -43,14 +38,4 @@ export function validateMatchForm(values: MatchFormValues): MatchValidationError
 
 export function hasValidationErrors(errors: MatchValidationErrors): boolean {
   return Object.values(errors).some(Boolean);
-}
-
-export interface Match {
-  id: string;
-  title: string;
-  date: string;
-  ruleset: string;
-  competitorA: string;
-  competitorB: string;
-  notes: string;
 }

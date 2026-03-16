@@ -1,12 +1,13 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import type { Match } from '@scrambleiq/shared';
 
 import { CreateMatchDto } from './create-match.dto';
-import { Match } from './match.model';
 import { MatchStore } from './store/match-store';
+import { MATCH_STORE } from './store/match-store.token';
 
 @Injectable()
 export class MatchesService {
-  constructor(@Inject('MATCH_STORE') private readonly matchStore: MatchStore) {}
+  constructor(@Inject(MATCH_STORE) private readonly matchStore: MatchStore) {}
 
   create(input: CreateMatchDto): Match {
     return this.matchStore.create(input);
