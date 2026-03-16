@@ -226,6 +226,7 @@ Recommended small abstractions:
 - ✅ Slice 1 completed: routing primitives are extracted into `app/router.ts` and page orchestration now flows through `app/AppShell.tsx`.
 - ✅ Slice 1 completed: match list + create flow extracted into `pages/MatchListPage.tsx`, `components/MatchCreateForm.tsx`, `components/MatchList.tsx`, and `hooks/useMatches.ts`.
 - ✅ Slice 2 completed: match detail orchestration is extracted into `pages/MatchDetailPage.tsx`, and `App.tsx` remains a thin composition root.
+- ✅ Slice 3 completed: event timeline annotation feature is extracted into `features/events` (`EventPanel`, `EventForm`, `EventList`, `useMatchEvents`) and wired through `MatchDetailPage` as a delegated module.
 
 ## Incremental migration plan (ordered, small slices)
 
@@ -246,8 +247,8 @@ Recommended small abstractions:
    - preserve current `useState` in page container initially
 
 5. **Extract event timeline module**
-   - move event form/list JSX + handlers into `features/events`
-   - create `useEventTimeline` for event CRUD/form state
+   - ✅ completed: moved event form/list JSX + handlers into `features/events`
+   - ✅ completed: created `useMatchEvents` for event CRUD/form state
 
 6. **Extract position timeline module**
    - mirror event extraction approach with `usePositionTimeline`
