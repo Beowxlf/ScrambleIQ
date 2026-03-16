@@ -215,4 +215,24 @@ describe('MatchDetailPage', () => {
 
     await waitFor(() => expect(getMatchAnalytics).toHaveBeenCalledTimes(3));
   });
+
+  it('keeps dataset tooling available within match detail orchestration', async () => {
+    const validateMatchDataset = vi.fn(async (matchId: string) => ({
+      matchId,
+      isValid: true,
+      issueCount: 0,
+      issues: [],
+    }));
+
+    const api = createMatchesApiMock({ validateMatchDataset });
+
+    render(<MatchDetailPage api={api} matchId="match-1" />);
+
+    expect(await screen.findByRole('button', { name: 'Export Dataset' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Validate Dataset' }));
+
+    expect(await screen.findByText('Validation status: Valid')).toBeInTheDocument();
+    expect(screen.getByText('No issues found. Dataset is ready for export.')).toBeInTheDocument();
+  });
+
 });

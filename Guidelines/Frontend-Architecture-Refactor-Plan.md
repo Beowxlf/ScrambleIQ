@@ -230,6 +230,9 @@ Recommended small abstractions:
 - ✅ Slice 4 completed: position timeline feature is extracted into `features/positions` (`PositionPanel`, `PositionForm`, `PositionList`, `useMatchPositions`) and wired through `MatchDetailPage` as a delegated module.
 - ✅ Slice 5 completed: video review feature is extracted into `features/video` (`VideoPanel`, `VideoMetadataForm`, `useMatchVideo`) and wired through `MatchDetailPage` for seek coordination with events and positions.
 - ✅ Slice 6 completed: analytics summary feature is extracted into `features/analytics` (`AnalyticsPanel`, `AnalyticsSummary`, `useMatchAnalytics`) and wired through `MatchDetailPage` for mutation-driven refresh behavior.
+- ✅ Slice 7 completed: dataset tooling is extracted into `features/dataset` (`DatasetToolsPanel`, `DatasetValidationReport`, `useMatchDatasetTools`) and wired through `MatchDetailPage` while preserving export/download and validation workflows.
+
+Phase-1 frontend modularization status: **complete for the planned extraction slices** (routing, match list, match detail orchestration, events, positions, video, analytics, dataset tooling).
 
 ## Incremental migration plan (ordered, small slices)
 
