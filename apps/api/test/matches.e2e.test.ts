@@ -181,4 +181,143 @@ describe('MatchesController', () => {
         expect(body.message).toBe('Timeline event with id missing-event was not found.');
       });
   });
+
+  it('creates a position with POST /matches/:id/positions', async () => {
+    const matchId = await createMatch();
+
+    const response = await request(app.getHttpServer())
+      .post(`/matches/${matchId}/positions`)
+      .send({
+        position: 'closed_guard',
+        competitorTop: 'A',
+        timestampStart: 12,
+        timestampEnd: 22,
+        notes: 'Established closed guard',
+      })
+      .expect(201);
+
+    expect(response.body).toMatchObject({
+      matchId,
+      position: 'closed_guard',
+      competitorTop: 'A',
+      timestampStart: 12,
+      timestampEnd: 22,
+      notes: 'Established closed guard',
+    });
+    expect(response.body.id).toEqual(expect.any(String));
+  });
+
+  it('gets positions sorted by timestampStart with GET /matches/:id/positions', async () => {
+    const matchId = await createMatch();
+
+    await request(app.getHttpServer())
+      .post(`/matches/${matchId}/positions`)
+      .send({ position: 'mount', competitorTop: 'B', timestampStart: 40, timestampEnd: 55 })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/matches/${matchId}/positions`)
+      .send({ position: 'closed_guard', competitorTop: 'A', timestampStart: 12, timestampEnd: 20 })
+      .expect(201);
+
+    const response = await request(app.getHttpServer()).get(`/matches/${matchId}/positions`).expect(200);
+
+    expect(response.body.map((position: { timestampStart: number }) => position.timestampStart)).toEqual([12, 40]);
+  });
+
+  it('updates a position with PATCH /positions/:id', async () => {
+    const matchId = await createMatch();
+    const createResponse = await request(app.getHttpServer())
+      .post(`/matches/${matchId}/positions`)
+      .send({ position: 'closed_guard', competitorTop: 'A', timestampStart: 12, timestampEnd: 20 })
+      .expect(201);
+
+    const response = await request(app.getHttpServer())
+      .patch(`/positions/${createResponse.body.id}`)
+      .send({ position: 'mount', competitorTop: 'B', timestampEnd: 26, notes: 'Transitioned to mount' })
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      id: createResponse.body.id,
+      position: 'mount',
+      competitorTop: 'B',
+      timestampStart: 12,
+      timestampEnd: 26,
+      notes: 'Transitioned to mount',
+    });
+  });
+
+  it('deletes a position with DELETE /positions/:id', async () => {
+    const matchId = await createMatch();
+    const createResponse = await request(app.getHttpServer())
+      .post(`/matches/${matchId}/positions`)
+      .send({ position: 'closed_guard', competitorTop: 'A', timestampStart: 12, timestampEnd: 20 })
+      .expect(201);
+
+    await request(app.getHttpServer()).delete(`/positions/${createResponse.body.id}`).expect(204);
+
+    const listResponse = await request(app.getHttpServer()).get(`/matches/${matchId}/positions`).expect(200);
+    expect(listResponse.body).toEqual([]);
+  });
+
+
+  it('removes positions when parent match is deleted', async () => {
+    const matchId = await createMatch();
+
+    await request(app.getHttpServer())
+      .post(`/matches/${matchId}/positions`)
+      .send({ position: 'closed_guard', competitorTop: 'A', timestampStart: 12, timestampEnd: 20 })
+      .expect(201);
+
+    await request(app.getHttpServer()).delete(`/matches/${matchId}`).expect(204);
+    await request(app.getHttpServer()).get(`/matches/${matchId}/positions`).expect(404);
+  });
+
+  it('rejects invalid position payloads', async () => {
+    const matchId = await createMatch();
+
+    const createResponse = await request(app.getHttpServer())
+      .post(`/matches/${matchId}/positions`)
+      .send({ position: 'unknown', competitorTop: 'C', timestampStart: -1, timestampEnd: -1, extraField: true })
+      .expect(400);
+
+    expect(createResponse.body.message).toContain('position must be one of the following values: standing, closed_guard, open_guard, half_guard, side_control, mount, back_control, north_south, leg_entanglement, scramble');
+    expect(createResponse.body.message).toContain('competitorTop must be one of the following values: A, B');
+    expect(createResponse.body.message).toContain('timestampStart must not be less than 0');
+    expect(createResponse.body.message).toContain('timestampEnd must be greater than timestampStart');
+    expect(createResponse.body.message).toContain('property extraField should not exist');
+  });
+
+  it('returns 404 behavior for missing position resources', async () => {
+    await request(app.getHttpServer())
+      .get('/matches/missing-match/positions')
+      .expect(404)
+      .expect(({ body }: { body: { message: string } }) => {
+        expect(body.message).toBe('Match with id missing-match was not found.');
+      });
+
+    await request(app.getHttpServer())
+      .post('/matches/missing-match/positions')
+      .send({ position: 'closed_guard', competitorTop: 'A', timestampStart: 12, timestampEnd: 20 })
+      .expect(404)
+      .expect(({ body }: { body: { message: string } }) => {
+        expect(body.message).toBe('Match with id missing-match was not found.');
+      });
+
+    await request(app.getHttpServer())
+      .patch('/positions/missing-position')
+      .send({ position: 'mount' })
+      .expect(404)
+      .expect(({ body }: { body: { message: string } }) => {
+        expect(body.message).toBe('Position state with id missing-position was not found.');
+      });
+
+    await request(app.getHttpServer())
+      .delete('/positions/missing-position')
+      .expect(404)
+      .expect(({ body }: { body: { message: string } }) => {
+        expect(body.message).toBe('Position state with id missing-position was not found.');
+      });
+  });
+
 });

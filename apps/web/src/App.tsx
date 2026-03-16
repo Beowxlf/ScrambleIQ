@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
-import type { Match, TimelineEvent } from '@scrambleiq/shared';
+import type { Match, PositionState, TimelineEvent } from '@scrambleiq/shared';
 
 import { hasValidationErrors, MatchFormValues, MatchValidationErrors, validateMatchForm } from './match';
 import { createHttpMatchesApi, MatchNotFoundError, MatchesApi } from './matches-api';
@@ -13,6 +13,15 @@ import {
   toCreateTimelineEventDto,
   validateTimelineEventForm,
 } from './timeline-event';
+import {
+  hasPositionStateValidationErrors,
+  initialPositionStateValues,
+  POSITION_TYPES,
+  PositionStateFormValues,
+  PositionStateValidationErrors,
+  toCreatePositionStateDto,
+  validatePositionStateForm,
+} from './position-state';
 
 const initialValues: MatchFormValues = {
   title: '',
@@ -249,6 +258,15 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
   const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
   const [eventSubmissionError, setEventSubmissionError] = useState<string | null>(null);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [positions, setPositions] = useState<PositionState[]>([]);
+  const [positionsError, setPositionsError] = useState<string | null>(null);
+  const [isLoadingPositions, setIsLoadingPositions] = useState(true);
+  const [isPositionFormVisible, setIsPositionFormVisible] = useState(false);
+  const [positionFormValues, setPositionFormValues] = useState<PositionStateFormValues>(initialPositionStateValues);
+  const [positionFormErrors, setPositionFormErrors] = useState<PositionStateValidationErrors>({});
+  const [isSubmittingPosition, setIsSubmittingPosition] = useState(false);
+  const [positionSubmissionError, setPositionSubmissionError] = useState<string | null>(null);
+  const [editingPositionId, setEditingPositionId] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -332,6 +350,41 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
 
     void loadMatch();
     void loadEvents();
+
+    const loadPositions = async () => {
+      setIsLoadingPositions(true);
+      setPositionsError(null);
+      setPositions([]);
+      setEditingPositionId(null);
+      setPositionFormValues(initialPositionStateValues);
+      setPositionFormErrors({});
+      setPositionSubmissionError(null);
+      setIsPositionFormVisible(false);
+
+      try {
+        const fetchedPositions = await api.listPositionStates(matchId);
+
+        if (isMounted) {
+          setPositions(fetchedPositions);
+        }
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        if (error instanceof MatchNotFoundError) {
+          return;
+        }
+
+        setPositionsError('Unable to load position states right now.');
+      } finally {
+        if (isMounted) {
+          setIsLoadingPositions(false);
+        }
+      }
+    };
+
+    void loadPositions();
 
     return () => {
       isMounted = false;
@@ -436,6 +489,74 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
     setEventFormErrors({});
     setEventSubmissionError(null);
     setIsEventFormVisible(true);
+  };
+
+  const submitPosition = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const validationErrors = validatePositionStateForm(positionFormValues);
+    setPositionFormErrors(validationErrors);
+
+    if (hasPositionStateValidationErrors(validationErrors)) {
+      return;
+    }
+
+    setIsSubmittingPosition(true);
+    setPositionSubmissionError(null);
+
+    try {
+      if (editingPositionId) {
+        const updatedPosition = await api.updatePositionState(editingPositionId, toCreatePositionStateDto(positionFormValues));
+        setPositions((previous) =>
+          previous
+            .map((position) => (position.id === editingPositionId ? updatedPosition : position))
+            .sort((a, b) => a.timestampStart - b.timestampStart),
+        );
+      } else {
+        const createdPosition = await api.createPositionState(matchId, toCreatePositionStateDto(positionFormValues));
+        setPositions((previous) => [...previous, createdPosition].sort((a, b) => a.timestampStart - b.timestampStart));
+      }
+
+      setPositionFormValues(initialPositionStateValues);
+      setPositionFormErrors({});
+      setEditingPositionId(null);
+      setIsPositionFormVisible(false);
+    } catch {
+      setPositionSubmissionError('Unable to save position state. Please try again.');
+    } finally {
+      setIsSubmittingPosition(false);
+    }
+  };
+
+  const deletePosition = async (positionId: string) => {
+    setPositionSubmissionError(null);
+
+    try {
+      await api.deletePositionState(positionId);
+      setPositions((previous) => previous.filter((position) => position.id !== positionId));
+
+      if (editingPositionId === positionId) {
+        setEditingPositionId(null);
+        setPositionFormValues(initialPositionStateValues);
+        setPositionFormErrors({});
+      }
+    } catch {
+      setPositionSubmissionError('Unable to delete position state. Please try again.');
+    }
+  };
+
+  const startEditPosition = (positionToEdit: PositionState) => {
+    setEditingPositionId(positionToEdit.id);
+    setPositionFormValues({
+      position: positionToEdit.position,
+      competitorTop: positionToEdit.competitorTop,
+      timestampStart: String(positionToEdit.timestampStart),
+      timestampEnd: String(positionToEdit.timestampEnd),
+      notes: positionToEdit.notes ?? '',
+    });
+    setPositionFormErrors({});
+    setPositionSubmissionError(null);
+    setIsPositionFormVisible(true);
   };
 
   const deleteMatch = async () => {
@@ -701,6 +822,139 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
                     Delete Event
                   </button>
                   {event.notes ? <p>Notes: {event.notes}</p> : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </section>
+      ) : null}
+
+      {!isLoadingMatch && !isMatchNotFound && !matchError ? (
+        <section aria-labelledby="position-timeline-heading">
+          <h2 id="position-timeline-heading">Position Timeline</h2>
+
+          {!isPositionFormVisible ? (
+            <button type="button" onClick={() => setIsPositionFormVisible(true)}>
+              Add Position
+            </button>
+          ) : null}
+
+          {isPositionFormVisible ? (
+            <form onSubmit={(event) => void submitPosition(event)} noValidate>
+              <h3>{editingPositionId ? 'Edit Position' : 'Add Position'}</h3>
+
+              <label htmlFor="position-type">Position</label>
+              <select
+                id="position-type"
+                name="position"
+                value={positionFormValues.position}
+                onChange={(event) =>
+                  setPositionFormValues({
+                    ...positionFormValues,
+                    position: event.target.value as PositionStateFormValues['position'],
+                  })
+                }
+              >
+                <option value="">Select position</option>
+                {POSITION_TYPES.map((positionType) => (
+                  <option key={positionType} value={positionType}>
+                    {positionType}
+                  </option>
+                ))}
+              </select>
+              {positionFormErrors.position ? <p>{positionFormErrors.position}</p> : null}
+
+              <label htmlFor="position-competitor-top">Top Competitor</label>
+              <select
+                id="position-competitor-top"
+                name="competitorTop"
+                value={positionFormValues.competitorTop}
+                onChange={(event) =>
+                  setPositionFormValues({
+                    ...positionFormValues,
+                    competitorTop: event.target.value as PositionStateFormValues['competitorTop'],
+                  })
+                }
+              >
+                <option value="">Select competitor</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+              </select>
+              {positionFormErrors.competitorTop ? <p>{positionFormErrors.competitorTop}</p> : null}
+
+              <label htmlFor="position-timestamp-start">Start Timestamp (seconds)</label>
+              <input
+                id="position-timestamp-start"
+                name="timestampStart"
+                type="number"
+                min={0}
+                value={positionFormValues.timestampStart}
+                onChange={(event) =>
+                  setPositionFormValues({ ...positionFormValues, timestampStart: event.target.value })
+                }
+              />
+              {positionFormErrors.timestampStart ? <p>{positionFormErrors.timestampStart}</p> : null}
+
+              <label htmlFor="position-timestamp-end">End Timestamp (seconds)</label>
+              <input
+                id="position-timestamp-end"
+                name="timestampEnd"
+                type="number"
+                min={1}
+                value={positionFormValues.timestampEnd}
+                onChange={(event) => setPositionFormValues({ ...positionFormValues, timestampEnd: event.target.value })}
+              />
+              {positionFormErrors.timestampEnd ? <p>{positionFormErrors.timestampEnd}</p> : null}
+
+              <label htmlFor="position-notes">Notes</label>
+              <textarea
+                id="position-notes"
+                name="notes"
+                value={positionFormValues.notes}
+                onChange={(event) => setPositionFormValues({ ...positionFormValues, notes: event.target.value })}
+              />
+
+              <p>
+                <button type="submit" disabled={isSubmittingPosition}>
+                  {isSubmittingPosition ? 'Saving...' : editingPositionId ? 'Save Position' : 'Create Position'}
+                </button>{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPositionFormVisible(false);
+                    setEditingPositionId(null);
+                    setPositionFormValues(initialPositionStateValues);
+                    setPositionFormErrors({});
+                    setPositionSubmissionError(null);
+                  }}
+                >
+                  Cancel
+                </button>
+              </p>
+              {positionSubmissionError ? <p>{positionSubmissionError}</p> : null}
+            </form>
+          ) : null}
+
+          {isLoadingPositions ? <p>Loading position states...</p> : null}
+          {positionsError ? <p>{positionsError}</p> : null}
+
+          {!isLoadingPositions && !positionsError && positions.length === 0 ? <p>No position states yet.</p> : null}
+
+          {!isLoadingPositions && !positionsError && positions.length > 0 ? (
+            <ul>
+              {positions.map((position) => (
+                <li key={position.id}>
+                  <span>
+                    {formatTimestamp(position.timestampStart)} - {formatTimestamp(position.timestampEnd)} {position.position} top:{' '}
+                    {position.competitorTop}
+                  </span>{' '}
+                  <button type="button" onClick={() => startEditPosition(position)}>
+                    Edit Position
+                  </button>{' '}
+                  <button type="button" onClick={() => void deletePosition(position.id)}>
+                    Delete Position
+                  </button>
+                  {position.notes ? <p>Notes: {position.notes}</p> : null}
                 </li>
               ))}
             </ul>

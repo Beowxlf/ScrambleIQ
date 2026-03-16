@@ -32,6 +32,16 @@ function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
     deleteTimelineEvent: async () => {
       throw new Error('deleteTimelineEvent was not mocked');
     },
+    createPositionState: async () => {
+      throw new Error('createPositionState was not mocked');
+    },
+    listPositionStates: async () => [],
+    updatePositionState: async () => {
+      throw new Error('updatePositionState was not mocked');
+    },
+    deletePositionState: async () => {
+      throw new Error('deletePositionState was not mocked');
+    },
     ...overrides,
   };
 }

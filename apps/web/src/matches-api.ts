@@ -1,9 +1,12 @@
 import type {
   CreateMatchDto,
+  CreatePositionStateDto,
   CreateTimelineEventDto,
   Match,
+  PositionState,
   TimelineEvent,
   UpdateMatchDto,
+  UpdatePositionStateDto,
   UpdateTimelineEventDto,
 } from '@scrambleiq/shared';
 
@@ -21,6 +24,13 @@ export class TimelineEventNotFoundError extends Error {
   }
 }
 
+export class PositionStateNotFoundError extends Error {
+  constructor(positionId: string) {
+    super(`Position state with id ${positionId} was not found.`);
+    this.name = 'PositionStateNotFoundError';
+  }
+}
+
 export interface MatchesApi {
   createMatch(payload: CreateMatchDto): Promise<Match>;
   listMatches(): Promise<Match[]>;
@@ -31,6 +41,10 @@ export interface MatchesApi {
   listTimelineEvents(matchId: string): Promise<TimelineEvent[]>;
   updateTimelineEvent(id: string, payload: UpdateTimelineEventDto): Promise<TimelineEvent>;
   deleteTimelineEvent(id: string): Promise<void>;
+  createPositionState(matchId: string, payload: CreatePositionStateDto): Promise<PositionState>;
+  listPositionStates(matchId: string): Promise<PositionState[]>;
+  updatePositionState(id: string, payload: UpdatePositionStateDto): Promise<PositionState>;
+  deletePositionState(id: string): Promise<void>;
 }
 
 interface HttpMatchesApiOptions {
@@ -190,6 +204,74 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
 
       if (!response.ok) {
         throw new Error('Failed to delete timeline event.');
+      }
+    },
+
+    async createPositionState(matchId, payload) {
+      const response = await fetchImpl(`${baseUrl}/matches/${matchId}/positions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.status === 404) {
+        throw new MatchNotFoundError(matchId);
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to create position state.');
+      }
+
+      return (await response.json()) as PositionState;
+    },
+
+    async listPositionStates(matchId) {
+      const response = await fetchImpl(`${baseUrl}/matches/${matchId}/positions`);
+
+      if (response.status === 404) {
+        throw new MatchNotFoundError(matchId);
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to load position states.');
+      }
+
+      return (await response.json()) as PositionState[];
+    },
+
+    async updatePositionState(id, payload) {
+      const response = await fetchImpl(`${baseUrl}/positions/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.status === 404) {
+        throw new PositionStateNotFoundError(id);
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to update position state.');
+      }
+
+      return (await response.json()) as PositionState;
+    },
+
+    async deletePositionState(id) {
+      const response = await fetchImpl(`${baseUrl}/positions/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.status === 404) {
+        throw new PositionStateNotFoundError(id);
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to delete position state.');
       }
     },
   };

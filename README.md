@@ -46,7 +46,7 @@ npm run dev:api
 - `PORT` (optional): API port (default: `3000`).
 - `WEB_ORIGIN` (optional): CORS origin (default: `http://localhost:5173`).
 
-## Phase-one feature: Match management and timeline events
+## Phase-one feature: Match management, timeline events, and position tracking
 
 ### Frontend (`apps/web`)
 
@@ -65,6 +65,15 @@ The web app includes a **Create Match** form with required-field validation for:
 
 `notes` is optional.
 
+Position form validation requires:
+
+- `position` from the supported position list
+- `competitorTop` (`A` or `B`)
+- `timestampStart` (non-negative integer)
+- `timestampEnd` (integer and greater than `timestampStart`)
+
+`notes` is optional.
+
 On `/matches/:id`, users can:
 
 - review match metadata
@@ -78,6 +87,28 @@ The timeline section supports:
 - creating events
 - editing events
 - deleting events
+
+The detail page also includes a **Position Timeline** section for positional state tracking.
+
+The position timeline supports:
+
+- listing position states sorted by ascending `timestampStart`
+- creating position state segments
+- editing position state segments
+- deleting position state segments
+
+Supported position values:
+
+- `standing`
+- `closed_guard`
+- `open_guard`
+- `half_guard`
+- `side_control`
+- `mount`
+- `back_control`
+- `north_south`
+- `leg_entanglement`
+- `scramble`
 
 Timeline event form validation requires:
 
@@ -101,6 +132,10 @@ The API exposes match and timeline endpoints backed by in-memory stores:
 - `GET http://localhost:3000/matches/:id/events`
 - `PATCH http://localhost:3000/events/:id`
 - `DELETE http://localhost:3000/events/:id`
+- `POST http://localhost:3000/matches/:id/positions`
+- `GET http://localhost:3000/matches/:id/positions`
+- `PATCH http://localhost:3000/positions/:id`
+- `DELETE http://localhost:3000/positions/:id`
 
 Validation behavior:
 
@@ -112,7 +147,9 @@ Validation behavior:
 
 `GET /matches/:id/events` returns timeline events sorted by ascending `timestamp`.
 
-Deleting a match also removes all timeline events attached to that match.
+`GET /matches/:id/positions` returns position states sorted by ascending `timestampStart`.
+
+Deleting a match also removes all timeline events and position states attached to that match.
 
 Example timeline event POST body:
 

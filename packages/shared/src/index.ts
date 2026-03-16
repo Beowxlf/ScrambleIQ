@@ -38,3 +38,38 @@ export interface CreateTimelineEventDto {
 }
 
 export type UpdateTimelineEventDto = Partial<CreateTimelineEventDto>;
+
+export const POSITION_TYPES = [
+  'standing',
+  'closed_guard',
+  'open_guard',
+  'half_guard',
+  'side_control',
+  'mount',
+  'back_control',
+  'north_south',
+  'leg_entanglement',
+  'scramble',
+] as const;
+
+export type PositionType = (typeof POSITION_TYPES)[number];
+
+export interface PositionState {
+  id: string;
+  matchId: string;
+  position: PositionType;
+  competitorTop: CompetitorSide;
+  timestampStart: number;
+  timestampEnd: number;
+  notes?: string;
+}
+
+export interface CreatePositionStateDto {
+  position: PositionType;
+  competitorTop: CompetitorSide;
+  timestampStart: number;
+  timestampEnd: number;
+  notes?: string;
+}
+
+export type UpdatePositionStateDto = Partial<CreatePositionStateDto>;

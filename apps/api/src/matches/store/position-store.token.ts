@@ -1,0 +1,1 @@
+export const POSITION_STORE = 'POSITION_STORE';
