@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+      - name: API runtime smoke check
+        run: |
+          set -euo pipefail
+          PORT=3100 npm run start --workspace @scrambleiq/api > /tmp/scrambleiq-api.log 2>&1 &
+          api_pid=$!
+
+          cleanup() {
+            kill "$api_pid" >/dev/null 2>&1 || true
+            wait "$api_pid" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          for attempt in {1..20}; do
+            if curl --silent --show-error --fail http://127.0.0.1:3100/health >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          echo "API failed runtime smoke check. Logs:"
+          cat /tmp/scrambleiq-api.log
+          exit 1

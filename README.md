@@ -11,7 +11,7 @@ This repository includes a minimal full-stack TypeScript scaffold aligned to the
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 22 LTS (or newer compatible LTS)
 - npm 10+
 
 ## Install
@@ -33,6 +33,15 @@ Backend (NestJS):
 ```bash
 npm run dev:api
 ```
+
+Production-style API startup from built output:
+
+```bash
+npm run build --workspace @scrambleiq/api
+npm run start --workspace @scrambleiq/api
+```
+
+> The API startup scripts automatically build `@scrambleiq/shared` first so runtime `require` imports resolve to compiled JavaScript.
 
 ## Environment variables
 
@@ -275,6 +284,27 @@ npm run typecheck
 npm run test
 npm run build
 ```
+
+Optional local API runtime smoke check:
+
+```bash
+PORT=3100 npm run start --workspace @scrambleiq/api
+# in another shell:
+curl http://127.0.0.1:3100/health
+```
+
+## Continuous Integration
+
+GitHub Actions runs on every `push` and `pull_request` with the following steps:
+
+1. `npm install`
+2. `npm run lint`
+3. `npm run typecheck`
+4. `npm run test`
+5. `npm run build`
+6. API runtime smoke check against `GET /health`
+
+Workflow file: `.github/workflows/ci.yml`.
 
 ## Repository structure
 
