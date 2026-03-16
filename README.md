@@ -65,7 +65,7 @@ Current extraction status:
 
 - Routing shell moved into `apps/web/src/app/AppShell.tsx` and `apps/web/src/app/router.ts` (history + `popstate` preserved).
 - Match list/create flow moved into `apps/web/src/pages/MatchListPage.tsx` with presentational components in `apps/web/src/components/` and data loading in `apps/web/src/hooks/useMatches.ts`.
-- Match detail orchestration remains in `apps/web/src/App.tsx` temporarily for incremental migration safety.
+- Match detail orchestration is now extracted into `apps/web/src/pages/MatchDetailPage.tsx`, with `App.tsx` acting as a thin composition root.
 
 ## Phase-one feature: Match management, timeline events, position tracking, and synchronized video review
 

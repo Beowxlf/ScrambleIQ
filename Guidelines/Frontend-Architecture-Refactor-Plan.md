@@ -225,7 +225,7 @@ Recommended small abstractions:
 
 - ✅ Slice 1 completed: routing primitives are extracted into `app/router.ts` and page orchestration now flows through `app/AppShell.tsx`.
 - ✅ Slice 1 completed: match list + create flow extracted into `pages/MatchListPage.tsx`, `components/MatchCreateForm.tsx`, `components/MatchList.tsx`, and `hooks/useMatches.ts`.
-- ⏳ Match detail orchestration intentionally remains in `App.tsx` until later slices.
+- ✅ Slice 2 completed: match detail orchestration is extracted into `pages/MatchDetailPage.tsx`, and `App.tsx` remains a thin composition root.
 
 ## Incremental migration plan (ordered, small slices)
 
