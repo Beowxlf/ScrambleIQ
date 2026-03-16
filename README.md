@@ -61,6 +61,12 @@ A dedicated Phase-1 frontend refactor plan is documented in `Guidelines/Frontend
 
 The plan preserves existing behavior while incrementally decomposing `apps/web/src/App.tsx` into page, feature, and hook modules.
 
+Current extraction status:
+
+- Routing shell moved into `apps/web/src/app/AppShell.tsx` and `apps/web/src/app/router.ts` (history + `popstate` preserved).
+- Match list/create flow moved into `apps/web/src/pages/MatchListPage.tsx` with presentational components in `apps/web/src/components/` and data loading in `apps/web/src/hooks/useMatches.ts`.
+- Match detail orchestration remains in `apps/web/src/App.tsx` temporarily for incremental migration safety.
+
 ## Phase-one feature: Match management, timeline events, position tracking, and synchronized video review
 
 ### Frontend (`apps/web`)
