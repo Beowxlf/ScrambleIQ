@@ -2,7 +2,9 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from '../src/App';
-import { Match, MatchFormValues } from '../src/match';
+import type { Match } from '@scrambleiq/shared';
+
+import { MatchFormValues } from '../src/match';
 import { MatchNotFoundError, MatchesApi } from '../src/matches-api';
 
 function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {

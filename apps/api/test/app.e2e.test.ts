@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 
 import { AppModule } from '../src/app.module';
+import { configureApp } from '../src/configure-app';
 import { afterAll, beforeAll, describe, it } from 'vitest';
 
 describe('AppController', () => {
@@ -14,6 +15,7 @@ describe('AppController', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
+    configureApp(app);
     await app.init();
   });
 
