@@ -21,7 +21,10 @@ export function useMatchAnalytics({ api, matchId, refreshTrigger }: UseMatchAnal
     const loadAnalytics = async () => {
       setIsLoadingAnalytics(true);
       setAnalyticsError(null);
-      setAnalytics(null);
+
+      if (refreshTrigger === 0) {
+        setAnalytics(null);
+      }
 
       try {
         const fetchedAnalytics = await api.getMatchAnalytics(matchId);
@@ -47,39 +50,6 @@ export function useMatchAnalytics({ api, matchId, refreshTrigger }: UseMatchAnal
     };
 
     void loadAnalytics();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [api, matchId]);
-
-  useEffect(() => {
-    if (refreshTrigger === 0) {
-      return;
-    }
-
-    let isMounted = true;
-
-    const refreshAnalytics = async () => {
-      try {
-        const fetchedAnalytics = await api.getMatchAnalytics(matchId);
-
-        if (isMounted) {
-          setAnalytics(fetchedAnalytics);
-          setAnalyticsError(null);
-        }
-      } catch {
-        if (isMounted) {
-          setAnalyticsError('Unable to load analytics summary right now.');
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoadingAnalytics(false);
-        }
-      }
-    };
-
-    void refreshAnalytics();
 
     return () => {
       isMounted = false;

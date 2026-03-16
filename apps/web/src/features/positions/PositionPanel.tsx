@@ -10,7 +10,7 @@ interface PositionPanelProps {
   matchId: string;
   selectedPositionId: string | null;
   onSeekToTimestamp: (timestamp: number, positionId: string) => void;
-  onPositionsMutated: () => Promise<void>;
+  onPositionsMutated: () => void;
 }
 
 export function PositionPanel({ api, matchId, selectedPositionId, onSeekToTimestamp, onPositionsMutated }: PositionPanelProps) {

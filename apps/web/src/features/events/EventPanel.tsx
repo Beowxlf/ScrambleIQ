@@ -10,7 +10,7 @@ interface EventPanelProps {
   matchId: string;
   selectedEventId: string | null;
   onSeekToTimestamp: (timestamp: number, eventId: string) => void;
-  onEventsMutated: () => Promise<void>;
+  onEventsMutated: () => void;
 }
 
 export function EventPanel({ api, matchId, selectedEventId, onSeekToTimestamp, onEventsMutated }: EventPanelProps) {

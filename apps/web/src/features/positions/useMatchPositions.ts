@@ -15,7 +15,7 @@ import {
 interface UseMatchPositionsArgs {
   api: MatchesApi;
   matchId: string;
-  onPositionsMutated: () => Promise<void>;
+  onPositionsMutated: () => void;
 }
 
 export function useMatchPositions({ api, matchId, onPositionsMutated }: UseMatchPositionsArgs) {
@@ -102,7 +102,7 @@ export function useMatchPositions({ api, matchId, onPositionsMutated }: UseMatch
       setPositionFormErrors({});
       setEditingPositionId(null);
       setIsPositionFormVisible(false);
-      await onPositionsMutated();
+      onPositionsMutated();
     } catch {
       setPositionSubmissionError('Unable to save position state. Please try again.');
     } finally {
@@ -117,7 +117,7 @@ export function useMatchPositions({ api, matchId, onPositionsMutated }: UseMatch
       await api.deletePositionState(positionId);
       setPositions((previous) => previous.filter((position) => position.id !== positionId));
 
-      await onPositionsMutated();
+      onPositionsMutated();
 
       if (editingPositionId === positionId) {
         setEditingPositionId(null);
