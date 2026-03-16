@@ -55,6 +55,12 @@ npm run start --workspace @scrambleiq/api
 - `PORT` (optional): API port (default: `3000`).
 - `WEB_ORIGIN` (optional): CORS origin (default: `http://localhost:5173`).
 
+## Frontend architecture planning
+
+A dedicated Phase-1 frontend refactor plan is documented in `Guidelines/Frontend-Architecture-Refactor-Plan.md`.
+
+The plan preserves existing behavior while incrementally decomposing `apps/web/src/App.tsx` into page, feature, and hook modules.
+
 ## Phase-one feature: Match management, timeline events, position tracking, and synchronized video review
 
 ### Frontend (`apps/web`)
