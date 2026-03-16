@@ -8,6 +8,24 @@ export interface Match {
   notes: string;
 }
 
+export interface MatchSummary {
+  matchId: string;
+  title: string;
+  competitorA: string;
+  competitorB: string;
+  eventDate: string;
+  eventCount: number;
+  positionCount: number;
+  hasVideo: boolean;
+}
+
+export interface MatchListResponse {
+  matches: MatchSummary[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export interface CreateMatchDto {
   title: string;
   date: string;

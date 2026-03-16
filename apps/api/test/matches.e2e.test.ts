@@ -39,6 +39,36 @@ describe('MatchesController', () => {
     return response.body.id as string;
   }
 
+  async function createEvent(matchId: string, timestamp: number): Promise<void> {
+    await request(app.getHttpServer())
+      .post(`/matches/${matchId}/events`)
+      .send({ timestamp, eventType: 'takedown_attempt', competitor: 'A' })
+      .expect(201);
+  }
+
+  async function createPosition(matchId: string, timestampStart: number, timestampEnd: number): Promise<void> {
+    await request(app.getHttpServer())
+      .post(`/matches/${matchId}/positions`)
+      .send({
+        position: 'closed_guard',
+        competitorTop: 'A',
+        timestampStart,
+        timestampEnd,
+      })
+      .expect(201);
+  }
+
+  async function createVideo(matchId: string): Promise<void> {
+    await request(app.getHttpServer())
+      .post(`/matches/${matchId}/video`)
+      .send({
+        title: 'Primary Camera',
+        sourceType: 'remote_url',
+        sourceUrl: 'https://example.com/video.mp4',
+      })
+      .expect(201);
+  }
+
   it('rejects invalid payloads with POST /matches', async () => {
     const response = await request(app.getHttpServer())
       .post('/matches')
@@ -86,6 +116,88 @@ describe('MatchesController', () => {
     await request(app.getHttpServer()).get(`/matches/${id}`).expect(404);
   });
 
+
+  it('lists match summaries with deterministic sorting', async () => {
+    const olderId = await createMatch();
+    await request(app.getHttpServer()).patch(`/matches/${olderId}`).send({ date: '2026-02-01', title: 'Older' }).expect(200);
+    const newerId = await createMatch();
+    await request(app.getHttpServer()).patch(`/matches/${newerId}`).send({ date: '2026-03-05', title: 'Newer' }).expect(200);
+
+    await createEvent(newerId, 5);
+    await createEvent(newerId, 8);
+    await createPosition(newerId, 10, 15);
+    await createVideo(newerId);
+
+    const response = await request(app.getHttpServer()).get('/matches').expect(200);
+
+    expect(response.body.total).toBe(2);
+    expect(response.body.matches).toHaveLength(2);
+    expect(response.body.matches[0]).toMatchObject({
+      matchId: newerId,
+      title: 'Newer',
+      eventDate: '2026-03-05',
+      eventCount: 2,
+      positionCount: 1,
+      hasVideo: true,
+    });
+    expect(response.body.matches[1].matchId).toBe(olderId);
+  });
+
+  it('filters matches by competitor, date range, and hasVideo', async () => {
+    const alphaId = await createMatch();
+    await request(app.getHttpServer()).patch(`/matches/${alphaId}`).send({
+      date: '2026-01-15',
+      competitorA: 'Taylor One',
+      competitorB: 'Jordan Two',
+    }).expect(200);
+
+    const betaId = await createMatch();
+    await request(app.getHttpServer()).patch(`/matches/${betaId}`).send({
+      date: '2026-02-20',
+      competitorA: 'Casey Three',
+      competitorB: 'Taylor Four',
+    }).expect(200);
+    await createVideo(betaId);
+
+    const byCompetitor = await request(app.getHttpServer()).get('/matches?competitor=taylor').expect(200);
+    expect(byCompetitor.body.total).toBe(2);
+
+    const byDate = await request(app.getHttpServer()).get('/matches?dateFrom=2026-02-01&dateTo=2026-12-31').expect(200);
+    expect(byDate.body.matches).toHaveLength(1);
+    expect(byDate.body.matches[0].matchId).toBe(betaId);
+
+    const byVideo = await request(app.getHttpServer()).get('/matches?hasVideo=true').expect(200);
+    expect(byVideo.body.matches).toHaveLength(1);
+    expect(byVideo.body.matches[0].matchId).toBe(betaId);
+  });
+
+  it('supports pagination via limit and offset', async () => {
+    const firstId = await createMatch();
+    await request(app.getHttpServer()).patch(`/matches/${firstId}`).send({ date: '2026-01-01', title: 'First' }).expect(200);
+    const secondId = await createMatch();
+    await request(app.getHttpServer()).patch(`/matches/${secondId}`).send({ date: '2026-01-02', title: 'Second' }).expect(200);
+    const thirdId = await createMatch();
+    await request(app.getHttpServer()).patch(`/matches/${thirdId}`).send({ date: '2026-01-03', title: 'Third' }).expect(200);
+
+    const response = await request(app.getHttpServer()).get('/matches?limit=1&offset=1').expect(200);
+
+    expect(response.body.total).toBe(3);
+    expect(response.body.limit).toBe(1);
+    expect(response.body.offset).toBe(1);
+    expect(response.body.matches).toHaveLength(1);
+    expect(response.body.matches[0].matchId).toBe(secondId);
+  });
+
+  it('rejects unknown and invalid list query parameters', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/matches?hasVideo=maybe&limit=0&foo=bar&dateFrom=2026-13-01')
+      .expect(400);
+
+    expect(response.body.message).toContain('hasVideo must be one of the following values: true, false');
+    expect(response.body.message).toContain('limit must not be less than 1');
+    expect(response.body.message).toContain('property foo should not exist');
+    expect(response.body.message).toContain('dateFrom must be a valid date in YYYY-MM-DD format');
+  });
   it('creates an event with POST /matches/:id/events', async () => {
     const matchId = await createMatch();
 

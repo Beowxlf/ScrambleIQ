@@ -10,7 +10,7 @@ function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
     createMatch: async () => {
       throw new Error('createMatch was not mocked');
     },
-    listMatches: async () => [],
+    listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
     getMatch: async (id) => ({
       id,
       title: 'Open Finals',
