@@ -1,4 +1,9 @@
-import { POSITION_TYPES, type CreatePositionStateDto, type UpdatePositionStateDto } from '@scrambleiq/shared';
+import {
+  MAX_NOTES_LENGTH,
+  POSITION_TYPES,
+  type CreatePositionStateDto,
+  type UpdatePositionStateDto,
+} from '@scrambleiq/shared';
 
 const requiredFields = ['position', 'competitorTop', 'timestampStart', 'timestampEnd'] as const;
 const optionalFields = ['notes'] as const;
@@ -12,9 +17,12 @@ export function validateCreatePositionStatePayload(payload: CreatePositionStateD
   validateRequiredCompetitorTop(body, errors);
   validateRequiredTimestampStart(body, errors);
   validateRequiredTimestampEnd(body, errors);
-  validateTimestampRange(body, errors);
   validateOptionalNotes(body, errors);
   validateAllowedFields(body, errors);
+
+  if (typeof body.timestampStart === 'number' && typeof body.timestampEnd === 'number' && body.timestampEnd <= body.timestampStart) {
+    errors.push('timestampEnd must be greater than timestampStart');
+  }
 
   return errors;
 }
@@ -39,9 +47,12 @@ export function validateUpdatePositionStatePayload(payload: UpdatePositionStateD
     validateTimestampEndValue(body.timestampEnd, errors);
   }
 
-  validateTimestampRange(body, errors);
   validateOptionalNotes(body, errors);
   validateAllowedFields(body, errors);
+
+  if (typeof body.timestampStart === 'number' && typeof body.timestampEnd === 'number' && body.timestampEnd <= body.timestampStart) {
+    errors.push('timestampEnd must be greater than timestampStart');
+  }
 
   return errors;
 }
@@ -57,7 +68,7 @@ function validateRequiredPosition(payload: Record<string, unknown>, errors: stri
 }
 
 function validatePositionValue(value: unknown, errors: string[]): void {
-  if (typeof value !== 'string' || !POSITION_TYPES.includes(value as (typeof POSITION_TYPES)[number])) {
+  if (typeof value !== 'string' || POSITION_TYPES.includes(value as (typeof POSITION_TYPES)[number]) === false) {
     errors.push(`position must be one of the following values: ${POSITION_TYPES.join(', ')}`);
   }
 }
@@ -89,7 +100,7 @@ function validateRequiredTimestampStart(payload: Record<string, unknown>, errors
 }
 
 function validateTimestampStartValue(value: unknown, errors: string[]): void {
-  if (typeof value !== 'number' || Number.isInteger(value) === false) {
+  if (typeof value !== 'number' || Number.isFinite(value) === false || Number.isInteger(value) === false) {
     errors.push('timestampStart must be a number conforming to the specified constraints');
     return;
   }
@@ -110,37 +121,33 @@ function validateRequiredTimestampEnd(payload: Record<string, unknown>, errors: 
 }
 
 function validateTimestampEndValue(value: unknown, errors: string[]): void {
-  if (typeof value !== 'number' || Number.isInteger(value) === false) {
+  if (typeof value !== 'number' || Number.isFinite(value) === false || Number.isInteger(value) === false) {
     errors.push('timestampEnd must be a number conforming to the specified constraints');
-  }
-}
-
-function validateTimestampRange(payload: Record<string, unknown>, errors: string[]): void {
-  if (typeof payload.timestampStart !== 'number' || typeof payload.timestampEnd !== 'number') {
     return;
   }
 
-  if (payload.timestampEnd <= payload.timestampStart) {
-    errors.push('timestampEnd must be greater than timestampStart');
+  if (value < 0) {
+    errors.push('timestampEnd must not be less than 0');
   }
 }
 
 function validateOptionalNotes(payload: Record<string, unknown>, errors: string[]): void {
-  if (!('notes' in payload)) {
-    return;
-  }
+  if ('notes' in payload && payload.notes !== undefined) {
+    if (typeof payload.notes !== 'string') {
+      errors.push('notes must be a string');
+      return;
+    }
 
-  if (typeof payload.notes !== 'string') {
-    errors.push('notes must be a string');
+    if (payload.notes.length > MAX_NOTES_LENGTH) {
+      errors.push(`notes must be shorter than or equal to ${MAX_NOTES_LENGTH} characters`);
+    }
   }
 }
 
 function validateAllowedFields(payload: Record<string, unknown>, errors: string[]): void {
   for (const key of Object.keys(payload)) {
-    if (allAllowedFields.has(key as (typeof requiredFields)[number] | (typeof optionalFields)[number])) {
-      continue;
+    if (!allAllowedFields.has(key as keyof CreatePositionStateDto)) {
+      errors.push(`property ${key} should not exist`);
     }
-
-    errors.push(`property ${key} should not exist`);
   }
 }

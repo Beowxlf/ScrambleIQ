@@ -49,6 +49,16 @@ export class EventsService {
       throw new BadRequestException(errors);
     }
 
+    if (Object.keys(input).length === 0) {
+      throw new BadRequestException(['At least one field must be provided for update']);
+    }
+
+    const existingEvent = this.eventStore.findEventById(id);
+
+    if (!existingEvent) {
+      throw new NotFoundException(`Timeline event with id ${id} was not found.`);
+    }
+
     const updatedEvent = this.eventStore.update(id, input);
 
     if (!updatedEvent) {
@@ -59,6 +69,12 @@ export class EventsService {
   }
 
   delete(id: string): void {
+    const existingEvent = this.eventStore.findEventById(id);
+
+    if (!existingEvent) {
+      throw new NotFoundException(`Timeline event with id ${id} was not found.`);
+    }
+
     const isDeleted = this.eventStore.delete(id);
 
     if (!isDeleted) {

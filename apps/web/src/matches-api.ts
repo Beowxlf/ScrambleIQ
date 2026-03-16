@@ -92,7 +92,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async getMatch(id) {
-      const response = await fetchImpl(`${baseUrl}/matches/${id}`);
+      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(id)}`);
 
       if (response.status === 404) {
         throw new MatchNotFoundError(id);
@@ -106,7 +106,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async updateMatch(id, payload) {
-      const response = await fetchImpl(`${baseUrl}/matches/${id}`, {
+      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(id)}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -126,7 +126,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async deleteMatch(id) {
-      const response = await fetchImpl(`${baseUrl}/matches/${id}`, {
+      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(id)}`, {
         method: 'DELETE',
       });
 
@@ -140,7 +140,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async createTimelineEvent(matchId, payload) {
-      const response = await fetchImpl(`${baseUrl}/matches/${matchId}/events`, {
+      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(matchId)}/events`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -160,7 +160,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async listTimelineEvents(matchId) {
-      const response = await fetchImpl(`${baseUrl}/matches/${matchId}/events`);
+      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(matchId)}/events`);
 
       if (response.status === 404) {
         throw new MatchNotFoundError(matchId);
@@ -174,7 +174,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async updateTimelineEvent(id, payload) {
-      const response = await fetchImpl(`${baseUrl}/events/${id}`, {
+      const response = await fetchImpl(`${baseUrl}/events/${encodeURIComponent(id)}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -194,7 +194,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async deleteTimelineEvent(id) {
-      const response = await fetchImpl(`${baseUrl}/events/${id}`, {
+      const response = await fetchImpl(`${baseUrl}/events/${encodeURIComponent(id)}`, {
         method: 'DELETE',
       });
 
@@ -208,7 +208,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async createPositionState(matchId, payload) {
-      const response = await fetchImpl(`${baseUrl}/matches/${matchId}/positions`, {
+      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(matchId)}/positions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -228,7 +228,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async listPositionStates(matchId) {
-      const response = await fetchImpl(`${baseUrl}/matches/${matchId}/positions`);
+      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(matchId)}/positions`);
 
       if (response.status === 404) {
         throw new MatchNotFoundError(matchId);
@@ -242,7 +242,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async updatePositionState(id, payload) {
-      const response = await fetchImpl(`${baseUrl}/positions/${id}`, {
+      const response = await fetchImpl(`${baseUrl}/positions/${encodeURIComponent(id)}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -262,7 +262,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async deletePositionState(id) {
-      const response = await fetchImpl(`${baseUrl}/positions/${id}`, {
+      const response = await fetchImpl(`${baseUrl}/positions/${encodeURIComponent(id)}`, {
         method: 'DELETE',
       });
 

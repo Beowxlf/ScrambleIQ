@@ -87,6 +87,14 @@ export class InMemoryMatchStore implements MatchStore, EventStore, PositionStore
       .sort((a, b) => a.timestamp - b.timestamp);
   }
 
+  findEventById(id: string): TimelineEvent | undefined {
+    return this.events.find((event) => event.id === id);
+  }
+
+  findPositionById(id: string): PositionState | undefined {
+    return this.positions.find((position) => position.id === id);
+  }
+
   findPositionsByMatchId(matchId: string): PositionState[] {
     return this.positions
       .filter((position) => position.matchId === matchId)
