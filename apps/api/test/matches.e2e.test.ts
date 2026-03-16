@@ -8,6 +8,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 describe('MatchesController', () => {
   let app: INestApplication;
+  const missingMatchId = '11111111-1111-4111-8111-111111111111';
+  const missingEventId = '22222222-2222-4222-8222-222222222222';
+  const missingPositionId = '33333333-3333-4333-8333-333333333333';
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -43,6 +46,23 @@ describe('MatchesController', () => {
       .expect(400);
 
     expect(response.body.message).toContain('title must be a string');
+  });
+
+  it('rejects invalid match dates and unknown properties', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/matches')
+      .send({
+        title: 'Bad Date',
+        date: '2025-02-29',
+        ruleset: 'Folkstyle',
+        competitorA: 'A',
+        competitorB: 'B',
+        ownerId: 'attacker',
+      })
+      .expect(400);
+
+    expect(response.body.message).toContain('date must be a valid date in YYYY-MM-DD format');
+    expect(response.body.message).toContain('property ownerId should not exist');
   });
 
   it('creates and fetches a match', async () => {
@@ -152,34 +172,39 @@ describe('MatchesController', () => {
 
   it('returns 404 behavior for missing match or event resources', async () => {
     await request(app.getHttpServer())
-      .get('/matches/missing-match/events')
+      .get(`/matches/${missingMatchId}/events`)
       .expect(404)
       .expect(({ body }: { body: { message: string } }) => {
-        expect(body.message).toBe('Match with id missing-match was not found.');
+        expect(body.message).toBe(`Match with id ${missingMatchId} was not found.`);
       });
 
     await request(app.getHttpServer())
-      .post('/matches/missing-match/events')
+      .post(`/matches/${missingMatchId}/events`)
       .send({ timestamp: 12, eventType: 'takedown_attempt', competitor: 'A' })
       .expect(404)
       .expect(({ body }: { body: { message: string } }) => {
-        expect(body.message).toBe('Match with id missing-match was not found.');
+        expect(body.message).toBe(`Match with id ${missingMatchId} was not found.`);
       });
 
     await request(app.getHttpServer())
-      .patch('/events/missing-event')
+      .patch(`/events/${missingEventId}`)
       .send({ eventType: 'guard_pass' })
       .expect(404)
       .expect(({ body }: { body: { message: string } }) => {
-        expect(body.message).toBe('Timeline event with id missing-event was not found.');
+        expect(body.message).toBe(`Timeline event with id ${missingEventId} was not found.`);
       });
 
     await request(app.getHttpServer())
-      .delete('/events/missing-event')
+      .delete(`/events/${missingEventId}`)
       .expect(404)
       .expect(({ body }: { body: { message: string } }) => {
-        expect(body.message).toBe('Timeline event with id missing-event was not found.');
+        expect(body.message).toBe(`Timeline event with id ${missingEventId} was not found.`);
       });
+  });
+
+  it('rejects invalid route ids before hitting services', async () => {
+    const response = await request(app.getHttpServer()).get('/matches/not-a-uuid').expect(400);
+    expect(response.body.message).toContain('Validation failed (uuid is expected)');
   });
 
   it('creates a position with POST /matches/:id/positions', async () => {
@@ -290,34 +315,50 @@ describe('MatchesController', () => {
 
   it('returns 404 behavior for missing position resources', async () => {
     await request(app.getHttpServer())
-      .get('/matches/missing-match/positions')
+      .get(`/matches/${missingMatchId}/positions`)
       .expect(404)
       .expect(({ body }: { body: { message: string } }) => {
-        expect(body.message).toBe('Match with id missing-match was not found.');
+        expect(body.message).toBe(`Match with id ${missingMatchId} was not found.`);
       });
 
     await request(app.getHttpServer())
-      .post('/matches/missing-match/positions')
+      .post(`/matches/${missingMatchId}/positions`)
       .send({ position: 'closed_guard', competitorTop: 'A', timestampStart: 12, timestampEnd: 20 })
       .expect(404)
       .expect(({ body }: { body: { message: string } }) => {
-        expect(body.message).toBe('Match with id missing-match was not found.');
+        expect(body.message).toBe(`Match with id ${missingMatchId} was not found.`);
       });
 
     await request(app.getHttpServer())
-      .patch('/positions/missing-position')
+      .patch(`/positions/${missingPositionId}`)
       .send({ position: 'mount' })
       .expect(404)
       .expect(({ body }: { body: { message: string } }) => {
-        expect(body.message).toBe('Position state with id missing-position was not found.');
+        expect(body.message).toBe(`Position state with id ${missingPositionId} was not found.`);
       });
 
     await request(app.getHttpServer())
-      .delete('/positions/missing-position')
+      .delete(`/positions/${missingPositionId}`)
       .expect(404)
       .expect(({ body }: { body: { message: string } }) => {
-        expect(body.message).toBe('Position state with id missing-position was not found.');
+        expect(body.message).toBe(`Position state with id ${missingPositionId} was not found.`);
       });
+  });
+
+  it('rejects overlapping position segments', async () => {
+    const matchId = await createMatch();
+
+    await request(app.getHttpServer())
+      .post(`/matches/${matchId}/positions`)
+      .send({ position: 'closed_guard', competitorTop: 'A', timestampStart: 10, timestampEnd: 20 })
+      .expect(201);
+
+    const response = await request(app.getHttpServer())
+      .post(`/matches/${matchId}/positions`)
+      .send({ position: 'mount', competitorTop: 'B', timestampStart: 15, timestampEnd: 25 })
+      .expect(400);
+
+    expect(response.body.message).toContain('Position state timestamps must not overlap existing segments');
   });
 
 });

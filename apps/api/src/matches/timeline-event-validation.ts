@@ -1,4 +1,4 @@
-import type { CreateTimelineEventDto, UpdateTimelineEventDto } from '@scrambleiq/shared';
+import { MAX_EVENT_TYPE_LENGTH, MAX_NOTES_LENGTH, type CreateTimelineEventDto, type UpdateTimelineEventDto } from '@scrambleiq/shared';
 
 const requiredFields = ['timestamp', 'eventType', 'competitor'] as const;
 const optionalFields = ['notes'] as const;
@@ -58,6 +58,10 @@ function validateTimestampValue(value: unknown, errors: string[]): void {
   if (value < 0) {
     errors.push('timestamp must not be less than 0');
   }
+
+  if (value > 24 * 60 * 60) {
+    errors.push(`timestamp must not be greater than ${24 * 60 * 60}`);
+  }
 }
 
 function validateRequiredEventType(payload: Record<string, unknown>, errors: string[]): void {
@@ -79,6 +83,10 @@ function validateEventTypeValue(value: unknown, errors: string[]): void {
   if (value.trim().length === 0) {
     errors.push('eventType should not be empty');
   }
+
+  if (value.length > MAX_EVENT_TYPE_LENGTH) {
+    errors.push(`eventType must be shorter than or equal to ${MAX_EVENT_TYPE_LENGTH} characters`);
+  }
 }
 
 function validateRequiredCompetitor(payload: Record<string, unknown>, errors: string[]): void {
@@ -98,14 +106,21 @@ function validateCompetitorValue(value: unknown, errors: string[]): void {
 }
 
 function validateOptionalNotes(payload: Record<string, unknown>, errors: string[]): void {
-  if ('notes' in payload && payload.notes !== undefined && typeof payload.notes !== 'string') {
-    errors.push('notes must be a string');
+  if ('notes' in payload && payload.notes !== undefined) {
+    if (typeof payload.notes !== 'string') {
+      errors.push('notes must be a string');
+      return;
+    }
+
+    if (payload.notes.length > MAX_NOTES_LENGTH) {
+      errors.push(`notes must be shorter than or equal to ${MAX_NOTES_LENGTH} characters`);
+    }
   }
 }
 
 function validateAllowedFields(payload: Record<string, unknown>, errors: string[]): void {
   for (const key of Object.keys(payload)) {
-    if (!allAllowedFields.has(key as (typeof requiredFields)[number])) {
+    if (!allAllowedFields.has(key as keyof CreateTimelineEventDto)) {
       errors.push(`property ${key} should not exist`);
     }
   }
