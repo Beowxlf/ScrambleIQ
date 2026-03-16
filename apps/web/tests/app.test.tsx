@@ -1,9 +1,9 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from '../src/App';
 import { Match, MatchFormValues } from '../src/match';
-import { MatchesApi } from '../src/matches-api';
+import { MatchNotFoundError, MatchesApi } from '../src/matches-api';
 
 function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
   return {
@@ -11,11 +11,18 @@ function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
       throw new Error('createMatch was not mocked');
     },
     listMatches: async () => [],
+    getMatch: async () => {
+      throw new Error('getMatch was not mocked');
+    },
     ...overrides,
   };
 }
 
 describe('App', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it('renders match creation form', async () => {
     const matchesApi = createMatchesApiMock();
     render(<App matchesApi={matchesApi} />);
@@ -51,6 +58,15 @@ describe('App', () => {
     const matchesApi = createMatchesApiMock({
       createMatch,
       listMatches: async () => [],
+      getMatch: async (id: string) => ({
+        id,
+        title: 'State Finals',
+        date: '2026-03-01',
+        ruleset: 'Folkstyle',
+        competitorA: 'Alex Carter',
+        competitorB: 'Sam Jordan',
+        notes: '',
+      }),
     });
 
     render(<App matchesApi={matchesApi} />);
@@ -106,6 +122,15 @@ describe('App', () => {
           notes: '',
         },
       ],
+      getMatch: async () => ({
+        id: 'match-1',
+        title: 'Open Finals',
+        date: '2026-03-10',
+        ruleset: 'Freestyle',
+        competitorA: 'Jordan Lee',
+        competitorB: 'Chris Park',
+        notes: '',
+      }),
     });
 
     render(<App matchesApi={matchesApi} />);
@@ -115,5 +140,68 @@ describe('App', () => {
     expect(screen.getByText('Ruleset: Freestyle')).toBeInTheDocument();
     expect(screen.getByText('Competitor A: Jordan Lee')).toBeInTheDocument();
     expect(screen.getByText('Competitor B: Chris Park')).toBeInTheDocument();
+  });
+
+  it('renders a selected match detail', async () => {
+    const matchesApi = createMatchesApiMock({
+      listMatches: async () => [
+        {
+          id: 'match-42',
+          title: 'City Open',
+          date: '2026-04-01',
+          ruleset: 'No-Gi',
+          competitorA: 'Pat Stone',
+          competitorB: 'Riley Cruz',
+          notes: 'Tight match',
+        },
+      ],
+      getMatch: async (id: string) => ({
+        id,
+        title: 'City Open',
+        date: '2026-04-01',
+        ruleset: 'No-Gi',
+        competitorA: 'Pat Stone',
+        competitorB: 'Riley Cruz',
+        notes: 'Tight match',
+      }),
+    });
+
+    render(<App matchesApi={matchesApi} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'View Match' }));
+
+    const detailSection = screen.getByRole('region', { name: 'Match Detail' });
+
+    expect(await within(detailSection).findByText('ID: match-42')).toBeInTheDocument();
+    expect(within(detailSection).getByText('Date: 2026-04-01')).toBeInTheDocument();
+    expect(within(detailSection).getByText('Ruleset: No-Gi')).toBeInTheDocument();
+    expect(within(detailSection).getByText('Competitor A: Pat Stone')).toBeInTheDocument();
+    expect(within(detailSection).getByText('Competitor B: Riley Cruz')).toBeInTheDocument();
+    expect(within(detailSection).getByText('Notes: Tight match')).toBeInTheDocument();
+  });
+
+  it('shows not found state when detail fetch returns 404', async () => {
+    const matchesApi = createMatchesApiMock({
+      listMatches: async () => [
+        {
+          id: 'missing-match',
+          title: 'Unknown Match',
+          date: '2026-04-02',
+          ruleset: 'Freestyle',
+          competitorA: 'A',
+          competitorB: 'B',
+          notes: '',
+        },
+      ],
+      getMatch: async (id: string) => {
+        throw new MatchNotFoundError(id);
+      },
+    });
+
+    render(<App matchesApi={matchesApi} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'View Match' }));
+
+    expect(await screen.findByText('Match not found.')).toBeInTheDocument();
   });
 });

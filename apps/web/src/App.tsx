@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
-import { createHttpMatchesApi, MatchesApi } from './matches-api';
 import { hasValidationErrors, Match, MatchFormValues, MatchValidationErrors, validateMatchForm } from './match';
+import { createHttpMatchesApi, MatchNotFoundError, MatchesApi } from './matches-api';
 
 const initialValues: MatchFormValues = {
   title: '',
@@ -27,6 +27,11 @@ export function App({ matchesApi }: AppProps) {
   const [submissionMessage, setSubmissionMessage] = useState<string | null>(null);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [matchesError, setMatchesError] = useState<string | null>(null);
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
+  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+  const [isLoadingSelectedMatch, setIsLoadingSelectedMatch] = useState(false);
+  const [selectedMatchError, setSelectedMatchError] = useState<string | null>(null);
+  const [isSelectedMatchNotFound, setIsSelectedMatchNotFound] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -59,6 +64,54 @@ export function App({ matchesApi }: AppProps) {
     };
   }, [api]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadSelectedMatch = async () => {
+      if (!selectedMatchId) {
+        setSelectedMatch(null);
+        setSelectedMatchError(null);
+        setIsSelectedMatchNotFound(false);
+        setIsLoadingSelectedMatch(false);
+        return;
+      }
+
+      setIsLoadingSelectedMatch(true);
+      setSelectedMatch(null);
+      setSelectedMatchError(null);
+      setIsSelectedMatchNotFound(false);
+
+      try {
+        const match = await api.getMatch(selectedMatchId);
+
+        if (isMounted) {
+          setSelectedMatch(match);
+        }
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        if (error instanceof MatchNotFoundError) {
+          setIsSelectedMatchNotFound(true);
+          return;
+        }
+
+        setSelectedMatchError('Unable to load match details right now.');
+      } finally {
+        if (isMounted) {
+          setIsLoadingSelectedMatch(false);
+        }
+      }
+    };
+
+    void loadSelectedMatch();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [api, selectedMatchId]);
+
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -77,6 +130,7 @@ export function App({ matchesApi }: AppProps) {
     try {
       const createdMatch = await api.createMatch(formValues);
       setMatches((previousMatches) => [createdMatch, ...previousMatches]);
+      setSelectedMatchId(createdMatch.id);
       setFormValues(initialValues);
       setErrors({});
       setSubmissionMessage('Match created successfully.');
@@ -173,9 +227,33 @@ export function App({ matchesApi }: AppProps) {
                 <p>Ruleset: {match.ruleset}</p>
                 <p>Competitor A: {match.competitorA}</p>
                 <p>Competitor B: {match.competitorB}</p>
+                <button type="button" onClick={() => setSelectedMatchId(match.id)}>
+                  View Match
+                </button>
               </li>
             ))}
           </ul>
+        ) : null}
+      </section>
+
+      <section aria-labelledby="match-detail-heading">
+        <h2 id="match-detail-heading">Match Detail</h2>
+
+        {!selectedMatchId ? <p>Select a match to view details.</p> : null}
+        {selectedMatchId && isLoadingSelectedMatch ? <p>Loading match details...</p> : null}
+        {selectedMatchId && !isLoadingSelectedMatch && isSelectedMatchNotFound ? <p>Match not found.</p> : null}
+        {selectedMatchId && !isLoadingSelectedMatch && selectedMatchError ? <p>{selectedMatchError}</p> : null}
+
+        {selectedMatchId && !isLoadingSelectedMatch && selectedMatch ? (
+          <article>
+            <h3>{selectedMatch.title}</h3>
+            <p>ID: {selectedMatch.id}</p>
+            <p>Date: {selectedMatch.date}</p>
+            <p>Ruleset: {selectedMatch.ruleset}</p>
+            <p>Competitor A: {selectedMatch.competitorA}</p>
+            <p>Competitor B: {selectedMatch.competitorB}</p>
+            <p>Notes: {selectedMatch.notes || 'No notes provided.'}</p>
+          </article>
         ) : null}
       </section>
     </main>

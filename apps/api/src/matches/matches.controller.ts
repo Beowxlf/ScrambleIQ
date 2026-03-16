@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Post } from '@nestjs/common';
 
 import { CreateMatchDto } from './create-match.dto';
 import { Match } from './match.model';
@@ -6,7 +6,7 @@ import { MatchesService } from './matches.service';
 
 @Controller('matches')
 export class MatchesController {
-  constructor(private readonly matchesService: MatchesService) {}
+  constructor(@Inject(MatchesService) private readonly matchesService: MatchesService) {}
 
   @Post()
   create(@Body() createMatchDto: CreateMatchDto): Match {
@@ -16,5 +16,10 @@ export class MatchesController {
   @Get()
   findAll(): Match[] {
     return this.matchesService.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string): Match {
+    return this.matchesService.findOne(id);
   }
 }

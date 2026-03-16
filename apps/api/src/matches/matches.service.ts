@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 
 import { CreateMatchDto } from './create-match.dto';
 import { Match } from './match.model';
@@ -14,5 +14,15 @@ export class MatchesService {
 
   findAll(): Match[] {
     return this.matchStore.findAll();
+  }
+
+  findOne(id: string): Match {
+    const match = this.matchStore.findById(id);
+
+    if (!match) {
+      throw new NotFoundException(`Match with id ${id} was not found.`);
+    }
+
+    return match;
   }
 }

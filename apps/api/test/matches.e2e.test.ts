@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 
 import { AppModule } from '../src/app.module';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 describe('MatchesController', () => {
   let app: INestApplication;
@@ -37,6 +38,31 @@ describe('MatchesController', () => {
 
     expect(response.body).toMatchObject(payload);
     expect(response.body.id).toEqual(expect.any(String));
+  });
+
+  it('returns a match by id with GET /matches/:id', async () => {
+    const payload = {
+      title: 'Regional Championship',
+      date: '2026-03-15',
+      ruleset: 'Submission Grappling',
+      competitorA: 'Taylor Brooks',
+      competitorB: 'Morgan Diaz',
+      notes: 'Final round',
+    };
+
+    const createResponse = await request(app.getHttpServer()).post('/matches').send(payload).expect(201);
+
+    const response = await request(app.getHttpServer())
+      .get(`/matches/${createResponse.body.id}`)
+      .expect(200);
+
+    expect(response.body).toEqual(createResponse.body);
+  });
+
+  it('returns 404 for an unknown id with GET /matches/:id', async () => {
+    const response = await request(app.getHttpServer()).get('/matches/non-existent-id').expect(404);
+
+    expect(response.body.message).toBe('Match with id non-existent-id was not found.');
   });
 
   it('returns matches with GET /matches', async () => {
