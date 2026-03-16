@@ -113,6 +113,7 @@ Current limitations (demo stage):
 - no file upload or transcoding pipeline
 - no ML/automatic analysis
 - analytics are derived only from currently stored manual annotations (no inferred or predictive metrics)
+- dataset export provides structured JSON only; no automated model training or labeling augmentation is included
 - in-memory persistence only (all data resets when API restarts)
 
 The detail page also includes a **Position Timeline** section for positional state tracking.
@@ -154,6 +155,7 @@ The API exposes match and timeline endpoints backed by in-memory stores:
 - `GET http://localhost:3000/matches`
 - `GET http://localhost:3000/matches/:id`
 - `GET http://localhost:3000/matches/:id/analytics`
+- `GET http://localhost:3000/matches/:id/export`
 - `PATCH http://localhost:3000/matches/:id`
 - `DELETE http://localhost:3000/matches/:id`
 - `POST http://localhost:3000/matches/:id/events`
@@ -198,6 +200,27 @@ Validation behavior:
 
 Analytics are computed on read from current timeline events and position states in memory and are **not persisted**.
 These analytics are based only on manual annotations and are **not ML-generated**.
+
+
+`GET /matches/:id/export` returns a deterministic `MatchDatasetExport` artifact for manual-annotation dataset workflows (for example offline analysis or future ML training pipelines):
+
+```json
+{
+  "match": { "id": "...", "title": "...", "date": "...", "ruleset": "...", "competitorA": "...", "competitorB": "...", "notes": "..." },
+  "video": { "id": "...", "matchId": "...", "title": "...", "sourceType": "remote_url", "sourceUrl": "...", "durationSeconds": 180, "notes": "..." },
+  "events": [{ "id": "...", "matchId": "...", "timestamp": 12, "eventType": "takedown_attempt", "competitor": "A", "notes": "..." }],
+  "positions": [{ "id": "...", "matchId": "...", "position": "closed_guard", "competitorTop": "A", "timestampStart": 16, "timestampEnd": 30, "notes": "..." }],
+  "analytics": { "matchId": "...", "totalEventCount": 1, "eventCountsByType": { "takedown_attempt": 1 }, "totalPositionCount": 1, "timeInPositionByTypeSeconds": {}, "competitorTopTimeByPositionSeconds": {}, "totalTrackedPositionTimeSeconds": 14 }
+}
+```
+
+Dataset export guarantees in this phase:
+
+- `events` are sorted by ascending `timestamp`
+- `positions` are sorted by ascending `timestampStart`
+- all timeline timestamps remain numeric seconds
+- object is returned directly as JSON (no file storage layer)
+
 
 Deleting a match also removes all timeline events, position states, and attached video metadata for that match.
 

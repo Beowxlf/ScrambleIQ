@@ -97,6 +97,28 @@ export interface MatchVideo {
   notes?: string;
 }
 
+export type MatchDatasetEvent = TimelineEvent;
+
+export type MatchDatasetPosition = PositionState;
+
+export interface MatchDatasetVideo {
+  id: string;
+  matchId: string;
+  title: string;
+  sourceType: MatchVideoSourceType;
+  sourceUrl: string;
+  durationSeconds?: number;
+  notes?: string;
+}
+
+export interface MatchDatasetExport {
+  match: Match;
+  video: MatchDatasetVideo | null;
+  events: MatchDatasetEvent[];
+  positions: MatchDatasetPosition[];
+  analytics: MatchAnalyticsSummary;
+}
+
 export interface CreateMatchVideoDto {
   title: string;
   sourceType: MatchVideoSourceType;

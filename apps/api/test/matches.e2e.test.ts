@@ -494,6 +494,58 @@ describe('MatchesController', () => {
     expect(response.body.competitorTopTimeByPositionSeconds.B.mount).toBe(5);
   });
 
+
+  it('returns structured match dataset export', async () => {
+    const matchId = await createMatch();
+
+    await request(app.getHttpServer())
+      .post(`/matches/${matchId}/video`)
+      .send({ title: 'Main camera', sourceType: 'remote_url', sourceUrl: 'https://cdn.example.com/match.mp4' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/matches/${matchId}/events`)
+      .send({ timestamp: 30, eventType: 'guard_pass', competitor: 'B' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/matches/${matchId}/events`)
+      .send({ timestamp: 10, eventType: 'takedown_attempt', competitor: 'A' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/matches/${matchId}/positions`)
+      .send({ position: 'half_guard', competitorTop: 'A', timestampStart: 20, timestampEnd: 30 })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/matches/${matchId}/positions`)
+      .send({ position: 'standing', competitorTop: 'A', timestampStart: 0, timestampEnd: 20 })
+      .expect(201);
+
+    const response = await request(app.getHttpServer()).get(`/matches/${matchId}/export`).expect(200);
+
+    expect(response.body.match.id).toBe(matchId);
+    expect(response.body.video).toMatchObject({
+      matchId,
+      title: 'Main camera',
+      sourceType: 'remote_url',
+      sourceUrl: 'https://cdn.example.com/match.mp4',
+    });
+    expect(response.body.analytics.matchId).toBe(matchId);
+    expect(response.body.events.map((event: { timestamp: number }) => event.timestamp)).toEqual([10, 30]);
+    expect(response.body.positions.map((position: { timestampStart: number }) => position.timestampStart)).toEqual([0, 20]);
+  });
+
+  it('returns 404 for export of an unknown match', async () => {
+    await request(app.getHttpServer())
+      .get(`/matches/${missingMatchId}/export`)
+      .expect(404)
+      .expect(({ body }: { body: { message: string } }) => {
+        expect(body.message).toBe(`Match with id ${missingMatchId} was not found.`);
+      });
+  });
+
   it('returns 404 for analytics of an unknown match', async () => {
     await request(app.getHttpServer())
       .get(`/matches/${missingMatchId}/analytics`)
