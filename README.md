@@ -33,9 +33,40 @@ Backend (NestJS):
 npm run dev:api
 ```
 
-Default backend health endpoint:
+## Phase-one feature: Match creation
+
+### Frontend (`apps/web`)
+
+The web app includes a **Create Match** form with required-field validation for:
+
+- title
+- date
+- ruleset
+- competitor A
+- competitor B
+
+`notes` is optional.
+
+### Backend (`apps/api`)
+
+The API exposes match endpoints backed by an in-memory store:
 
 - `GET http://localhost:3000/health`
+- `POST http://localhost:3000/matches`
+- `GET http://localhost:3000/matches`
+
+Example POST body:
+
+```json
+{
+  "title": "State Finals",
+  "date": "2026-03-01",
+  "ruleset": "Folkstyle",
+  "competitorA": "Alex Carter",
+  "competitorB": "Sam Jordan",
+  "notes": "Quarterfinal match"
+}
+```
 
 ## Validation commands
 
@@ -50,8 +81,8 @@ npm run build
 
 ```text
 apps/
-  api/   # NestJS backend scaffold
-  web/   # React + Vite frontend scaffold
+  api/   # NestJS backend scaffold + in-memory match API
+  web/   # React + Vite frontend scaffold + match creation form
 Guidelines/
   Tech-Stack.md
 ```
