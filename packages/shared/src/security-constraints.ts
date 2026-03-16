@@ -3,3 +3,4 @@ export const MAX_RULESET_LENGTH = 60;
 export const MAX_COMPETITOR_NAME_LENGTH = 80;
 export const MAX_EVENT_TYPE_LENGTH = 80;
 export const MAX_NOTES_LENGTH = 2000;
+export const MAX_SOURCE_URL_LENGTH = 2048;

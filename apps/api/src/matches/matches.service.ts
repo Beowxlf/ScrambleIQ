@@ -10,6 +10,8 @@ import { MatchStore } from './store/match-store';
 import { MATCH_STORE } from './store/match-store.token';
 import { PositionStore } from './store/position-store';
 import { POSITION_STORE } from './store/position-store.token';
+import { VideoStore } from './store/video-store';
+import { VIDEO_STORE } from './store/video-store.token';
 
 @Injectable()
 export class MatchesService {
@@ -17,6 +19,7 @@ export class MatchesService {
     @Inject(MATCH_STORE) private readonly matchStore: MatchStore,
     @Inject(EVENT_STORE) private readonly eventStore: EventStore,
     @Inject(POSITION_STORE) private readonly positionStore: PositionStore,
+    @Inject(VIDEO_STORE) private readonly videoStore: VideoStore,
   ) {}
 
   create(input: CreateMatchDto): Match {
@@ -72,5 +75,6 @@ export class MatchesService {
 
     this.eventStore.deleteByMatchId(id);
     this.positionStore.deleteByMatchId(id);
+    this.videoStore.deleteByMatchId(id);
   }
 }

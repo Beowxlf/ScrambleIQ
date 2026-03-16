@@ -46,7 +46,7 @@ npm run dev:api
 - `PORT` (optional): API port (default: `3000`).
 - `WEB_ORIGIN` (optional): CORS origin (default: `http://localhost:5173`).
 
-## Phase-one feature: Match management, timeline events, and position tracking
+## Phase-one feature: Match management, timeline events, position tracking, and synchronized video review
 
 ### Frontend (`apps/web`)
 
@@ -96,6 +96,24 @@ The timeline section supports:
 - editing events
 - deleting events
 
+The detail page also includes a **Video Review** section for single-video attachment and synchronized playback alongside timeline annotations.
+
+Video review in this phase supports:
+
+- a single attached `MatchVideo` record per match
+- `sourceType` values: `remote_url` or `local_demo`
+- metadata attach/edit/remove workflows
+- browser-native `<video>` playback when a video is attached
+- clicking timeline events to seek playback to `timestamp`
+- clicking position segments to seek playback to `timestampStart`
+
+Current limitations (demo stage):
+
+- no cloud storage integration
+- no file upload or transcoding pipeline
+- no ML/automatic analysis
+- in-memory persistence only (all data resets when API restarts)
+
 The detail page also includes a **Position Timeline** section for positional state tracking.
 
 The position timeline supports:
@@ -144,6 +162,10 @@ The API exposes match and timeline endpoints backed by in-memory stores:
 - `GET http://localhost:3000/matches/:id/positions`
 - `PATCH http://localhost:3000/positions/:id`
 - `DELETE http://localhost:3000/positions/:id`
+- `POST http://localhost:3000/matches/:id/video`
+- `GET http://localhost:3000/matches/:id/video`
+- `PATCH http://localhost:3000/video/:id`
+- `DELETE http://localhost:3000/video/:id`
 
 Validation behavior:
 
@@ -154,7 +176,7 @@ Validation behavior:
 - route IDs must be valid UUIDs
 - match `date` must be strict calendar-valid `YYYY-MM-DD`
 - `notes` is optional
-- max lengths are enforced for title/ruleset/competitor names/event type/notes
+- max lengths are enforced for title/ruleset/competitor names/event type/notes/sourceUrl
 - unknown payload fields are rejected
 - position segments cannot overlap within a match timeline
 
@@ -162,7 +184,9 @@ Validation behavior:
 
 `GET /matches/:id/positions` returns position states sorted by ascending `timestampStart`.
 
-Deleting a match also removes all timeline events and position states attached to that match.
+Deleting a match also removes all timeline events, position states, and attached video metadata for that match.
+
+`POST /matches/:id/video` currently behaves as attach-or-replace for the single allowed video record per match.
 
 Example timeline event POST body:
 

@@ -345,6 +345,90 @@ describe('MatchesController', () => {
       });
   });
 
+
+  it('creates and gets a match video', async () => {
+    const matchId = await createMatch();
+
+    const createResponse = await request(app.getHttpServer())
+      .post(`/matches/${matchId}/video`)
+      .send({
+        title: 'Finals angle',
+        sourceType: 'remote_url',
+        sourceUrl: 'https://cdn.example.com/video.mp4',
+        durationSeconds: 360,
+        notes: 'Primary camera',
+      })
+      .expect(201);
+
+    expect(createResponse.body.matchId).toBe(matchId);
+
+    const getResponse = await request(app.getHttpServer()).get(`/matches/${matchId}/video`).expect(200);
+    expect(getResponse.body.id).toBe(createResponse.body.id);
+  });
+
+  it('updates and deletes a match video', async () => {
+    const matchId = await createMatch();
+
+    const createResponse = await request(app.getHttpServer())
+      .post(`/matches/${matchId}/video`)
+      .send({ title: 'Angle A', sourceType: 'remote_url', sourceUrl: 'https://cdn.example.com/a.mp4' })
+      .expect(201);
+
+    const updateResponse = await request(app.getHttpServer())
+      .patch(`/video/${createResponse.body.id}`)
+      .send({ title: 'Angle B', sourceType: 'local_demo', notes: 'Updated metadata' })
+      .expect(200);
+
+    expect(updateResponse.body).toMatchObject({
+      id: createResponse.body.id,
+      title: 'Angle B',
+      sourceType: 'local_demo',
+      notes: 'Updated metadata',
+    });
+
+    await request(app.getHttpServer()).delete(`/video/${createResponse.body.id}`).expect(204);
+    await request(app.getHttpServer()).patch(`/video/${createResponse.body.id}`).send({ title: 'Nope' }).expect(404);
+  });
+
+  it('returns 404 for unknown match and video IDs for video endpoints', async () => {
+    await request(app.getHttpServer())
+      .post(`/matches/${missingMatchId}/video`)
+      .send({ title: 'Angle', sourceType: 'remote_url', sourceUrl: 'https://cdn.example.com/a.mp4' })
+      .expect(404);
+
+    await request(app.getHttpServer()).get(`/matches/${missingMatchId}/video`).expect(404);
+
+    await request(app.getHttpServer())
+      .patch(`/video/44444444-4444-4444-8444-444444444444`)
+      .send({ title: 'Angle B' })
+      .expect(404);
+  });
+
+  it('rejects invalid match video payloads', async () => {
+    const matchId = await createMatch();
+
+    const response = await request(app.getHttpServer())
+      .post(`/matches/${matchId}/video`)
+      .send({ title: '', sourceType: 'bad', sourceUrl: '', unknown: true })
+      .expect(400);
+
+    expect(response.body.message).toContain('title should not be empty');
+    expect(response.body.message).toContain('sourceType must be one of the following values: remote_url, local_demo');
+    expect(response.body.message).toContain('sourceUrl should not be empty');
+    expect(response.body.message).toContain('property unknown should not exist');
+  });
+
+  it('removes attached video when parent match is deleted', async () => {
+    const matchId = await createMatch();
+
+    await request(app.getHttpServer())
+      .post(`/matches/${matchId}/video`)
+      .send({ title: 'Angle', sourceType: 'remote_url', sourceUrl: 'https://cdn.example.com/a.mp4' })
+      .expect(201);
+
+    await request(app.getHttpServer()).delete(`/matches/${matchId}`).expect(204);
+    await request(app.getHttpServer()).get(`/matches/${matchId}/video`).expect(404);
+  });
   it('rejects overlapping position segments', async () => {
     const matchId = await createMatch();
 

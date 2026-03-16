@@ -74,10 +74,34 @@ export interface CreatePositionStateDto {
 
 export type UpdatePositionStateDto = Partial<CreatePositionStateDto>;
 
+export const MATCH_VIDEO_SOURCE_TYPES = ['remote_url', 'local_demo'] as const;
+export type MatchVideoSourceType = (typeof MATCH_VIDEO_SOURCE_TYPES)[number];
+
+export interface MatchVideo {
+  id: string;
+  matchId: string;
+  title: string;
+  sourceType: MatchVideoSourceType;
+  sourceUrl: string;
+  durationSeconds?: number;
+  notes?: string;
+}
+
+export interface CreateMatchVideoDto {
+  title: string;
+  sourceType: MatchVideoSourceType;
+  sourceUrl: string;
+  durationSeconds?: number;
+  notes?: string;
+}
+
+export type UpdateMatchVideoDto = Partial<CreateMatchVideoDto>;
+
 export {
   MAX_COMPETITOR_NAME_LENGTH,
   MAX_EVENT_TYPE_LENGTH,
   MAX_NOTES_LENGTH,
   MAX_RULESET_LENGTH,
+  MAX_SOURCE_URL_LENGTH,
   MAX_TITLE_LENGTH,
 } from './security-constraints';
