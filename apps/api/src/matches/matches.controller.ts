@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Patch, Post } from '@nestjs/common';
 import type { Match } from '@scrambleiq/shared';
 
 import { CreateMatchDto } from './create-match.dto';
@@ -28,5 +28,11 @@ export class MatchesController {
   @Get(':id')
   findOne(@Param('id') id: string): Match {
     return this.matchesService.findOne(id);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  delete(@Param('id') id: string): void {
+    this.matchesService.delete(id);
   }
 }

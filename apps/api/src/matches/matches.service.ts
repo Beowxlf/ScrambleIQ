@@ -50,4 +50,12 @@ export class MatchesService {
 
     return match;
   }
+
+  delete(id: string): void {
+    const isDeleted = this.matchStore.delete(id);
+
+    if (!isDeleted) {
+      throw new NotFoundException(`Match with id ${id} was not found.`);
+    }
+  }
 }

@@ -5,4 +5,5 @@ export interface MatchStore {
   findAll(): Match[];
   findById(id: string): Match | undefined;
   update(id: string, input: UpdateMatchDto): Match | undefined;
+  delete(id: string): boolean;
 }
