@@ -49,7 +49,7 @@ The web app includes a **Create Match** form with required-field validation for:
 
 `notes` is optional.
 
-The form is connected to the backend API. On submit, the frontend calls `POST /matches`, shows success or failure feedback, and prepends the created match into a basic match list loaded from `GET /matches`.
+The form is connected to the backend API. On submit, the frontend calls `POST /matches`, shows success or failure feedback, and prepends the created match into a basic match list loaded from `GET /matches`. From the match list, users can open a Match Detail view that loads a single match by id and shows loading, not found, and error states.
 
 ### Backend (`apps/api`)
 
@@ -58,6 +58,7 @@ The API exposes match endpoints backed by an in-memory store:
 - `GET http://localhost:3000/health`
 - `POST http://localhost:3000/matches`
 - `GET http://localhost:3000/matches`
+- `GET http://localhost:3000/matches/:id`
 
 Example POST body:
 

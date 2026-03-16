@@ -26,4 +26,8 @@ export class InMemoryMatchStore implements MatchStore {
   findAll(): Match[] {
     return [...this.matches];
   }
+
+  findById(id: string): Match | undefined {
+    return this.matches.find((match) => match.id === id);
+  }
 }

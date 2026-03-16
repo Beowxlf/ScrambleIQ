@@ -1,8 +1,16 @@
 import { Match, MatchFormValues } from './match';
 
+export class MatchNotFoundError extends Error {
+  constructor(matchId: string) {
+    super(`Match with id ${matchId} was not found.`);
+    this.name = 'MatchNotFoundError';
+  }
+}
+
 export interface MatchesApi {
   createMatch(payload: MatchFormValues): Promise<Match>;
   listMatches(): Promise<Match[]>;
+  getMatch(id: string): Promise<Match>;
 }
 
 interface HttpMatchesApiOptions {
@@ -39,6 +47,20 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       return (await response.json()) as Match[];
+    },
+
+    async getMatch(id) {
+      const response = await fetchImpl(`${baseUrl}/matches/${id}`);
+
+      if (response.status === 404) {
+        throw new MatchNotFoundError(id);
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to load match.');
+      }
+
+      return (await response.json()) as Match;
     },
   };
 }

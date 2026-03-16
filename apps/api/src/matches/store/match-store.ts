@@ -4,4 +4,5 @@ import { Match } from '../match.model';
 export interface MatchStore {
   create(input: CreateMatchDto): Match;
   findAll(): Match[];
+  findById(id: string): Match | undefined;
 }
