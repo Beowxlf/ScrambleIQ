@@ -13,14 +13,18 @@ interface EventListProps {
 export function EventList({ events, selectedEventId, onSeekToEvent, onEdit, onDelete }: EventListProps) {
   return (
     <ul>
-      {events.map((timelineEvent) => (
-        <li key={timelineEvent.id}>
+      {events.map((timelineEvent) => {
+        const eventLabel = `${formatTimestamp(timelineEvent.timestamp)} ${timelineEvent.eventType} ${timelineEvent.competitor}`;
+
+        return (
+          <li key={timelineEvent.id}>
           <button
             type="button"
             onClick={() => onSeekToEvent(timelineEvent)}
             aria-pressed={selectedEventId === timelineEvent.id}
+            aria-label={eventLabel}
           >
-            {formatTimestamp(timelineEvent.timestamp)} {timelineEvent.eventType} {timelineEvent.competitor}
+            {eventLabel}
           </button>{' '}
           <button type="button" onClick={() => onEdit(timelineEvent)}>
             Edit Event
@@ -29,8 +33,9 @@ export function EventList({ events, selectedEventId, onSeekToEvent, onEdit, onDe
             Delete Event
           </button>
           {timelineEvent.notes ? <p>Notes: {timelineEvent.notes}</p> : null}
-        </li>
-      ))}
+          </li>
+        );
+      })}
     </ul>
   );
 }
