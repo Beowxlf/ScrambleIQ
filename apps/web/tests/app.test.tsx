@@ -1,9 +1,9 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { App } from '../src/App';
 import type { Match } from '@scrambleiq/shared';
 
+import { App } from '../src/App';
 import { MatchFormValues } from '../src/match';
 import { MatchNotFoundError, MatchesApi } from '../src/matches-api';
 
@@ -21,6 +21,10 @@ function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
 }
 
 describe('App', () => {
+  beforeEach(() => {
+    window.history.replaceState({}, '', '/');
+  });
+
   afterEach(() => {
     cleanup();
   });
@@ -50,7 +54,7 @@ describe('App', () => {
     expect(await screen.findByText('No matches yet.')).toBeInTheDocument();
   });
 
-  it('submits a valid match and renders it in the list', async () => {
+  it('submits a valid match and renders detail page', async () => {
     const createMatch = vi.fn(async (payload: MatchFormValues): Promise<Match> => ({
       id: 'match-1',
       ...payload,
@@ -82,12 +86,8 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create Match' }));
 
     await waitFor(() => expect(createMatch).toHaveBeenCalledTimes(1));
-    expect(screen.getByText('Match created successfully.')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'State Finals' })).toBeInTheDocument();
-    expect(screen.getByText('Date: 2026-03-01')).toBeInTheDocument();
-    expect(screen.getByText('Ruleset: Folkstyle')).toBeInTheDocument();
-    expect(screen.getByText('Competitor A: Alex Carter')).toBeInTheDocument();
-    expect(screen.getByText('Competitor B: Sam Jordan')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Match Detail' })).toBeInTheDocument();
+    expect(screen.getByText('ID: match-1')).toBeInTheDocument();
   });
 
   it('shows an error message when submission fails', async () => {
@@ -111,40 +111,7 @@ describe('App', () => {
     expect(await screen.findByText('Unable to create match. Please try again.')).toBeInTheDocument();
   });
 
-  it('renders matches returned by the API', async () => {
-    const matchesApi = createMatchesApiMock({
-      listMatches: async () => [
-        {
-          id: 'match-1',
-          title: 'Open Finals',
-          date: '2026-03-10',
-          ruleset: 'Freestyle',
-          competitorA: 'Jordan Lee',
-          competitorB: 'Chris Park',
-          notes: '',
-        },
-      ],
-      getMatch: async () => ({
-        id: 'match-1',
-        title: 'Open Finals',
-        date: '2026-03-10',
-        ruleset: 'Freestyle',
-        competitorA: 'Jordan Lee',
-        competitorB: 'Chris Park',
-        notes: '',
-      }),
-    });
-
-    render(<App matchesApi={matchesApi} />);
-
-    expect(await screen.findByRole('heading', { name: 'Open Finals' })).toBeInTheDocument();
-    expect(screen.getByText('Date: 2026-03-10')).toBeInTheDocument();
-    expect(screen.getByText('Ruleset: Freestyle')).toBeInTheDocument();
-    expect(screen.getByText('Competitor A: Jordan Lee')).toBeInTheDocument();
-    expect(screen.getByText('Competitor B: Chris Park')).toBeInTheDocument();
-  });
-
-  it('renders a selected match detail', async () => {
+  it('opens a match detail view from the list', async () => {
     const matchesApi = createMatchesApiMock({
       listMatches: async () => [
         {
@@ -172,7 +139,7 @@ describe('App', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'View Match' }));
 
-    const detailSection = screen.getByRole('region', { name: 'Match Detail' });
+    const detailSection = await screen.findByRole('region', { name: 'Match Detail' });
 
     expect(await within(detailSection).findByText('ID: match-42')).toBeInTheDocument();
     expect(within(detailSection).getByText('Date: 2026-04-01')).toBeInTheDocument();
@@ -182,28 +149,56 @@ describe('App', () => {
     expect(within(detailSection).getByText('Notes: Tight match')).toBeInTheDocument();
   });
 
+  it('renders fetched match detail data when opening detail route directly', async () => {
+    const matchesApi = createMatchesApiMock({
+      listMatches: async () => [],
+      getMatch: async (id: string) => ({
+        id,
+        title: 'Open Finals',
+        date: '2026-03-10',
+        ruleset: 'Freestyle',
+        competitorA: 'Jordan Lee',
+        competitorB: 'Chris Park',
+        notes: '',
+      }),
+    });
+
+    window.history.replaceState({}, '', '/matches/match-1');
+
+    render(<App matchesApi={matchesApi} />);
+
+    expect(await screen.findByRole('heading', { name: 'Open Finals' })).toBeInTheDocument();
+    expect(screen.getByText('ID: match-1')).toBeInTheDocument();
+    expect(screen.getByText('Notes: No notes provided.')).toBeInTheDocument();
+  });
+
   it('shows not found state when detail fetch returns 404', async () => {
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [
-        {
-          id: 'missing-match',
-          title: 'Unknown Match',
-          date: '2026-04-02',
-          ruleset: 'Freestyle',
-          competitorA: 'A',
-          competitorB: 'B',
-          notes: '',
-        },
-      ],
+      listMatches: async () => [],
       getMatch: async (id: string) => {
         throw new MatchNotFoundError(id);
       },
     });
 
+    window.history.replaceState({}, '', '/matches/missing-match');
+
     render(<App matchesApi={matchesApi} />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'View Match' }));
-
     expect(await screen.findByText('Match not found.')).toBeInTheDocument();
+  });
+
+  it('shows an error state when detail fetch fails', async () => {
+    const matchesApi = createMatchesApiMock({
+      listMatches: async () => [],
+      getMatch: async () => {
+        throw new Error('Network failed');
+      },
+    });
+
+    window.history.replaceState({}, '', '/matches/match-77');
+
+    render(<App matchesApi={matchesApi} />);
+
+    expect(await screen.findByText('Unable to load match details right now.')).toBeInTheDocument();
   });
 });

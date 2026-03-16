@@ -14,13 +14,42 @@ const initialValues: MatchFormValues = {
   notes: '',
 };
 
+type AppRoute =
+  | {
+      page: 'list';
+    }
+  | {
+      page: 'detail';
+      matchId: string;
+    };
+
 interface AppProps {
   matchesApi?: MatchesApi;
 }
 
-export function App({ matchesApi }: AppProps) {
-  const api = useMemo(() => matchesApi ?? createHttpMatchesApi(), [matchesApi]);
+function parseRoute(pathname: string): AppRoute {
+  if (pathname === '/') {
+    return { page: 'list' };
+  }
 
+  const detailPathMatch = pathname.match(/^\/matches\/([^/]+)$/);
+
+  if (detailPathMatch) {
+    return {
+      page: 'detail',
+      matchId: decodeURIComponent(detailPathMatch[1]),
+    };
+  }
+
+  return { page: 'list' };
+}
+
+function navigateTo(pathname: string) {
+  window.history.pushState({}, '', pathname);
+  window.dispatchEvent(new PopStateEvent('popstate'));
+}
+
+function MatchListPage({ api }: { api: MatchesApi }) {
   const [formValues, setFormValues] = useState<MatchFormValues>(initialValues);
   const [errors, setErrors] = useState<MatchValidationErrors>({});
   const [matches, setMatches] = useState<Match[]>([]);
@@ -29,11 +58,6 @@ export function App({ matchesApi }: AppProps) {
   const [submissionMessage, setSubmissionMessage] = useState<string | null>(null);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [matchesError, setMatchesError] = useState<string | null>(null);
-  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
-  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
-  const [isLoadingSelectedMatch, setIsLoadingSelectedMatch] = useState(false);
-  const [selectedMatchError, setSelectedMatchError] = useState<string | null>(null);
-  const [isSelectedMatchNotFound, setIsSelectedMatchNotFound] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -66,54 +90,6 @@ export function App({ matchesApi }: AppProps) {
     };
   }, [api]);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadSelectedMatch = async () => {
-      if (!selectedMatchId) {
-        setSelectedMatch(null);
-        setSelectedMatchError(null);
-        setIsSelectedMatchNotFound(false);
-        setIsLoadingSelectedMatch(false);
-        return;
-      }
-
-      setIsLoadingSelectedMatch(true);
-      setSelectedMatch(null);
-      setSelectedMatchError(null);
-      setIsSelectedMatchNotFound(false);
-
-      try {
-        const match = await api.getMatch(selectedMatchId);
-
-        if (isMounted) {
-          setSelectedMatch(match);
-        }
-      } catch (error) {
-        if (!isMounted) {
-          return;
-        }
-
-        if (error instanceof MatchNotFoundError) {
-          setIsSelectedMatchNotFound(true);
-          return;
-        }
-
-        setSelectedMatchError('Unable to load match details right now.');
-      } finally {
-        if (isMounted) {
-          setIsLoadingSelectedMatch(false);
-        }
-      }
-    };
-
-    void loadSelectedMatch();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [api, selectedMatchId]);
-
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -132,10 +108,10 @@ export function App({ matchesApi }: AppProps) {
     try {
       const createdMatch = await api.createMatch(formValues);
       setMatches((previousMatches) => [createdMatch, ...previousMatches]);
-      setSelectedMatchId(createdMatch.id);
       setFormValues(initialValues);
       setErrors({});
       setSubmissionMessage('Match created successfully.');
+      navigateTo(`/matches/${createdMatch.id}`);
     } catch {
       setSubmissionError('Unable to create match. Please try again.');
     } finally {
@@ -229,7 +205,7 @@ export function App({ matchesApi }: AppProps) {
                 <p>Ruleset: {match.ruleset}</p>
                 <p>Competitor A: {match.competitorA}</p>
                 <p>Competitor B: {match.competitorB}</p>
-                <button type="button" onClick={() => setSelectedMatchId(match.id)}>
+                <button type="button" onClick={() => navigateTo(`/matches/${match.id}`)}>
                   View Match
                 </button>
               </li>
@@ -237,27 +213,107 @@ export function App({ matchesApi }: AppProps) {
           </ul>
         ) : null}
       </section>
+    </main>
+  );
+}
+
+function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string }) {
+  const [match, setMatch] = useState<Match | null>(null);
+  const [isLoadingMatch, setIsLoadingMatch] = useState(true);
+  const [matchError, setMatchError] = useState<string | null>(null);
+  const [isMatchNotFound, setIsMatchNotFound] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadMatch = async () => {
+      setIsLoadingMatch(true);
+      setMatch(null);
+      setMatchError(null);
+      setIsMatchNotFound(false);
+
+      try {
+        const fetchedMatch = await api.getMatch(matchId);
+
+        if (isMounted) {
+          setMatch(fetchedMatch);
+        }
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        if (error instanceof MatchNotFoundError) {
+          setIsMatchNotFound(true);
+          return;
+        }
+
+        setMatchError('Unable to load match details right now.');
+      } finally {
+        if (isMounted) {
+          setIsLoadingMatch(false);
+        }
+      }
+    };
+
+    void loadMatch();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [api, matchId]);
+
+  return (
+    <main>
+      <h1>ScrambleIQ</h1>
+      <p>
+        <button type="button" onClick={() => navigateTo('/')}>
+          Back to matches
+        </button>
+      </p>
 
       <section aria-labelledby="match-detail-heading">
         <h2 id="match-detail-heading">Match Detail</h2>
 
-        {!selectedMatchId ? <p>Select a match to view details.</p> : null}
-        {selectedMatchId && isLoadingSelectedMatch ? <p>Loading match details...</p> : null}
-        {selectedMatchId && !isLoadingSelectedMatch && isSelectedMatchNotFound ? <p>Match not found.</p> : null}
-        {selectedMatchId && !isLoadingSelectedMatch && selectedMatchError ? <p>{selectedMatchError}</p> : null}
+        {isLoadingMatch ? <p>Loading match details...</p> : null}
+        {!isLoadingMatch && isMatchNotFound ? <p>Match not found.</p> : null}
+        {!isLoadingMatch && matchError ? <p>{matchError}</p> : null}
 
-        {selectedMatchId && !isLoadingSelectedMatch && selectedMatch ? (
+        {!isLoadingMatch && match ? (
           <article>
-            <h3>{selectedMatch.title}</h3>
-            <p>ID: {selectedMatch.id}</p>
-            <p>Date: {selectedMatch.date}</p>
-            <p>Ruleset: {selectedMatch.ruleset}</p>
-            <p>Competitor A: {selectedMatch.competitorA}</p>
-            <p>Competitor B: {selectedMatch.competitorB}</p>
-            <p>Notes: {selectedMatch.notes || 'No notes provided.'}</p>
+            <h3>{match.title}</h3>
+            <p>ID: {match.id}</p>
+            <p>Date: {match.date}</p>
+            <p>Ruleset: {match.ruleset}</p>
+            <p>Competitor A: {match.competitorA}</p>
+            <p>Competitor B: {match.competitorB}</p>
+            <p>Notes: {match.notes || 'No notes provided.'}</p>
           </article>
         ) : null}
       </section>
     </main>
   );
+}
+
+export function App({ matchesApi }: AppProps) {
+  const api = useMemo(() => matchesApi ?? createHttpMatchesApi(), [matchesApi]);
+  const [route, setRoute] = useState<AppRoute>(() => parseRoute(window.location.pathname));
+
+  useEffect(() => {
+    const onPopState = () => {
+      setRoute(parseRoute(window.location.pathname));
+    };
+
+    window.addEventListener('popstate', onPopState);
+
+    return () => {
+      window.removeEventListener('popstate', onPopState);
+    };
+  }, []);
+
+  if (route.page === 'detail') {
+    return <MatchDetailPage api={api} matchId={route.matchId} />;
+  }
+
+  return <MatchListPage api={api} />;
 }

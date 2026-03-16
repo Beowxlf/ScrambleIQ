@@ -46,9 +46,14 @@ npm run dev:api
 - `PORT` (optional): API port (default: `3000`).
 - `WEB_ORIGIN` (optional): CORS origin (default: `http://localhost:5173`).
 
-## Phase-one feature: Match creation and listing
+## Phase-one feature: Match creation, listing, and detail view
 
 ### Frontend (`apps/web`)
+
+The app uses route-based navigation:
+
+- `/`: create match form + match list
+- `/matches/:id`: single match detail view
 
 The web app includes a **Create Match** form with required-field validation for:
 
