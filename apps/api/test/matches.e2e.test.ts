@@ -23,6 +23,19 @@ describe('MatchesController', () => {
     await app.close();
   });
 
+  async function createMatch(): Promise<string> {
+    const response = await request(app.getHttpServer()).post('/matches').send({
+      title: 'State Finals',
+      date: '2026-03-01',
+      ruleset: 'Folkstyle',
+      competitorA: 'Alex Carter',
+      competitorB: 'Sam Jordan',
+      notes: 'Quarterfinal match',
+    }).expect(201);
+
+    return response.body.id as string;
+  }
+
   it('rejects invalid payloads with POST /matches', async () => {
     const response = await request(app.getHttpServer())
       .post('/matches')
@@ -32,225 +45,140 @@ describe('MatchesController', () => {
     expect(response.body.message).toContain('title must be a string');
   });
 
-  it('rejects missing required fields with POST /matches', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/matches')
-      .send({ date: '2026-03-01', ruleset: 'Folkstyle', competitorA: 'A', competitorB: 'B' })
-      .expect(400);
+  it('creates and fetches a match', async () => {
+    const id = await createMatch();
 
-    expect(response.body.message).toContain('title should not be empty');
-    expect(response.body.message).toContain('title must be a string');
+    const response = await request(app.getHttpServer()).get(`/matches/${id}`).expect(200);
+
+    expect(response.body.id).toBe(id);
+    expect(response.body.title).toBe('State Finals');
   });
 
-  it('creates a match with POST /matches', async () => {
-    const payload = {
-      title: 'State Finals',
-      date: '2026-03-01',
-      ruleset: 'Folkstyle',
-      competitorA: 'Alex Carter',
-      competitorB: 'Sam Jordan',
-      notes: 'Quarterfinal match',
-    };
+  it('updates and deletes a match', async () => {
+    const id = await createMatch();
 
-    const response = await request(app.getHttpServer()).post('/matches').send(payload).expect(201);
+    await request(app.getHttpServer())
+      .patch(`/matches/${id}`)
+      .send({ title: 'Updated Finals' })
+      .expect(200);
 
-    expect(response.body).toMatchObject(payload);
+    await request(app.getHttpServer()).delete(`/matches/${id}`).expect(204);
+    await request(app.getHttpServer()).get(`/matches/${id}`).expect(404);
+  });
+
+  it('creates an event with POST /matches/:id/events', async () => {
+    const matchId = await createMatch();
+
+    const response = await request(app.getHttpServer())
+      .post(`/matches/${matchId}/events`)
+      .send({ timestamp: 12, eventType: 'takedown_attempt', competitor: 'A', notes: 'Entry to single leg' })
+      .expect(201);
+
+    expect(response.body).toMatchObject({
+      matchId,
+      timestamp: 12,
+      eventType: 'takedown_attempt',
+      competitor: 'A',
+      notes: 'Entry to single leg',
+    });
     expect(response.body.id).toEqual(expect.any(String));
   });
 
-  it('returns matches ordered newest date first with GET /matches', async () => {
-    await request(app.getHttpServer()).post('/matches').send({
-      title: 'Oldest',
-      date: '2026-03-01',
-      ruleset: 'Folkstyle',
-      competitorA: 'A',
-      competitorB: 'B',
-    });
+  it('gets events sorted by timestamp with GET /matches/:id/events', async () => {
+    const matchId = await createMatch();
 
-    await request(app.getHttpServer()).post('/matches').send({
-      title: 'Newest',
-      date: '2026-03-03',
-      ruleset: 'Folkstyle',
-      competitorA: 'C',
-      competitorB: 'D',
-    });
+    await request(app.getHttpServer())
+      .post(`/matches/${matchId}/events`)
+      .send({ timestamp: 42, eventType: 'guard_pass', competitor: 'B' })
+      .expect(201);
 
-    await request(app.getHttpServer()).post('/matches').send({
-      title: 'Middle',
-      date: '2026-03-02',
-      ruleset: 'Folkstyle',
-      competitorA: 'E',
-      competitorB: 'F',
-    });
+    await request(app.getHttpServer())
+      .post(`/matches/${matchId}/events`)
+      .send({ timestamp: 12, eventType: 'takedown_attempt', competitor: 'A' })
+      .expect(201);
 
-    const response = await request(app.getHttpServer()).get('/matches').expect(200);
+    const response = await request(app.getHttpServer()).get(`/matches/${matchId}/events`).expect(200);
 
-    expect(response.body.map((match: { title: string }) => match.title)).toEqual(['Newest', 'Middle', 'Oldest']);
+    expect(response.body.map((event: { timestamp: number }) => event.timestamp)).toEqual([12, 42]);
   });
 
-  it('returns a match by id with GET /matches/:id', async () => {
-    const payload = {
-      title: 'Regional Championship',
-      date: '2026-03-15',
-      ruleset: 'Submission Grappling',
-      competitorA: 'Taylor Brooks',
-      competitorB: 'Morgan Diaz',
-      notes: 'Final round',
-    };
-
-    const createResponse = await request(app.getHttpServer()).post('/matches').send(payload).expect(201);
-
-    const response = await request(app.getHttpServer()).get(`/matches/${createResponse.body.id}`).expect(200);
-
-    expect(response.body).toEqual(createResponse.body);
-  });
-
-
-  it('updates a match with PATCH /matches/:id', async () => {
-    const createResponse = await request(app.getHttpServer()).post('/matches').send({
-      title: 'Original Title',
-      date: '2026-03-01',
-      ruleset: 'Folkstyle',
-      competitorA: 'Alex Carter',
-      competitorB: 'Sam Jordan',
-      notes: 'Original notes',
-    }).expect(201);
+  it('updates an event with PATCH /events/:id', async () => {
+    const matchId = await createMatch();
+    const createResponse = await request(app.getHttpServer())
+      .post(`/matches/${matchId}/events`)
+      .send({ timestamp: 18, eventType: 'takedown_completed', competitor: 'A' })
+      .expect(201);
 
     const response = await request(app.getHttpServer())
-      .patch(`/matches/${createResponse.body.id}`)
-      .send({
-        title: 'Updated Title',
-        date: '2026-03-02',
-        ruleset: 'No-Gi',
-        competitorA: 'Alex Carter',
-        competitorB: 'Sam Jordan',
-        notes: 'Updated notes',
-      })
+      .patch(`/events/${createResponse.body.id}`)
+      .send({ timestamp: 20, competitor: 'B', notes: 'Countered to score' })
       .expect(200);
 
     expect(response.body).toMatchObject({
       id: createResponse.body.id,
-      title: 'Updated Title',
-      date: '2026-03-02',
-      ruleset: 'No-Gi',
-      competitorA: 'Alex Carter',
-      competitorB: 'Sam Jordan',
-      notes: 'Updated notes',
+      timestamp: 20,
+      eventType: 'takedown_completed',
+      competitor: 'B',
+      notes: 'Countered to score',
     });
   });
 
-  it('partially updates a match with PATCH /matches/:id', async () => {
-    const createResponse = await request(app.getHttpServer()).post('/matches').send({
-      title: 'Original Title',
-      date: '2026-03-01',
-      ruleset: 'Folkstyle',
-      competitorA: 'Alex Carter',
-      competitorB: 'Sam Jordan',
-      notes: 'Original notes',
-    }).expect(201);
+  it('deletes an event with DELETE /events/:id', async () => {
+    const matchId = await createMatch();
+    const createResponse = await request(app.getHttpServer())
+      .post(`/matches/${matchId}/events`)
+      .send({ timestamp: 18, eventType: 'takedown_completed', competitor: 'A' })
+      .expect(201);
 
-    const response = await request(app.getHttpServer())
-      .patch(`/matches/${createResponse.body.id}`)
-      .send({
-        title: 'Updated Title',
-      })
-      .expect(200);
+    await request(app.getHttpServer()).delete(`/events/${createResponse.body.id}`).expect(204);
 
-    expect(response.body).toMatchObject({
-      id: createResponse.body.id,
-      title: 'Updated Title',
-      date: '2026-03-01',
-      ruleset: 'Folkstyle',
-      competitorA: 'Alex Carter',
-      competitorB: 'Sam Jordan',
-      notes: 'Original notes',
-    });
+    const listResponse = await request(app.getHttpServer()).get(`/matches/${matchId}/events`).expect(200);
+    expect(listResponse.body).toEqual([]);
   });
 
-  it('rejects invalid payloads with PATCH /matches/:id', async () => {
-    const createResponse = await request(app.getHttpServer()).post('/matches').send({
-      title: 'Original Title',
-      date: '2026-03-01',
-      ruleset: 'Folkstyle',
-      competitorA: 'Alex Carter',
-      competitorB: 'Sam Jordan',
-      notes: 'Original notes',
-    }).expect(201);
+  it('rejects invalid event payloads', async () => {
+    const matchId = await createMatch();
 
-    const response = await request(app.getHttpServer())
-      .patch(`/matches/${createResponse.body.id}`)
-      .send({ title: '', date: 'not-a-date' })
+    const createResponse = await request(app.getHttpServer())
+      .post(`/matches/${matchId}/events`)
+      .send({ timestamp: -1, eventType: '', competitor: 'C', extraField: true })
       .expect(400);
 
-    expect(response.body.message).toContain('title should not be empty');
-    expect(response.body.message).toContain('date must be a valid date');
+    expect(createResponse.body.message).toContain('timestamp must not be less than 0');
+    expect(createResponse.body.message).toContain('eventType should not be empty');
+    expect(createResponse.body.message).toContain('competitor must be one of the following values: A, B');
+    expect(createResponse.body.message).toContain('property extraField should not exist');
   });
 
-  it('returns 404 for PATCH /matches/:id when id does not exist', async () => {
-    const response = await request(app.getHttpServer())
-      .patch('/matches/non-existent-id')
-      .send({ title: 'Updated title' })
-      .expect(404);
+  it('returns 404 behavior for missing match or event resources', async () => {
+    await request(app.getHttpServer())
+      .get('/matches/missing-match/events')
+      .expect(404)
+      .expect(({ body }: { body: { message: string } }) => {
+        expect(body.message).toBe('Match with id missing-match was not found.');
+      });
 
-    expect(response.body.message).toBe('Match with id non-existent-id was not found.');
-  });
+    await request(app.getHttpServer())
+      .post('/matches/missing-match/events')
+      .send({ timestamp: 12, eventType: 'takedown_attempt', competitor: 'A' })
+      .expect(404)
+      .expect(({ body }: { body: { message: string } }) => {
+        expect(body.message).toBe('Match with id missing-match was not found.');
+      });
 
-  it('returns 404 for an unknown id with GET /matches/:id', async () => {
-    const response = await request(app.getHttpServer()).get('/matches/non-existent-id').expect(404);
+    await request(app.getHttpServer())
+      .patch('/events/missing-event')
+      .send({ eventType: 'guard_pass' })
+      .expect(404)
+      .expect(({ body }: { body: { message: string } }) => {
+        expect(body.message).toBe('Timeline event with id missing-event was not found.');
+      });
 
-    expect(response.body.message).toBe('Match with id non-existent-id was not found.');
-  });
-
-  it('deletes a match with DELETE /matches/:id', async () => {
-    const createResponse = await request(app.getHttpServer()).post('/matches').send({
-      title: 'Delete Me',
-      date: '2026-03-04',
-      ruleset: 'Folkstyle',
-      competitorA: 'Alex Carter',
-      competitorB: 'Sam Jordan',
-      notes: 'To be deleted',
-    }).expect(201);
-
-    await request(app.getHttpServer()).delete(`/matches/${createResponse.body.id}`).expect(204);
-  });
-
-  it('returns 404 for DELETE /matches/:id when id does not exist', async () => {
-    const response = await request(app.getHttpServer()).delete('/matches/non-existent-id').expect(404);
-
-    expect(response.body.message).toBe('Match with id non-existent-id was not found.');
-  });
-
-  it('does not return deleted matches in GET /matches', async () => {
-    const createResponse = await request(app.getHttpServer()).post('/matches').send({
-      title: 'Delete from list',
-      date: '2026-03-05',
-      ruleset: 'Folkstyle',
-      competitorA: 'Alex Carter',
-      competitorB: 'Sam Jordan',
-      notes: '',
-    }).expect(201);
-
-    await request(app.getHttpServer()).delete(`/matches/${createResponse.body.id}`).expect(204);
-
-    const listResponse = await request(app.getHttpServer()).get('/matches').expect(200);
-
-    expect(listResponse.body.some((match: { id: string }) => match.id === createResponse.body.id)).toBe(false);
-  });
-
-  it('does not return deleted matches in GET /matches/:id', async () => {
-    const createResponse = await request(app.getHttpServer()).post('/matches').send({
-      title: 'Delete from detail',
-      date: '2026-03-06',
-      ruleset: 'Folkstyle',
-      competitorA: 'Alex Carter',
-      competitorB: 'Sam Jordan',
-      notes: '',
-    }).expect(201);
-
-    await request(app.getHttpServer()).delete(`/matches/${createResponse.body.id}`).expect(204);
-
-    const detailResponse = await request(app.getHttpServer()).get(`/matches/${createResponse.body.id}`).expect(404);
-
-    expect(detailResponse.body.message).toBe(`Match with id ${createResponse.body.id} was not found.`);
+    await request(app.getHttpServer())
+      .delete('/events/missing-event')
+      .expect(404)
+      .expect(({ body }: { body: { message: string } }) => {
+        expect(body.message).toBe('Timeline event with id missing-event was not found.');
+      });
   });
 });

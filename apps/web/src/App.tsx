@@ -1,9 +1,18 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
-import type { Match } from '@scrambleiq/shared';
+import type { Match, TimelineEvent } from '@scrambleiq/shared';
 
 import { hasValidationErrors, MatchFormValues, MatchValidationErrors, validateMatchForm } from './match';
 import { createHttpMatchesApi, MatchNotFoundError, MatchesApi } from './matches-api';
+import {
+  formatTimestamp,
+  hasTimelineEventValidationErrors,
+  initialTimelineEventValues,
+  TimelineEventFormValues,
+  TimelineEventValidationErrors,
+  toCreateTimelineEventDto,
+  validateTimelineEventForm,
+} from './timeline-event';
 
 const initialValues: MatchFormValues = {
   title: '',
@@ -231,6 +240,16 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  const [events, setEvents] = useState<TimelineEvent[]>([]);
+  const [eventsError, setEventsError] = useState<string | null>(null);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+  const [isEventFormVisible, setIsEventFormVisible] = useState(false);
+  const [eventFormValues, setEventFormValues] = useState<TimelineEventFormValues>(initialTimelineEventValues);
+  const [eventFormErrors, setEventFormErrors] = useState<TimelineEventValidationErrors>({});
+  const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
+  const [eventSubmissionError, setEventSubmissionError] = useState<string | null>(null);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -278,7 +297,41 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
       }
     };
 
+    const loadEvents = async () => {
+      setIsLoadingEvents(true);
+      setEventsError(null);
+      setEvents([]);
+      setEditingEventId(null);
+      setEventFormValues(initialTimelineEventValues);
+      setEventFormErrors({});
+      setEventSubmissionError(null);
+      setIsEventFormVisible(false);
+
+      try {
+        const fetchedEvents = await api.listTimelineEvents(matchId);
+
+        if (isMounted) {
+          setEvents(fetchedEvents);
+        }
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        if (error instanceof MatchNotFoundError) {
+          return;
+        }
+
+        setEventsError('Unable to load timeline events right now.');
+      } finally {
+        if (isMounted) {
+          setIsLoadingEvents(false);
+        }
+      }
+    };
+
     void loadMatch();
+    void loadEvents();
 
     return () => {
       isMounted = false;
@@ -316,6 +369,73 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
     } finally {
       setIsSubmittingEdit(false);
     }
+  };
+
+  const submitEvent = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const validationErrors = validateTimelineEventForm(eventFormValues);
+    setEventFormErrors(validationErrors);
+
+    if (hasTimelineEventValidationErrors(validationErrors)) {
+      return;
+    }
+
+    setIsSubmittingEvent(true);
+    setEventSubmissionError(null);
+
+    try {
+      if (editingEventId) {
+        const updatedEvent = await api.updateTimelineEvent(editingEventId, toCreateTimelineEventDto(eventFormValues));
+        setEvents((previousEvents) =>
+          previousEvents
+            .map((currentEvent) => (currentEvent.id === editingEventId ? updatedEvent : currentEvent))
+            .sort((a, b) => a.timestamp - b.timestamp),
+        );
+      } else {
+        const createdEvent = await api.createTimelineEvent(matchId, toCreateTimelineEventDto(eventFormValues));
+        setEvents((previousEvents) => [...previousEvents, createdEvent].sort((a, b) => a.timestamp - b.timestamp));
+      }
+
+      setEventFormValues(initialTimelineEventValues);
+      setEventFormErrors({});
+      setEditingEventId(null);
+      setIsEventFormVisible(false);
+    } catch {
+      setEventSubmissionError('Unable to save timeline event. Please try again.');
+    } finally {
+      setIsSubmittingEvent(false);
+    }
+  };
+
+  const deleteEvent = async (eventId: string) => {
+    setEventSubmissionError(null);
+
+    try {
+      await api.deleteTimelineEvent(eventId);
+      setEvents((previousEvents) => previousEvents.filter((event) => event.id !== eventId));
+
+      if (editingEventId === eventId) {
+        setEditingEventId(null);
+        setEventFormValues(initialTimelineEventValues);
+        setEventFormErrors({});
+      }
+    } catch {
+      setEventSubmissionError('Unable to delete timeline event. Please try again.');
+    }
+  };
+
+  const startEditEvent = (eventToEdit: TimelineEvent) => {
+    setEditingEventId(eventToEdit.id);
+    setEventFormValues({
+      timestamp: String(eventToEdit.timestamp),
+      eventType: eventToEdit.eventType,
+      competitor: eventToEdit.competitor,
+      notes: eventToEdit.notes ?? '',
+    });
+    setEventFormErrors({});
+    setEventSubmissionError(null);
+    setIsEventFormVisible(true);
   };
 
   const deleteMatch = async () => {
@@ -483,6 +603,110 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
           )
         ) : null}
       </section>
+
+      {!isLoadingMatch && !isMatchNotFound && !matchError ? (
+        <section aria-labelledby="event-timeline-heading">
+          <h2 id="event-timeline-heading">Event Timeline</h2>
+
+          {!isEventFormVisible ? (
+            <button type="button" onClick={() => setIsEventFormVisible(true)}>
+              Add Event
+            </button>
+          ) : null}
+
+          {isEventFormVisible ? (
+            <form onSubmit={(event) => void submitEvent(event)} noValidate>
+              <h3>{editingEventId ? 'Edit Event' : 'Add Event'}</h3>
+
+              <label htmlFor="event-timestamp">Timestamp (seconds)</label>
+              <input
+                id="event-timestamp"
+                name="timestamp"
+                type="number"
+                min={0}
+                value={eventFormValues.timestamp}
+                onChange={(event) => setEventFormValues({ ...eventFormValues, timestamp: event.target.value })}
+              />
+              {eventFormErrors.timestamp ? <p>{eventFormErrors.timestamp}</p> : null}
+
+              <label htmlFor="event-type">Event Type</label>
+              <input
+                id="event-type"
+                name="eventType"
+                value={eventFormValues.eventType}
+                onChange={(event) => setEventFormValues({ ...eventFormValues, eventType: event.target.value })}
+              />
+              {eventFormErrors.eventType ? <p>{eventFormErrors.eventType}</p> : null}
+
+              <label htmlFor="event-competitor">Competitor</label>
+              <select
+                id="event-competitor"
+                name="competitor"
+                value={eventFormValues.competitor}
+                onChange={(event) =>
+                  setEventFormValues({ ...eventFormValues, competitor: event.target.value as '' | 'A' | 'B' })
+                }
+              >
+                <option value="">Select competitor</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+              </select>
+              {eventFormErrors.competitor ? <p>{eventFormErrors.competitor}</p> : null}
+
+              <label htmlFor="event-notes">Notes</label>
+              <textarea
+                id="event-notes"
+                name="notes"
+                value={eventFormValues.notes}
+                onChange={(event) => setEventFormValues({ ...eventFormValues, notes: event.target.value })}
+              />
+
+              <p>
+                <button type="submit" disabled={isSubmittingEvent}>
+                  {isSubmittingEvent ? 'Saving...' : editingEventId ? 'Save Event' : 'Create Event'}
+                </button>{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEventFormVisible(false);
+                    setEditingEventId(null);
+                    setEventFormValues(initialTimelineEventValues);
+                    setEventFormErrors({});
+                    setEventSubmissionError(null);
+                  }}
+                >
+                  Cancel
+                </button>
+              </p>
+              {eventSubmissionError ? <p>{eventSubmissionError}</p> : null}
+            </form>
+          ) : null}
+
+          {isLoadingEvents ? <p>Loading timeline events...</p> : null}
+          {eventsError ? <p>{eventsError}</p> : null}
+
+          {!isLoadingEvents && !eventsError && events.length === 0 ? <p>No timeline events yet.</p> : null}
+
+          {!isLoadingEvents && !eventsError && events.length > 0 ? (
+            <ul>
+              {events.map((event) => (
+                <li key={event.id}>
+                  <span>
+                    {formatTimestamp(event.timestamp)} {event.eventType} {event.competitor}
+                  </span>{' '}
+                  <button type="button" onClick={() => startEditEvent(event)}>
+                    Edit Event
+                  </button>{' '}
+                  <button type="button" onClick={() => void deleteEvent(event.id)}>
+                    Delete Event
+                  </button>
+                  {event.notes ? <p>Notes: {event.notes}</p> : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </section>
+      ) : null}
     </main>
   );
 }

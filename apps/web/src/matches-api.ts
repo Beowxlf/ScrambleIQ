@@ -1,9 +1,23 @@
-import type { CreateMatchDto, Match, UpdateMatchDto } from '@scrambleiq/shared';
+import type {
+  CreateMatchDto,
+  CreateTimelineEventDto,
+  Match,
+  TimelineEvent,
+  UpdateMatchDto,
+  UpdateTimelineEventDto,
+} from '@scrambleiq/shared';
 
 export class MatchNotFoundError extends Error {
   constructor(matchId: string) {
     super(`Match with id ${matchId} was not found.`);
     this.name = 'MatchNotFoundError';
+  }
+}
+
+export class TimelineEventNotFoundError extends Error {
+  constructor(eventId: string) {
+    super(`Timeline event with id ${eventId} was not found.`);
+    this.name = 'TimelineEventNotFoundError';
   }
 }
 
@@ -13,6 +27,10 @@ export interface MatchesApi {
   getMatch(id: string): Promise<Match>;
   updateMatch(id: string, payload: UpdateMatchDto): Promise<Match>;
   deleteMatch(id: string): Promise<void>;
+  createTimelineEvent(matchId: string, payload: CreateTimelineEventDto): Promise<TimelineEvent>;
+  listTimelineEvents(matchId: string): Promise<TimelineEvent[]>;
+  updateTimelineEvent(id: string, payload: UpdateTimelineEventDto): Promise<TimelineEvent>;
+  deleteTimelineEvent(id: string): Promise<void>;
 }
 
 interface HttpMatchesApiOptions {
@@ -104,6 +122,74 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
 
       if (!response.ok) {
         throw new Error('Failed to delete match.');
+      }
+    },
+
+    async createTimelineEvent(matchId, payload) {
+      const response = await fetchImpl(`${baseUrl}/matches/${matchId}/events`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.status === 404) {
+        throw new MatchNotFoundError(matchId);
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to create timeline event.');
+      }
+
+      return (await response.json()) as TimelineEvent;
+    },
+
+    async listTimelineEvents(matchId) {
+      const response = await fetchImpl(`${baseUrl}/matches/${matchId}/events`);
+
+      if (response.status === 404) {
+        throw new MatchNotFoundError(matchId);
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to load timeline events.');
+      }
+
+      return (await response.json()) as TimelineEvent[];
+    },
+
+    async updateTimelineEvent(id, payload) {
+      const response = await fetchImpl(`${baseUrl}/events/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.status === 404) {
+        throw new TimelineEventNotFoundError(id);
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to update timeline event.');
+      }
+
+      return (await response.json()) as TimelineEvent;
+    },
+
+    async deleteTimelineEvent(id) {
+      const response = await fetchImpl(`${baseUrl}/events/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.status === 404) {
+        throw new TimelineEventNotFoundError(id);
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to delete timeline event.');
       }
     },
   };
