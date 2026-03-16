@@ -200,4 +200,57 @@ describe('MatchesController', () => {
 
     expect(response.body.message).toBe('Match with id non-existent-id was not found.');
   });
+
+  it('deletes a match with DELETE /matches/:id', async () => {
+    const createResponse = await request(app.getHttpServer()).post('/matches').send({
+      title: 'Delete Me',
+      date: '2026-03-04',
+      ruleset: 'Folkstyle',
+      competitorA: 'Alex Carter',
+      competitorB: 'Sam Jordan',
+      notes: 'To be deleted',
+    }).expect(201);
+
+    await request(app.getHttpServer()).delete(`/matches/${createResponse.body.id}`).expect(204);
+  });
+
+  it('returns 404 for DELETE /matches/:id when id does not exist', async () => {
+    const response = await request(app.getHttpServer()).delete('/matches/non-existent-id').expect(404);
+
+    expect(response.body.message).toBe('Match with id non-existent-id was not found.');
+  });
+
+  it('does not return deleted matches in GET /matches', async () => {
+    const createResponse = await request(app.getHttpServer()).post('/matches').send({
+      title: 'Delete from list',
+      date: '2026-03-05',
+      ruleset: 'Folkstyle',
+      competitorA: 'Alex Carter',
+      competitorB: 'Sam Jordan',
+      notes: '',
+    }).expect(201);
+
+    await request(app.getHttpServer()).delete(`/matches/${createResponse.body.id}`).expect(204);
+
+    const listResponse = await request(app.getHttpServer()).get('/matches').expect(200);
+
+    expect(listResponse.body.some((match: { id: string }) => match.id === createResponse.body.id)).toBe(false);
+  });
+
+  it('does not return deleted matches in GET /matches/:id', async () => {
+    const createResponse = await request(app.getHttpServer()).post('/matches').send({
+      title: 'Delete from detail',
+      date: '2026-03-06',
+      ruleset: 'Folkstyle',
+      competitorA: 'Alex Carter',
+      competitorB: 'Sam Jordan',
+      notes: '',
+    }).expect(201);
+
+    await request(app.getHttpServer()).delete(`/matches/${createResponse.body.id}`).expect(204);
+
+    const detailResponse = await request(app.getHttpServer()).get(`/matches/${createResponse.body.id}`).expect(404);
+
+    expect(detailResponse.body.message).toBe(`Match with id ${createResponse.body.id} was not found.`);
+  });
 });

@@ -47,5 +47,15 @@ export class InMemoryMatchStore implements MatchStore {
     this.matches[index] = updated;
     return updated;
   }
-}
 
+  delete(id: string): boolean {
+    const index = this.matches.findIndex((match) => match.id === id);
+
+    if (index < 0) {
+      return false;
+    }
+
+    this.matches.splice(index, 1);
+    return true;
+  }
+}

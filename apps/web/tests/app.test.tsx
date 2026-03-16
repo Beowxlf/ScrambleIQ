@@ -19,6 +19,9 @@ function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
     updateMatch: async () => {
       throw new Error('updateMatch was not mocked');
     },
+    deleteMatch: async () => {
+      throw new Error('deleteMatch was not mocked');
+    },
     ...overrides,
   };
 }
@@ -326,6 +329,110 @@ describe('App', () => {
 
     expect(await screen.findByText('Unable to update match. Please try again.')).toBeInTheDocument();
     expect(screen.getByLabelText('Title')).toHaveValue('Unsaved Title');
+  });
+
+  it('shows a delete action on the match detail page', async () => {
+    const matchesApi = createMatchesApiMock({
+      listMatches: async () => [],
+      getMatch: async (id: string) => ({
+        id,
+        title: 'Open Finals',
+        date: '2026-03-10',
+        ruleset: 'Freestyle',
+        competitorA: 'Jordan Lee',
+        competitorB: 'Chris Park',
+        notes: 'Original notes',
+      }),
+      deleteMatch: async () => undefined,
+    });
+
+    window.history.replaceState({}, '', '/matches/match-1');
+
+    render(<App matchesApi={matchesApi} />);
+
+    expect(await screen.findByRole('button', { name: 'Delete Match' })).toBeInTheDocument();
+  });
+
+  it('requires confirmation before deleting a match', async () => {
+    const deleteMatch = vi.fn(async () => undefined);
+    const matchesApi = createMatchesApiMock({
+      listMatches: async () => [],
+      getMatch: async (id: string) => ({
+        id,
+        title: 'Open Finals',
+        date: '2026-03-10',
+        ruleset: 'Freestyle',
+        competitorA: 'Jordan Lee',
+        competitorB: 'Chris Park',
+        notes: 'Original notes',
+      }),
+      deleteMatch,
+    });
+
+    window.history.replaceState({}, '', '/matches/match-1');
+
+    render(<App matchesApi={matchesApi} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Delete Match' }));
+
+    expect(screen.getByText('Are you sure you want to delete this match?')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Confirm Delete' })).toBeInTheDocument();
+    expect(deleteMatch).not.toHaveBeenCalled();
+  });
+
+  it('navigates back to / after successful delete', async () => {
+    const deleteMatch = vi.fn(async () => undefined);
+    const matchesApi = createMatchesApiMock({
+      listMatches: async () => [],
+      getMatch: async (id: string) => ({
+        id,
+        title: 'Open Finals',
+        date: '2026-03-10',
+        ruleset: 'Freestyle',
+        competitorA: 'Jordan Lee',
+        competitorB: 'Chris Park',
+        notes: 'Original notes',
+      }),
+      deleteMatch,
+    });
+
+    window.history.replaceState({}, '', '/matches/match-1');
+
+    render(<App matchesApi={matchesApi} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Delete Match' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm Delete' }));
+
+    await waitFor(() => expect(deleteMatch).toHaveBeenCalledWith('match-1'));
+    expect(window.location.pathname).toBe('/');
+  });
+
+  it('shows an error and stays on detail page when delete fails', async () => {
+    const matchesApi = createMatchesApiMock({
+      listMatches: async () => [],
+      getMatch: async (id: string) => ({
+        id,
+        title: 'Open Finals',
+        date: '2026-03-10',
+        ruleset: 'Freestyle',
+        competitorA: 'Jordan Lee',
+        competitorB: 'Chris Park',
+        notes: 'Original notes',
+      }),
+      deleteMatch: async () => {
+        throw new Error('Server failure');
+      },
+    });
+
+    window.history.replaceState({}, '', '/matches/match-1');
+
+    render(<App matchesApi={matchesApi} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Delete Match' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm Delete' }));
+
+    expect(await screen.findByText('Unable to delete match. Please try again.')).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/matches/match-1');
   });
 
 });

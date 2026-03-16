@@ -12,6 +12,7 @@ export interface MatchesApi {
   listMatches(): Promise<Match[]>;
   getMatch(id: string): Promise<Match>;
   updateMatch(id: string, payload: UpdateMatchDto): Promise<Match>;
+  deleteMatch(id: string): Promise<void>;
 }
 
 interface HttpMatchesApiOptions {
@@ -90,6 +91,20 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       return (await response.json()) as Match;
+    },
+
+    async deleteMatch(id) {
+      const response = await fetchImpl(`${baseUrl}/matches/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.status === 404) {
+        throw new MatchNotFoundError(id);
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to delete match.');
+      }
     },
   };
 }

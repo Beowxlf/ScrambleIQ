@@ -46,7 +46,7 @@ npm run dev:api
 - `PORT` (optional): API port (default: `3000`).
 - `WEB_ORIGIN` (optional): CORS origin (default: `http://localhost:5173`).
 
-## Phase-one feature: Match creation, listing, detail view, and editing
+## Phase-one feature: Match creation, listing, detail view, editing, and deletion
 
 ### Frontend (`apps/web`)
 
@@ -69,6 +69,8 @@ The form is connected to the backend API. On submit, the frontend calls `POST /m
 
 From `/matches/:id`, users can enter **edit mode**, update match metadata (`title`, `date`, `ruleset`, `competitorA`, `competitorB`, `notes`), and submit changes without leaving the detail route. On failed updates, the UI shows an error message and keeps form input intact.
 
+From `/matches/:id`, users can also delete the match with a lightweight in-page confirmation step. On successful deletion, the app navigates back to `/`; on failure, it shows an error and keeps the user on the detail page.
+
 ### Backend (`apps/api`)
 
 The API exposes match endpoints backed by an in-memory store:
@@ -78,12 +80,15 @@ The API exposes match endpoints backed by an in-memory store:
 - `GET http://localhost:3000/matches`
 - `GET http://localhost:3000/matches/:id`
 - `PATCH http://localhost:3000/matches/:id`
+- `DELETE http://localhost:3000/matches/:id`
 
 `POST /matches` and `PATCH /matches/:id` enforce backend validation for required/optional fields, valid date format, and allowed properties.
 
 `GET /matches` returns matches sorted by newest `date` first.
 
 `PATCH /matches/:id` supports partial updates of existing match fields and returns the updated match. Unknown IDs return `404`.
+
+`DELETE /matches/:id` removes an existing match and returns `204 No Content`. Unknown IDs return `404`.
 
 Example POST body:
 

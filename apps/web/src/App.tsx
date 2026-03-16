@@ -227,6 +227,9 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
   const [editErrors, setEditErrors] = useState<MatchValidationErrors>({});
   const [editSubmissionError, setEditSubmissionError] = useState<string | null>(null);
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+  const [isDeleteConfirming, setIsDeleteConfirming] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -239,6 +242,9 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
       setIsEditMode(false);
       setEditSubmissionError(null);
       setEditErrors({});
+      setIsDeleteConfirming(false);
+      setIsDeleting(false);
+      setDeleteError(null);
 
       try {
         const fetchedMatch = await api.getMatch(matchId);
@@ -309,6 +315,20 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
       setEditSubmissionError('Unable to update match. Please try again.');
     } finally {
       setIsSubmittingEdit(false);
+    }
+  };
+
+  const deleteMatch = async () => {
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      await api.deleteMatch(matchId);
+      navigateTo('/');
+    } catch {
+      setDeleteError('Unable to delete match. Please try again.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -427,6 +447,38 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
                   Edit Match
                 </button>
               </p>
+              <div>
+                {!isDeleteConfirming ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDeleteConfirming(true);
+                      setDeleteError(null);
+                    }}
+                    disabled={isDeleting}
+                  >
+                    Delete Match
+                  </button>
+                ) : (
+                  <>
+                    <p>Are you sure you want to delete this match?</p>
+                    <button type="button" onClick={() => void deleteMatch()} disabled={isDeleting}>
+                      {isDeleting ? 'Deleting...' : 'Confirm Delete'}
+                    </button>{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsDeleteConfirming(false);
+                        setDeleteError(null);
+                      }}
+                      disabled={isDeleting}
+                    >
+                      Cancel
+                    </button>
+                  </>
+                )}
+              </div>
+              {deleteError ? <p>{deleteError}</p> : null}
             </article>
           )
         ) : null}
