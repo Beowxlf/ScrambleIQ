@@ -1,21 +1,11 @@
 import { FormEvent, useEffect, useState } from 'react';
 
-import type { DatasetValidationIssue, DatasetValidationReport, Match, MatchAnalyticsSummary, MatchDatasetExport, MatchVideo, PositionState } from '@scrambleiq/shared';
+import type { DatasetValidationIssue, DatasetValidationReport, Match, MatchAnalyticsSummary, MatchDatasetExport, MatchVideo } from '@scrambleiq/shared';
 
 import { hasValidationErrors, MatchFormValues, MatchValidationErrors, validateMatchForm } from '../match';
 import { MatchNotFoundError } from '../matches-api';
 import type { MatchesApi } from '../matches-api';
 import { navigateTo } from '../app/router';
-import { formatTimestamp } from '../timeline-event';
-import {
-  hasPositionStateValidationErrors,
-  initialPositionStateValues,
-  POSITION_TYPES,
-  PositionStateFormValues,
-  PositionStateValidationErrors,
-  toCreatePositionStateDto,
-  validatePositionStateForm,
-} from '../position-state';
 import {
   hasMatchVideoValidationErrors,
   initialMatchVideoValues,
@@ -26,6 +16,7 @@ import {
   validateMatchVideoForm,
 } from '../match-video';
 import { EventPanel } from '../features/events/EventPanel';
+import { PositionPanel } from '../features/positions/PositionPanel';
 
 const initialValues: MatchFormValues = {
   title: '',
@@ -65,18 +56,9 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
   const [isValidatingDataset, setIsValidatingDataset] = useState(false);
   const [datasetValidationError, setDatasetValidationError] = useState<string | null>(null);
 
-  const [positions, setPositions] = useState<PositionState[]>([]);
-  const [positionsError, setPositionsError] = useState<string | null>(null);
-  const [isLoadingPositions, setIsLoadingPositions] = useState(true);
   const [analytics, setAnalytics] = useState<MatchAnalyticsSummary | null>(null);
   const [analyticsError, setAnalyticsError] = useState<string | null>(null);
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(true);
-  const [isPositionFormVisible, setIsPositionFormVisible] = useState(false);
-  const [positionFormValues, setPositionFormValues] = useState<PositionStateFormValues>(initialPositionStateValues);
-  const [positionFormErrors, setPositionFormErrors] = useState<PositionStateValidationErrors>({});
-  const [isSubmittingPosition, setIsSubmittingPosition] = useState(false);
-  const [positionSubmissionError, setPositionSubmissionError] = useState<string | null>(null);
-  const [editingPositionId, setEditingPositionId] = useState<string | null>(null);
   const [video, setVideo] = useState<MatchVideo | null>(null);
   const [isLoadingVideo, setIsLoadingVideo] = useState(true);
   const [videoError, setVideoError] = useState<string | null>(null);
@@ -204,40 +186,6 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
       }
     };
 
-    const loadPositions = async () => {
-      setIsLoadingPositions(true);
-      setPositionsError(null);
-      setPositions([]);
-      setEditingPositionId(null);
-      setPositionFormValues(initialPositionStateValues);
-      setPositionFormErrors({});
-      setPositionSubmissionError(null);
-      setIsPositionFormVisible(false);
-
-      try {
-        const fetchedPositions = await api.listPositionStates(matchId);
-
-        if (isMounted) {
-          setPositions(fetchedPositions);
-        }
-      } catch (error) {
-        if (!isMounted) {
-          return;
-        }
-
-        if (error instanceof MatchNotFoundError) {
-          return;
-        }
-
-        setPositionsError('Unable to load position states right now.');
-      } finally {
-        if (isMounted) {
-          setIsLoadingPositions(false);
-        }
-      }
-    };
-
-    void loadPositions();
     void loadVideo();
     void loadAnalytics();
 
@@ -289,77 +237,6 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
     } finally {
       setIsLoadingAnalytics(false);
     }
-  };
-
-  const submitPosition = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    const validationErrors = validatePositionStateForm(positionFormValues);
-    setPositionFormErrors(validationErrors);
-
-    if (hasPositionStateValidationErrors(validationErrors)) {
-      return;
-    }
-
-    setIsSubmittingPosition(true);
-    setPositionSubmissionError(null);
-
-    try {
-      if (editingPositionId) {
-        const updatedPosition = await api.updatePositionState(editingPositionId, toCreatePositionStateDto(positionFormValues));
-        setPositions((previous) =>
-          previous
-            .map((position) => (position.id === editingPositionId ? updatedPosition : position))
-            .sort((a, b) => a.timestampStart - b.timestampStart),
-        );
-      } else {
-        const createdPosition = await api.createPositionState(matchId, toCreatePositionStateDto(positionFormValues));
-        setPositions((previous) => [...previous, createdPosition].sort((a, b) => a.timestampStart - b.timestampStart));
-      }
-
-      setPositionFormValues(initialPositionStateValues);
-      setPositionFormErrors({});
-      setEditingPositionId(null);
-      setIsPositionFormVisible(false);
-      await refreshAnalytics();
-    } catch {
-      setPositionSubmissionError('Unable to save position state. Please try again.');
-    } finally {
-      setIsSubmittingPosition(false);
-    }
-  };
-
-  const deletePosition = async (positionId: string) => {
-    setPositionSubmissionError(null);
-
-    try {
-      await api.deletePositionState(positionId);
-      setPositions((previous) => previous.filter((position) => position.id !== positionId));
-
-      await refreshAnalytics();
-
-      if (editingPositionId === positionId) {
-        setEditingPositionId(null);
-        setPositionFormValues(initialPositionStateValues);
-        setPositionFormErrors({});
-      }
-    } catch {
-      setPositionSubmissionError('Unable to delete position state. Please try again.');
-    }
-  };
-
-  const startEditPosition = (positionToEdit: PositionState) => {
-    setEditingPositionId(positionToEdit.id);
-    setPositionFormValues({
-      position: positionToEdit.position,
-      competitorTop: positionToEdit.competitorTop,
-      timestampStart: String(positionToEdit.timestampStart),
-      timestampEnd: String(positionToEdit.timestampEnd),
-      notes: positionToEdit.notes ?? '',
-    });
-    setPositionFormErrors({});
-    setPositionSubmissionError(null);
-    setIsPositionFormVisible(true);
   };
 
   const submitVideo = async (event: FormEvent<HTMLFormElement>) => {
@@ -862,140 +739,13 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
       ) : null}
 
       {!isLoadingMatch && !isMatchNotFound && !matchError ? (
-        <section aria-labelledby="position-timeline-heading">
-          <h2 id="position-timeline-heading">Position Timeline</h2>
-
-          {!isPositionFormVisible ? (
-            <button type="button" onClick={() => setIsPositionFormVisible(true)}>
-              Add Position
-            </button>
-          ) : null}
-
-          {isPositionFormVisible ? (
-            <form onSubmit={(event) => void submitPosition(event)} noValidate>
-              <h3>{editingPositionId ? 'Edit Position' : 'Add Position'}</h3>
-
-              <label htmlFor="position-type">Position</label>
-              <select
-                id="position-type"
-                name="position"
-                value={positionFormValues.position}
-                onChange={(event) =>
-                  setPositionFormValues({
-                    ...positionFormValues,
-                    position: event.target.value as PositionStateFormValues['position'],
-                  })
-                }
-              >
-                <option value="">Select position</option>
-                {POSITION_TYPES.map((positionType) => (
-                  <option key={positionType} value={positionType}>
-                    {positionType}
-                  </option>
-                ))}
-              </select>
-              {positionFormErrors.position ? <p>{positionFormErrors.position}</p> : null}
-
-              <label htmlFor="position-competitor-top">Top Competitor</label>
-              <select
-                id="position-competitor-top"
-                name="competitorTop"
-                value={positionFormValues.competitorTop}
-                onChange={(event) =>
-                  setPositionFormValues({
-                    ...positionFormValues,
-                    competitorTop: event.target.value as PositionStateFormValues['competitorTop'],
-                  })
-                }
-              >
-                <option value="">Select competitor</option>
-                <option value="A">A</option>
-                <option value="B">B</option>
-              </select>
-              {positionFormErrors.competitorTop ? <p>{positionFormErrors.competitorTop}</p> : null}
-
-              <label htmlFor="position-timestamp-start">Start Timestamp (seconds)</label>
-              <input
-                id="position-timestamp-start"
-                name="timestampStart"
-                type="number"
-                min={0}
-                value={positionFormValues.timestampStart}
-                onChange={(event) =>
-                  setPositionFormValues({ ...positionFormValues, timestampStart: event.target.value })
-                }
-              />
-              {positionFormErrors.timestampStart ? <p>{positionFormErrors.timestampStart}</p> : null}
-
-              <label htmlFor="position-timestamp-end">End Timestamp (seconds)</label>
-              <input
-                id="position-timestamp-end"
-                name="timestampEnd"
-                type="number"
-                min={1}
-                value={positionFormValues.timestampEnd}
-                onChange={(event) => setPositionFormValues({ ...positionFormValues, timestampEnd: event.target.value })}
-              />
-              {positionFormErrors.timestampEnd ? <p>{positionFormErrors.timestampEnd}</p> : null}
-
-              <label htmlFor="position-notes">Notes</label>
-              <textarea
-                id="position-notes"
-                name="notes"
-                value={positionFormValues.notes}
-                onChange={(event) => setPositionFormValues({ ...positionFormValues, notes: event.target.value })}
-              />
-
-              <p>
-                <button type="submit" disabled={isSubmittingPosition}>
-                  {isSubmittingPosition ? 'Saving...' : editingPositionId ? 'Save Position' : 'Create Position'}
-                </button>{' '}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsPositionFormVisible(false);
-                    setEditingPositionId(null);
-                    setPositionFormValues(initialPositionStateValues);
-                    setPositionFormErrors({});
-                    setPositionSubmissionError(null);
-                  }}
-                >
-                  Cancel
-                </button>
-              </p>
-              {positionSubmissionError ? <p>{positionSubmissionError}</p> : null}
-            </form>
-          ) : null}
-
-          {isLoadingPositions ? <p>Loading position states...</p> : null}
-          {positionsError ? <p>{positionsError}</p> : null}
-
-          {!isLoadingPositions && !positionsError && positions.length === 0 ? <p>No position states yet.</p> : null}
-
-          {!isLoadingPositions && !positionsError && positions.length > 0 ? (
-            <ul>
-              {positions.map((position) => (
-                <li key={position.id}>
-                  <button
-                    type="button"
-                    onClick={() => seekToTimestamp(position.timestampStart, { positionId: position.id })}
-                    aria-pressed={selectedPositionId === position.id}
-                  >
-                    {formatTimestamp(position.timestampStart)} - {formatTimestamp(position.timestampEnd)} {position.position} top:{' '}
-                    {position.competitorTop}
-                  </button>{' '}
-                  <button type="button" onClick={() => startEditPosition(position)}>
-                    Edit Position
-                  </button>{' '}
-                  <button type="button" onClick={() => void deletePosition(position.id)}>
-                    Delete Position
-                  </button>
-                  {position.notes ? <p>Notes: {position.notes}</p> : null}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </section>
+        <PositionPanel
+          api={api}
+          matchId={matchId}
+          selectedPositionId={selectedPositionId}
+          onSeekToTimestamp={(timestamp, positionId) => seekToTimestamp(timestamp, { positionId })}
+          onPositionsMutated={refreshAnalytics}
+        />
       ) : null}
     </main>
   );

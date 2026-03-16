@@ -227,6 +227,7 @@ Recommended small abstractions:
 - ✅ Slice 1 completed: match list + create flow extracted into `pages/MatchListPage.tsx`, `components/MatchCreateForm.tsx`, `components/MatchList.tsx`, and `hooks/useMatches.ts`.
 - ✅ Slice 2 completed: match detail orchestration is extracted into `pages/MatchDetailPage.tsx`, and `App.tsx` remains a thin composition root.
 - ✅ Slice 3 completed: event timeline annotation feature is extracted into `features/events` (`EventPanel`, `EventForm`, `EventList`, `useMatchEvents`) and wired through `MatchDetailPage` as a delegated module.
+- ✅ Slice 4 completed: position timeline feature is extracted into `features/positions` (`PositionPanel`, `PositionForm`, `PositionList`, `useMatchPositions`) and wired through `MatchDetailPage` as a delegated module.
 
 ## Incremental migration plan (ordered, small slices)
 
@@ -251,7 +252,8 @@ Recommended small abstractions:
    - ✅ completed: created `useMatchEvents` for event CRUD/form state
 
 6. **Extract position timeline module**
-   - mirror event extraction approach with `usePositionTimeline`
+   - ✅ completed: moved position form/list JSX + handlers into `features/positions`
+   - ✅ completed: created `useMatchPositions` for position CRUD/form state
 
 7. **Extract video review module**
    - isolate metadata form/player + seek-selection logic via `useVideoSeekSelection`
