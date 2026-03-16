@@ -1,5 +1,5 @@
 /* @vitest-environment jsdom */
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MatchDetailPage } from '../src/pages/MatchDetailPage';
@@ -131,5 +131,88 @@ describe('MatchDetailPage', () => {
     expect(window.location.pathname).toBe('/');
 
     pushStateSpy.mockRestore();
+  });
+
+  it('refreshes analytics after event and position mutations', async () => {
+    const getMatchAnalytics = vi.fn(async (matchId: string) => ({
+      matchId,
+      totalEventCount: 0,
+      eventCountsByType: {},
+      totalPositionCount: 0,
+      timeInPositionByTypeSeconds: {
+        standing: 0,
+        closed_guard: 0,
+        open_guard: 0,
+        half_guard: 0,
+        side_control: 0,
+        mount: 0,
+        back_control: 0,
+        north_south: 0,
+        leg_entanglement: 0,
+        scramble: 0,
+      },
+      competitorTopTimeByPositionSeconds: {
+        A: {
+          standing: 0,
+          closed_guard: 0,
+          open_guard: 0,
+          half_guard: 0,
+          side_control: 0,
+          mount: 0,
+          back_control: 0,
+          north_south: 0,
+          leg_entanglement: 0,
+          scramble: 0,
+        },
+        B: {
+          standing: 0,
+          closed_guard: 0,
+          open_guard: 0,
+          half_guard: 0,
+          side_control: 0,
+          mount: 0,
+          back_control: 0,
+          north_south: 0,
+          leg_entanglement: 0,
+          scramble: 0,
+        },
+      },
+      totalTrackedPositionTimeSeconds: 0,
+    }));
+
+    const api = createMatchesApiMock({
+      getMatchAnalytics,
+      createTimelineEvent: vi.fn(async () => ({ id: 'event-1', matchId: 'match-1', timestamp: 10, eventType: 'entry', competitor: 'A' as const })),
+      createPositionState: vi.fn(async () => ({
+        id: 'position-1',
+        matchId: 'match-1',
+        position: 'closed_guard' as const,
+        competitorTop: 'A' as const,
+        timestampStart: 12,
+        timestampEnd: 22,
+      })),
+    });
+
+    render(<MatchDetailPage api={api} matchId="match-1" />);
+
+    await screen.findByRole('heading', { name: 'Analytics Summary' });
+    await waitFor(() => expect(getMatchAnalytics).toHaveBeenCalledTimes(1));
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Add Event' }));
+    fireEvent.change(screen.getByLabelText('Timestamp (seconds)'), { target: { value: '10' } });
+    fireEvent.change(screen.getByLabelText('Event Type'), { target: { value: 'entry' } });
+    fireEvent.change(screen.getByLabelText('Competitor'), { target: { value: 'A' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create Event' }));
+
+    await waitFor(() => expect(getMatchAnalytics).toHaveBeenCalledTimes(2));
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Add Position' }));
+    fireEvent.change(screen.getByLabelText('Position'), { target: { value: 'closed_guard' } });
+    fireEvent.change(screen.getByLabelText('Top Competitor'), { target: { value: 'A' } });
+    fireEvent.change(screen.getByLabelText('Start Timestamp (seconds)'), { target: { value: '12' } });
+    fireEvent.change(screen.getByLabelText('End Timestamp (seconds)'), { target: { value: '22' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create Position' }));
+
+    await waitFor(() => expect(getMatchAnalytics).toHaveBeenCalledTimes(3));
   });
 });
