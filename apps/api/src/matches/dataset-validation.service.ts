@@ -6,39 +6,35 @@ import {
   type DatasetValidationIssue,
   type DatasetValidationReport,
   type MatchAnalyticsSummary,
+  type PositionState,
   type PositionType,
   type TimelineEvent,
-  type PositionState,
 } from '@scrambleiq/shared';
 
-import { EventStore } from './store/event-store';
-import { EVENT_STORE } from './store/event-store.token';
-import { MatchStore } from './store/match-store';
-import { MATCH_STORE } from './store/match-store.token';
-import { PositionStore } from './store/position-store';
-import { POSITION_STORE } from './store/position-store.token';
-import { VideoStore } from './store/video-store';
-import { VIDEO_STORE } from './store/video-store.token';
+import { EventRepository, EVENT_REPOSITORY } from '../repositories/event.repository';
+import { MatchRepository, MATCH_REPOSITORY } from '../repositories/match.repository';
+import { PositionRepository, POSITION_REPOSITORY } from '../repositories/position.repository';
+import { VideoRepository, VIDEO_REPOSITORY } from '../repositories/video.repository';
 
 @Injectable()
 export class DatasetValidationService {
   constructor(
-    @Inject(MATCH_STORE) private readonly matchStore: MatchStore,
-    @Inject(EVENT_STORE) private readonly eventStore: EventStore,
-    @Inject(POSITION_STORE) private readonly positionStore: PositionStore,
-    @Inject(VIDEO_STORE) private readonly videoStore: VideoStore,
+    @Inject(MATCH_REPOSITORY) private readonly matchRepository: MatchRepository,
+    @Inject(EVENT_REPOSITORY) private readonly eventRepository: EventRepository,
+    @Inject(POSITION_REPOSITORY) private readonly positionRepository: PositionRepository,
+    @Inject(VIDEO_REPOSITORY) private readonly videoRepository: VideoRepository,
   ) {}
 
-  validateMatchDataset(matchId: string, analyticsSummary: MatchAnalyticsSummary): DatasetValidationReport {
-    const match = this.matchStore.findById(matchId);
+  async validateMatchDataset(matchId: string, analyticsSummary: MatchAnalyticsSummary): Promise<DatasetValidationReport> {
+    const match = await this.matchRepository.findById(matchId);
 
     if (!match) {
       throw new NotFoundException(`Match with id ${matchId} was not found.`);
     }
 
-    const events = this.eventStore.findByMatchId(matchId);
-    const positions = this.positionStore.findPositionsByMatchId(matchId);
-    const video = this.videoStore.findVideoByMatchId(matchId);
+    const events = await this.eventRepository.findByMatchId(matchId);
+    const positions = await this.positionRepository.findByMatchId(matchId);
+    const video = await this.videoRepository.findByMatchId(matchId);
 
     const issues: DatasetValidationIssue[] = [];
 

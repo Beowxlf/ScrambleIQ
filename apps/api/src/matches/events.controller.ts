@@ -10,23 +10,23 @@ export class EventsController {
   constructor(@Inject(EventsService) private readonly eventsService: EventsService) {}
 
   @Post('matches/:id/events')
-  create(@Param('id', ParseUUIDPipe) matchId: string, @Body() payload: CreateTimelineEventDto): TimelineEvent {
+  create(@Param('id', ParseUUIDPipe) matchId: string, @Body() payload: CreateTimelineEventDto): Promise<TimelineEvent> {
     return this.eventsService.create(matchId, payload);
   }
 
   @Get('matches/:id/events')
-  findByMatch(@Param('id', ParseUUIDPipe) matchId: string): TimelineEvent[] {
+  findByMatch(@Param('id', ParseUUIDPipe) matchId: string): Promise<TimelineEvent[]> {
     return this.eventsService.findByMatch(matchId);
   }
 
   @Patch('events/:id')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() payload: UpdateTimelineEventDto): TimelineEvent {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() payload: UpdateTimelineEventDto): Promise<TimelineEvent> {
     return this.eventsService.update(id, payload);
   }
 
   @Delete('events/:id')
   @HttpCode(204)
-  delete(@Param('id', ParseUUIDPipe) id: string): void {
-    this.eventsService.delete(id);
+  delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    return this.eventsService.delete(id);
   }
 }

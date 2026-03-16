@@ -1,50 +1,48 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { PositionState } from '@scrambleiq/shared';
 
+import { MatchRepository, MATCH_REPOSITORY } from '../repositories/match.repository';
+import { PositionRepository, POSITION_REPOSITORY } from '../repositories/position.repository';
 import { CreatePositionStateDto } from './create-position-state.dto';
 import { UpdatePositionStateDto } from './update-position-state.dto';
 import { validateCreatePositionStatePayload, validateUpdatePositionStatePayload } from './position-state-validation';
-import { MatchStore } from './store/match-store';
-import { MATCH_STORE } from './store/match-store.token';
-import { PositionStore } from './store/position-store';
-import { POSITION_STORE } from './store/position-store.token';
 
 @Injectable()
 export class PositionsService {
   constructor(
-    @Inject(POSITION_STORE) private readonly positionStore: PositionStore,
-    @Inject(MATCH_STORE) private readonly matchStore: MatchStore,
+    @Inject(POSITION_REPOSITORY) private readonly positionRepository: PositionRepository,
+    @Inject(MATCH_REPOSITORY) private readonly matchRepository: MatchRepository,
   ) {}
 
-  create(matchId: string, input: CreatePositionStateDto): PositionState {
+  async create(matchId: string, input: CreatePositionStateDto): Promise<PositionState> {
     const errors = validateCreatePositionStatePayload(input);
 
     if (errors.length > 0) {
       throw new BadRequestException(errors);
     }
 
-    const match = this.matchStore.findById(matchId);
+    const match = await this.matchRepository.findById(matchId);
 
     if (!match) {
       throw new NotFoundException(`Match with id ${matchId} was not found.`);
     }
 
-    this.ensureNoOverlap(matchId, input.timestampStart, input.timestampEnd);
+    await this.ensureNoOverlap(matchId, input.timestampStart, input.timestampEnd);
 
-    return this.positionStore.create(matchId, input);
+    return this.positionRepository.create(matchId, input);
   }
 
-  findByMatch(matchId: string): PositionState[] {
-    const match = this.matchStore.findById(matchId);
+  async findByMatch(matchId: string): Promise<PositionState[]> {
+    const match = await this.matchRepository.findById(matchId);
 
     if (!match) {
       throw new NotFoundException(`Match with id ${matchId} was not found.`);
     }
 
-    return this.positionStore.findPositionsByMatchId(matchId);
+    return this.positionRepository.findByMatchId(matchId);
   }
 
-  update(id: string, input: UpdatePositionStateDto): PositionState {
+  async update(id: string, input: UpdatePositionStateDto): Promise<PositionState> {
     const errors = validateUpdatePositionStatePayload(input);
 
     if (errors.length > 0) {
@@ -55,7 +53,7 @@ export class PositionsService {
       throw new BadRequestException(['At least one field must be provided for update']);
     }
 
-    const currentPosition = this.positionStore.findPositionById(id);
+    const currentPosition = await this.positionRepository.findById(id);
 
     if (!currentPosition) {
       throw new NotFoundException(`Position state with id ${id} was not found.`);
@@ -68,9 +66,9 @@ export class PositionsService {
       throw new BadRequestException(['timestampEnd must be greater than timestampStart']);
     }
 
-    this.ensureNoOverlap(currentPosition.matchId, timestampStart, timestampEnd, id);
+    await this.ensureNoOverlap(currentPosition.matchId, timestampStart, timestampEnd, id);
 
-    const updated = this.positionStore.update(id, input);
+    const updated = await this.positionRepository.update(id, input);
 
     if (!updated) {
       throw new NotFoundException(`Position state with id ${id} was not found.`);
@@ -79,23 +77,22 @@ export class PositionsService {
     return updated;
   }
 
-  delete(id: string): void {
-    const existingPosition = this.positionStore.findPositionById(id);
+  async delete(id: string): Promise<void> {
+    const existingPosition = await this.positionRepository.findById(id);
 
     if (!existingPosition) {
       throw new NotFoundException(`Position state with id ${id} was not found.`);
     }
 
-    const isDeleted = this.positionStore.delete(id);
+    const isDeleted = await this.positionRepository.delete(id);
 
     if (!isDeleted) {
       throw new NotFoundException(`Position state with id ${id} was not found.`);
     }
   }
 
-  private ensureNoOverlap(matchId: string, start: number, end: number, excludeId?: string): void {
-    const hasOverlap = this.positionStore
-      .findPositionsByMatchId(matchId)
+  private async ensureNoOverlap(matchId: string, start: number, end: number, excludeId?: string): Promise<void> {
+    const hasOverlap = (await this.positionRepository.findByMatchId(matchId))
       .some((position) => position.id !== excludeId && start < position.timestampEnd && end > position.timestampStart);
 
     if (hasOverlap) {

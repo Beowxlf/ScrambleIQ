@@ -1,9 +1,9 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type {
   CompetitorSide,
+  DatasetValidationReport,
   Match,
   MatchAnalyticsSummary,
-  DatasetValidationReport,
   MatchDatasetEvent,
   MatchDatasetExport,
   MatchDatasetPosition,
@@ -14,57 +14,59 @@ import type {
 } from '@scrambleiq/shared';
 import { POSITION_TYPES } from '@scrambleiq/shared';
 
+import {
+  DATASET_VALIDATION_REPOSITORY,
+  DatasetValidationRepository,
+} from '../repositories/dataset-validation.repository';
+import { EventRepository, EVENT_REPOSITORY } from '../repositories/event.repository';
+import { MatchRepository, MATCH_REPOSITORY } from '../repositories/match.repository';
+import { PositionRepository, POSITION_REPOSITORY } from '../repositories/position.repository';
+import { VideoRepository, VIDEO_REPOSITORY } from '../repositories/video.repository';
 import { CreateMatchDto } from './create-match.dto';
-import { UpdateMatchDto } from './update-match.dto';
-import { validateCreateMatchPayload, validateUpdateMatchPayload } from './match-validation';
-import { EventStore } from './store/event-store';
-import { EVENT_STORE } from './store/event-store.token';
-import { MatchStore } from './store/match-store';
-import { MATCH_STORE } from './store/match-store.token';
-import { PositionStore } from './store/position-store';
-import { POSITION_STORE } from './store/position-store.token';
-import { VideoStore } from './store/video-store';
-import { VIDEO_STORE } from './store/video-store.token';
 import { DatasetValidationService } from './dataset-validation.service';
 import { ValidatedMatchListQuery } from './list-matches-query-validation';
+import { validateCreateMatchPayload, validateUpdateMatchPayload } from './match-validation';
+import { UpdateMatchDto } from './update-match.dto';
 
 @Injectable()
 export class MatchesService {
   constructor(
-    @Inject(MATCH_STORE) private readonly matchStore: MatchStore,
-    @Inject(EVENT_STORE) private readonly eventStore: EventStore,
-    @Inject(POSITION_STORE) private readonly positionStore: PositionStore,
-    @Inject(VIDEO_STORE) private readonly videoStore: VideoStore,
+    @Inject(MATCH_REPOSITORY) private readonly matchRepository: MatchRepository,
+    @Inject(EVENT_REPOSITORY) private readonly eventRepository: EventRepository,
+    @Inject(POSITION_REPOSITORY) private readonly positionRepository: PositionRepository,
+    @Inject(VIDEO_REPOSITORY) private readonly videoRepository: VideoRepository,
+    @Inject(DATASET_VALIDATION_REPOSITORY)
+    private readonly datasetValidationRepository: DatasetValidationRepository,
     @Inject(DatasetValidationService) private readonly datasetValidationService: DatasetValidationService,
   ) {}
 
-  create(input: CreateMatchDto): Match {
+  async create(input: CreateMatchDto): Promise<Match> {
     const errors = validateCreateMatchPayload(input);
 
     if (errors.length > 0) {
       throw new BadRequestException(errors);
     }
 
-    return this.matchStore.create(input);
+    return this.matchRepository.create(input);
   }
 
-  findAll(query: ValidatedMatchListQuery): MatchListResponse {
-    const matches = this.matchStore.findAll();
+  async findAll(query: ValidatedMatchListQuery): Promise<MatchListResponse> {
+    const matches = await this.matchRepository.findAll();
 
     const sortedMatches = matches
       .slice()
       .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
 
-    const summaries: MatchSummary[] = sortedMatches.map((match) => ({
+    const summaries: MatchSummary[] = await Promise.all(sortedMatches.map(async (match) => ({
       matchId: match.id,
       title: match.title,
       competitorA: match.competitorA,
       competitorB: match.competitorB,
       eventDate: match.date,
-      eventCount: this.eventStore.findByMatchId(match.id).length,
-      positionCount: this.positionStore.findPositionsByMatchId(match.id).length,
-      hasVideo: this.videoStore.findVideoByMatchId(match.id) !== undefined,
-    }));
+      eventCount: (await this.eventRepository.findByMatchId(match.id)).length,
+      positionCount: (await this.positionRepository.findByMatchId(match.id)).length,
+      hasVideo: (await this.videoRepository.findByMatchId(match.id)) !== undefined,
+    })));
 
     const filtered = summaries.filter((summary) => {
       if (query.competitor) {
@@ -100,7 +102,7 @@ export class MatchesService {
     };
   }
 
-  update(id: string, input: UpdateMatchDto): Match {
+  async update(id: string, input: UpdateMatchDto): Promise<Match> {
     const errors = validateUpdateMatchPayload(input);
 
     if (errors.length > 0) {
@@ -111,7 +113,7 @@ export class MatchesService {
       throw new BadRequestException(['At least one field must be provided for update']);
     }
 
-    const updatedMatch = this.matchStore.update(id, input);
+    const updatedMatch = await this.matchRepository.update(id, input);
 
     if (!updatedMatch) {
       throw new NotFoundException(`Match with id ${id} was not found.`);
@@ -120,52 +122,48 @@ export class MatchesService {
     return updatedMatch;
   }
 
-
-
-
-
-  validateDataset(id: string): DatasetValidationReport {
-    const analytics = this.getAnalytics(id);
-    return this.datasetValidationService.validateMatchDataset(id, analytics);
+  async validateDataset(id: string): Promise<DatasetValidationReport> {
+    const analytics = await this.getAnalytics(id);
+    const report = await this.datasetValidationService.validateMatchDataset(id, analytics);
+    await this.datasetValidationRepository.upsert(id, report);
+    return report;
   }
 
-  exportDataset(id: string): MatchDatasetExport {
-    const match = this.matchStore.findById(id);
+  async exportDataset(id: string): Promise<MatchDatasetExport> {
+    const match = await this.matchRepository.findById(id);
 
     if (!match) {
       throw new NotFoundException(`Match with id ${id} was not found.`);
     }
 
-    const events = this.eventStore
-      .findByMatchId(id)
+    const events = (await this.eventRepository.findByMatchId(id))
       .slice()
       .sort((a, b) => a.timestamp - b.timestamp) as MatchDatasetEvent[];
 
-    const positions = this.positionStore
-      .findPositionsByMatchId(id)
+    const positions = (await this.positionRepository.findByMatchId(id))
       .slice()
       .sort((a, b) => a.timestampStart - b.timestampStart) as MatchDatasetPosition[];
 
-    const video = (this.videoStore.findVideoByMatchId(id) ?? null) as MatchDatasetVideo | null;
+    const video = ((await this.videoRepository.findByMatchId(id)) ?? null) as MatchDatasetVideo | null;
 
     return {
       match,
       video,
       events,
       positions,
-      analytics: this.getAnalytics(id),
+      analytics: await this.getAnalytics(id),
     };
   }
 
-  getAnalytics(id: string): MatchAnalyticsSummary {
-    const match = this.matchStore.findById(id);
+  async getAnalytics(id: string): Promise<MatchAnalyticsSummary> {
+    const match = await this.matchRepository.findById(id);
 
     if (!match) {
       throw new NotFoundException(`Match with id ${id} was not found.`);
     }
 
-    const events = this.eventStore.findByMatchId(id);
-    const positions = this.positionStore.findPositionsByMatchId(id);
+    const events = await this.eventRepository.findByMatchId(id);
+    const positions = await this.positionRepository.findByMatchId(id);
 
     const eventCountsByType = events.reduce<Record<string, number>>((acc, event) => {
       acc[event.eventType] = (acc[event.eventType] ?? 0) + 1;
@@ -206,8 +204,8 @@ export class MatchesService {
     };
   }
 
-  findOne(id: string): Match {
-    const match = this.matchStore.findById(id);
+  async findOne(id: string): Promise<Match> {
+    const match = await this.matchRepository.findById(id);
 
     if (!match) {
       throw new NotFoundException(`Match with id ${id} was not found.`);
@@ -216,15 +214,11 @@ export class MatchesService {
     return match;
   }
 
-  delete(id: string): void {
-    const isDeleted = this.matchStore.delete(id);
+  async delete(id: string): Promise<void> {
+    const isDeleted = await this.matchRepository.delete(id);
 
     if (!isDeleted) {
       throw new NotFoundException(`Match with id ${id} was not found.`);
     }
-
-    this.eventStore.deleteByMatchId(id);
-    this.positionStore.deleteByMatchId(id);
-    this.videoStore.deleteByMatchId(id);
   }
 }

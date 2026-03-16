@@ -376,3 +376,53 @@ packages/
 Guidelines/
   Tech-Stack.md
 ```
+
+## API persistence layer (PostgreSQL + repository pattern)
+
+The API now uses a repository abstraction for persistence. Services depend on repository interfaces, not direct database calls.
+
+### Repository interfaces
+
+- `apps/api/src/repositories/match.repository.ts`
+- `apps/api/src/repositories/event.repository.ts`
+- `apps/api/src/repositories/position.repository.ts`
+- `apps/api/src/repositories/video.repository.ts`
+- `apps/api/src/repositories/dataset-validation.repository.ts`
+
+### PostgreSQL schema
+
+Migrations are SQL-first and live in `apps/api/migrations/`.
+
+Current base migration: `001_initial_schema.sql`.
+
+Tables:
+
+- `matches`
+- `events` (FK `match_id -> matches.id` ON DELETE CASCADE)
+- `positions` (FK `match_id -> matches.id` ON DELETE CASCADE)
+- `videos` (FK `match_id -> matches.id` ON DELETE CASCADE, unique per match)
+- `dataset_validation_results` (FK `match_id -> matches.id` ON DELETE CASCADE)
+- `schema_migrations` (migration tracking)
+
+Each domain table includes:
+
+- `id`
+- `created_at`
+- `updated_at`
+
+### Migration strategy
+
+- Strategy: SQL migrations + lightweight Node execution (`psql`).
+- Migration runner: `apps/api/src/database/database.migrations.ts`.
+- On API start, if `DATABASE_URL` is set, migrations are applied automatically before repository usage.
+
+### Runtime behavior by environment
+
+- With `DATABASE_URL` set: PostgreSQL repositories are used.
+- Without `DATABASE_URL`: API falls back to in-memory repository implementations (useful for local/unit test defaults).
+
+### Backend environment variables
+
+- `DATABASE_URL` (optional for local tests, required for PostgreSQL persistence)
+- `PORT` (optional): API port (default: `3000`)
+- `WEB_ORIGIN` (optional): CORS origin (default: `http://localhost:5173`)

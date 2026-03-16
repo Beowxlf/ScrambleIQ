@@ -10,23 +10,23 @@ export class VideosController {
   constructor(@Inject(VideosService) private readonly videosService: VideosService) {}
 
   @Post('matches/:id/video')
-  create(@Param('id', ParseUUIDPipe) matchId: string, @Body() payload: CreateMatchVideoDto): MatchVideo {
+  create(@Param('id', ParseUUIDPipe) matchId: string, @Body() payload: CreateMatchVideoDto): Promise<MatchVideo> {
     return this.videosService.create(matchId, payload);
   }
 
   @Get('matches/:id/video')
-  findByMatch(@Param('id', ParseUUIDPipe) matchId: string): MatchVideo {
+  findByMatch(@Param('id', ParseUUIDPipe) matchId: string): Promise<MatchVideo> {
     return this.videosService.findByMatch(matchId);
   }
 
   @Patch('video/:id')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() payload: UpdateMatchVideoDto): MatchVideo {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() payload: UpdateMatchVideoDto): Promise<MatchVideo> {
     return this.videosService.update(id, payload);
   }
 
   @Delete('video/:id')
   @HttpCode(204)
-  delete(@Param('id', ParseUUIDPipe) id: string): void {
-    this.videosService.delete(id);
+  delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    return this.videosService.delete(id);
   }
 }
