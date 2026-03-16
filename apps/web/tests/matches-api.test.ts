@@ -3,6 +3,16 @@ import { describe, expect, it, vi } from 'vitest';
 import { createHttpMatchesApi } from '../src/matches-api';
 
 describe('createHttpMatchesApi path parameter encoding', () => {
+
+  it('encodes list query params', async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ matches: [], total: 0, limit: 10, offset: 20 }), { status: 200 }));
+    const api = createHttpMatchesApi({ baseUrl: 'http://localhost:3000', fetchImpl });
+
+    await api.listMatches({ competitor: 'Alex Carter', hasVideo: true, limit: 10, offset: 20 });
+
+    expect(fetchImpl).toHaveBeenCalledWith('http://localhost:3000/matches?competitor=Alex+Carter&hasVideo=true&limit=10&offset=20');
+  });
+
   it('encodes match id path params', async () => {
     const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ id: 'ok' }), { status: 200 }));
     const api = createHttpMatchesApi({ baseUrl: 'http://localhost:3000', fetchImpl });

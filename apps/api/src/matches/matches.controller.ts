@@ -1,9 +1,11 @@
-import { Body, Controller, Delete, Get, HttpCode, Inject, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
-import type { DatasetValidationReport, Match, MatchAnalyticsSummary, MatchDatasetExport } from '@scrambleiq/shared';
+import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Inject, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import type { DatasetValidationReport, Match, MatchAnalyticsSummary, MatchDatasetExport, MatchListResponse } from '@scrambleiq/shared';
 
 import { CreateMatchDto } from './create-match.dto';
 import { MatchesService } from './matches.service';
 import { UpdateMatchDto } from './update-match.dto';
+import { ListMatchesQueryDto } from './list-matches-query.dto';
+import { validateAndNormalizeListMatchesQuery } from './list-matches-query-validation';
 
 @Controller('matches')
 export class MatchesController {
@@ -15,8 +17,14 @@ export class MatchesController {
   }
 
   @Get()
-  findAll(): Match[] {
-    return this.matchesService.findAll();
+  findAll(@Query() query: ListMatchesQueryDto): MatchListResponse {
+    const { value, errors } = validateAndNormalizeListMatchesQuery(query);
+
+    if (!value || errors.length > 0) {
+      throw new BadRequestException(errors);
+    }
+
+    return this.matchesService.findAll(value);
   }
 
 

@@ -8,6 +8,8 @@ import type {
   MatchDatasetExport,
   MatchDatasetPosition,
   MatchDatasetVideo,
+  MatchListResponse,
+  MatchSummary,
   PositionType,
 } from '@scrambleiq/shared';
 import { POSITION_TYPES } from '@scrambleiq/shared';
@@ -24,6 +26,7 @@ import { POSITION_STORE } from './store/position-store.token';
 import { VideoStore } from './store/video-store';
 import { VIDEO_STORE } from './store/video-store.token';
 import { DatasetValidationService } from './dataset-validation.service';
+import { ValidatedMatchListQuery } from './list-matches-query-validation';
 
 @Injectable()
 export class MatchesService {
@@ -45,8 +48,56 @@ export class MatchesService {
     return this.matchStore.create(input);
   }
 
-  findAll(): Match[] {
-    return this.matchStore.findAll();
+  findAll(query: ValidatedMatchListQuery): MatchListResponse {
+    const matches = this.matchStore.findAll();
+
+    const sortedMatches = matches
+      .slice()
+      .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+
+    const summaries: MatchSummary[] = sortedMatches.map((match) => ({
+      matchId: match.id,
+      title: match.title,
+      competitorA: match.competitorA,
+      competitorB: match.competitorB,
+      eventDate: match.date,
+      eventCount: this.eventStore.findByMatchId(match.id).length,
+      positionCount: this.positionStore.findPositionsByMatchId(match.id).length,
+      hasVideo: this.videoStore.findVideoByMatchId(match.id) !== undefined,
+    }));
+
+    const filtered = summaries.filter((summary) => {
+      if (query.competitor) {
+        const q = query.competitor.toLowerCase();
+        const matchesCompetitor = summary.competitorA.toLowerCase().includes(q)
+          || summary.competitorB.toLowerCase().includes(q);
+
+        if (!matchesCompetitor) {
+          return false;
+        }
+      }
+
+      if (query.dateFrom && summary.eventDate < query.dateFrom) {
+        return false;
+      }
+
+      if (query.dateTo && summary.eventDate > query.dateTo) {
+        return false;
+      }
+
+      if (query.hasVideo !== undefined && summary.hasVideo !== query.hasVideo) {
+        return false;
+      }
+
+      return true;
+    });
+
+    return {
+      matches: filtered.slice(query.offset, query.offset + query.limit),
+      total: filtered.length,
+      limit: query.limit,
+      offset: query.offset,
+    };
   }
 
   update(id: string, input: UpdateMatchDto): Match {

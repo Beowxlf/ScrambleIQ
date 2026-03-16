@@ -6,6 +6,7 @@ import type {
   DatasetValidationReport,
   Match,
   MatchAnalyticsSummary,
+  MatchListResponse,
   MatchDatasetExport,
   MatchVideo,
   PositionState,
@@ -46,7 +47,7 @@ export class MatchVideoNotFoundError extends Error {
 }
 export interface MatchesApi {
   createMatch(payload: CreateMatchDto): Promise<Match>;
-  listMatches(): Promise<Match[]>;
+  listMatches(query?: { competitor?: string; hasVideo?: boolean; limit?: number; offset?: number }): Promise<MatchListResponse>;
   getMatch(id: string): Promise<Match>;
   updateMatch(id: string, payload: UpdateMatchDto): Promise<Match>;
   deleteMatch(id: string): Promise<void>;
@@ -101,14 +102,33 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       return (await response.json()) as Match;
     },
 
-    async listMatches() {
-      const response = await fetchImpl(`${baseUrl}/matches`);
+    async listMatches(query) {
+      const searchParams = new URLSearchParams();
+
+      if (query?.competitor) {
+        searchParams.set('competitor', query.competitor);
+      }
+
+      if (query?.hasVideo !== undefined) {
+        searchParams.set('hasVideo', String(query.hasVideo));
+      }
+
+      if (query?.limit !== undefined) {
+        searchParams.set('limit', String(query.limit));
+      }
+
+      if (query?.offset !== undefined) {
+        searchParams.set('offset', String(query.offset));
+      }
+
+      const queryString = searchParams.toString();
+      const response = await fetchImpl(`${baseUrl}/matches${queryString ? `?${queryString}` : ''}`);
 
       if (!response.ok) {
         throw new Error('Failed to load matches.');
       }
 
-      return (await response.json()) as Match[];
+      return (await response.json()) as MatchListResponse;
     },
 
     async getMatch(id) {

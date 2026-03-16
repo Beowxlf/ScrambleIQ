@@ -194,6 +194,37 @@ Validation behavior:
 - unknown payload fields are rejected
 - position segments cannot overlap within a match timeline
 
+`GET /matches` returns deterministic match discovery summaries sorted by newest `eventDate` first (with `matchId` as a stable tie-breaker).
+
+Supported query parameters for `GET /matches`:
+
+- `competitor` (case-insensitive substring against `competitorA` or `competitorB`)
+- `dateFrom` and `dateTo` (inclusive `YYYY-MM-DD` range filter)
+- `hasVideo` (`true` or `false`)
+- `limit` and `offset` (pagination, default `limit=50`, `offset=0`)
+
+List response shape:
+
+```json
+{
+  "matches": [
+    {
+      "matchId": "d1b7...",
+      "title": "State Finals",
+      "competitorA": "Alex Carter",
+      "competitorB": "Sam Jordan",
+      "eventDate": "2026-03-01",
+      "eventCount": 12,
+      "positionCount": 8,
+      "hasVideo": true
+    }
+  ],
+  "total": 1,
+  "limit": 50,
+  "offset": 0
+}
+```
+
 `GET /matches/:id/events` returns timeline events sorted by ascending `timestamp`.
 
 `GET /matches/:id/positions` returns position states sorted by ascending `timestampStart`.

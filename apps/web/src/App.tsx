@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
-import type { DatasetValidationIssue, DatasetValidationReport, Match, MatchAnalyticsSummary, MatchDatasetExport, MatchVideo, PositionState, TimelineEvent } from '@scrambleiq/shared';
+import type { DatasetValidationIssue, DatasetValidationReport, Match, MatchAnalyticsSummary, MatchDatasetExport, MatchSummary, MatchVideo, PositionState, TimelineEvent } from '@scrambleiq/shared';
 
 import { hasValidationErrors, MatchFormValues, MatchValidationErrors, validateMatchForm } from './match';
 import { createHttpMatchesApi, MatchNotFoundError, MatchesApi } from './matches-api';
@@ -89,12 +89,14 @@ function downloadDatasetAsJson(dataset: MatchDatasetExport, matchId: string): vo
 function MatchListPage({ api }: { api: MatchesApi }) {
   const [formValues, setFormValues] = useState<MatchFormValues>(initialValues);
   const [errors, setErrors] = useState<MatchValidationErrors>({});
-  const [matches, setMatches] = useState<Match[]>([]);
+  const [matches, setMatches] = useState<MatchSummary[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingMatches, setIsLoadingMatches] = useState(true);
   const [submissionMessage, setSubmissionMessage] = useState<string | null>(null);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [matchesError, setMatchesError] = useState<string | null>(null);
+  const [competitorFilter, setCompetitorFilter] = useState('');
+  const [hasVideoOnly, setHasVideoOnly] = useState(false);
 
 
   useEffect(() => {
@@ -105,10 +107,13 @@ function MatchListPage({ api }: { api: MatchesApi }) {
       setMatchesError(null);
 
       try {
-        const fetchedMatches = await api.listMatches();
+        const fetchedMatches = await api.listMatches({
+          competitor: competitorFilter.trim() || undefined,
+          hasVideo: hasVideoOnly ? true : undefined,
+        });
 
         if (isMounted) {
-          setMatches(fetchedMatches);
+          setMatches(fetchedMatches.matches);
         }
       } catch {
         if (isMounted) {
@@ -126,7 +131,7 @@ function MatchListPage({ api }: { api: MatchesApi }) {
     return () => {
       isMounted = false;
     };
-  }, [api]);
+  }, [api, competitorFilter, hasVideoOnly]);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -145,7 +150,6 @@ function MatchListPage({ api }: { api: MatchesApi }) {
 
     try {
       const createdMatch = await api.createMatch(formValues);
-      setMatches((previousMatches) => [createdMatch, ...previousMatches]);
       setFormValues(initialValues);
       setErrors({});
       setSubmissionMessage('Match created successfully.');
@@ -229,6 +233,23 @@ function MatchListPage({ api }: { api: MatchesApi }) {
 
       <section aria-labelledby="match-list-heading">
         <h2 id="match-list-heading">Matches</h2>
+
+        <label htmlFor="competitor-filter">Filter by competitor</label>
+        <input
+          id="competitor-filter"
+          name="competitor-filter"
+          value={competitorFilter}
+          onChange={(event) => setCompetitorFilter(event.target.value)}
+        />
+
+        <label htmlFor="has-video-filter">Has video only</label>
+        <input
+          id="has-video-filter"
+          name="has-video-filter"
+          type="checkbox"
+          checked={hasVideoOnly}
+          onChange={(event) => setHasVideoOnly(event.target.checked)}
+        />
         {isLoadingMatches ? <p>Loading matches...</p> : null}
         {matchesError ? <p>{matchesError}</p> : null}
 
@@ -237,13 +258,14 @@ function MatchListPage({ api }: { api: MatchesApi }) {
         {!isLoadingMatches && !matchesError && matches.length > 0 ? (
           <ul>
             {matches.map((match) => (
-              <li key={match.id}>
+              <li key={match.matchId}>
                 <h3>{match.title}</h3>
-                <p>Date: {match.date}</p>
-                <p>Ruleset: {match.ruleset}</p>
-                <p>Competitor A: {match.competitorA}</p>
-                <p>Competitor B: {match.competitorB}</p>
-                <button type="button" onClick={() => navigateTo(`/matches/${match.id}`)}>
+                <p>Date: {match.eventDate}</p>
+                <p>Competitors: {match.competitorA} vs {match.competitorB}</p>
+                <p>Events: {match.eventCount}</p>
+                <p>Positions: {match.positionCount}</p>
+                <p>Video: {match.hasVideo ? 'Yes' : 'No'}</p>
+                <button type="button" onClick={() => navigateTo(`/matches/${match.matchId}`)}>
                   View Match
                 </button>
               </li>

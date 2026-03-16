@@ -12,7 +12,7 @@ function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
     createMatch: async () => {
       throw new Error('createMatch was not mocked');
     },
-    listMatches: async () => [],
+    listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
     getMatch: async () => {
       throw new Error('getMatch was not mocked');
     },
@@ -187,7 +187,7 @@ describe('App', () => {
 
     const matchesApi = createMatchesApiMock({
       createMatch,
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       getMatch: async (id: string) => ({
         id,
         title: 'State Finals',
@@ -219,7 +219,7 @@ describe('App', () => {
       createMatch: async () => {
         throw new Error('Server error');
       },
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
     });
 
     render(<App matchesApi={matchesApi} />);
@@ -237,17 +237,23 @@ describe('App', () => {
 
   it('opens a match detail view from the list', async () => {
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [
-        {
-          id: 'match-42',
-          title: 'City Open',
-          date: '2026-04-01',
-          ruleset: 'No-Gi',
-          competitorA: 'Pat Stone',
-          competitorB: 'Riley Cruz',
-          notes: 'Tight match',
-        },
-      ],
+      listMatches: async () => ({
+        matches: [
+          {
+            matchId: 'match-42',
+            title: 'City Open',
+            eventDate: '2026-04-01',
+            competitorA: 'Pat Stone',
+            competitorB: 'Riley Cruz',
+            eventCount: 3,
+            positionCount: 2,
+            hasVideo: true,
+          },
+        ],
+        total: 1,
+        limit: 50,
+        offset: 0,
+      }),
       getMatch: async (id: string) => ({
         id,
         title: 'City Open',
@@ -275,7 +281,7 @@ describe('App', () => {
 
   it('renders fetched match detail data when opening detail route directly', async () => {
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       getMatch: async (id: string) => ({
         id,
         title: 'Open Finals',
@@ -298,7 +304,7 @@ describe('App', () => {
 
   it('shows not found state when detail fetch returns 404', async () => {
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       getMatch: async (id: string) => {
         throw new MatchNotFoundError(id);
       },
@@ -313,7 +319,7 @@ describe('App', () => {
 
   it('shows an error state when detail fetch fails', async () => {
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       getMatch: async () => {
         throw new Error('Network failed');
       },
@@ -328,7 +334,7 @@ describe('App', () => {
 
   it('enters edit mode from the match detail page', async () => {
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       getMatch: async (id: string) => ({
         id,
         title: 'Open Finals',
@@ -352,7 +358,7 @@ describe('App', () => {
 
   it('renders edit form with existing match values', async () => {
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       getMatch: async (id: string) => ({
         id,
         title: 'Open Finals',
@@ -390,7 +396,7 @@ describe('App', () => {
     }));
 
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       getMatch: async (id: string) => ({
         id,
         title: 'Open Finals',
@@ -421,7 +427,7 @@ describe('App', () => {
 
   it('shows an error and preserves user input when update fails', async () => {
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       getMatch: async (id: string) => ({
         id,
         title: 'Open Finals',
@@ -451,7 +457,7 @@ describe('App', () => {
 
   it('shows a delete action on the match detail page', async () => {
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       getMatch: async (id: string) => ({
         id,
         title: 'Open Finals',
@@ -474,7 +480,7 @@ describe('App', () => {
   it('requires confirmation before deleting a match', async () => {
     const deleteMatch = vi.fn(async () => undefined);
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       getMatch: async (id: string) => ({
         id,
         title: 'Open Finals',
@@ -501,7 +507,7 @@ describe('App', () => {
   it('navigates back to / after successful delete', async () => {
     const deleteMatch = vi.fn(async () => undefined);
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       getMatch: async (id: string) => ({
         id,
         title: 'Open Finals',
@@ -527,7 +533,7 @@ describe('App', () => {
 
   it('shows an error and stays on detail page when delete fails', async () => {
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       getMatch: async (id: string) => ({
         id,
         title: 'Open Finals',
@@ -564,7 +570,7 @@ describe('App', () => {
     URL.revokeObjectURL = vi.fn(() => undefined);
 
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       getMatch: async (id: string) => ({
         id,
         title: 'Open Finals',
@@ -594,7 +600,7 @@ describe('App', () => {
 
   it('shows dataset export loading and error state', async () => {
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       getMatch: async (id: string) => ({
         id,
         title: 'Open Finals',
@@ -620,7 +626,7 @@ describe('App', () => {
 
   it('renders analytics section on match detail page', async () => {
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       getMatch: async (id: string) => ({
         id,
         title: 'Open Finals',
@@ -641,7 +647,7 @@ describe('App', () => {
 
   it('shows analytics loading state', async () => {
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       getMatch: async (id: string) => ({
         id,
         title: 'Open Finals',
@@ -665,7 +671,7 @@ describe('App', () => {
 
   it('shows analytics error state', async () => {
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       getMatch: async (id: string) => ({
         id,
         title: 'Open Finals',
@@ -688,7 +694,7 @@ describe('App', () => {
 
   it('renders analytics values from fetched data', async () => {
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       getMatch: async (id: string) => ({
         id,
         title: 'Open Finals',
@@ -757,7 +763,7 @@ describe('App', () => {
 
   it('shows analytics empty state when annotation data is minimal', async () => {
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       getMatch: async (id: string) => ({
         id,
         title: 'Open Finals',
@@ -785,7 +791,7 @@ describe('App', () => {
     }));
 
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       validateMatchDataset,
       getMatch: async (id: string) => ({
         id,
@@ -808,7 +814,7 @@ describe('App', () => {
 
   it('renders grouped validation issues', async () => {
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       validateMatchDataset: async (matchId: string): Promise<DatasetValidationReport> => ({
         matchId,
         isValid: false,
@@ -843,7 +849,7 @@ describe('App', () => {
 
   it('shows validation empty state when no issues exist', async () => {
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       getMatch: async (id: string) => ({
         id,
         title: 'Open Finals',
@@ -865,7 +871,7 @@ describe('App', () => {
 
   it('shows validation error state when request fails', async () => {
     const matchesApi = createMatchesApiMock({
-      listMatches: async () => [],
+      listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       validateMatchDataset: async () => {
         throw new Error('validate failed');
       },
@@ -886,6 +892,24 @@ describe('App', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Validate Dataset' }));
 
     expect(await screen.findByText('Unable to validate dataset right now. Please try again.')).toBeInTheDocument();
+  });
+
+
+  it('passes list filters to the API', async () => {
+    const listMatches = vi.fn(async () => ({ matches: [], total: 0, limit: 50, offset: 0 }));
+    const matchesApi = createMatchesApiMock({ listMatches });
+
+    render(<App matchesApi={matchesApi} />);
+
+    await waitFor(() => expect(listMatches).toHaveBeenCalledWith({ competitor: undefined, hasVideo: undefined }));
+
+    fireEvent.change(screen.getByLabelText('Filter by competitor'), { target: { value: 'Alex' } });
+
+    await waitFor(() => expect(listMatches).toHaveBeenLastCalledWith({ competitor: 'Alex', hasVideo: undefined }));
+
+    fireEvent.click(screen.getByLabelText('Has video only'));
+
+    await waitFor(() => expect(listMatches).toHaveBeenLastCalledWith({ competitor: 'Alex', hasVideo: true }));
   });
 
 });
