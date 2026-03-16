@@ -134,7 +134,7 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
     }
   };
 
-  const refreshAnalytics = async () => {
+  const refreshAnalytics = () => {
     setAnalyticsRefreshTrigger((currentValue) => currentValue + 1);
   };
 

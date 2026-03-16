@@ -74,6 +74,15 @@ Current extraction status:
 
 With dataset tooling extraction complete, the planned Phase-1 frontend modularization slices are now fully implemented.
 
+Phase-1 frontend architecture hardening pass is also complete. The frontend now follows a standardized feature module pattern across `apps/web/src/features/*`:
+
+- `*Panel` component acts as the feature container and composition root
+- `*Form` component handles feature input/edit UX (where applicable)
+- `*List`/`*Summary`/`*Report` component renders feature outputs
+- `useMatch*` hook owns feature-local data fetching, mutations, and local UI state
+
+`pages/MatchDetailPage.tsx` remains responsible only for page orchestration concerns: route-bound match loading/edit/delete, cross-feature analytics refresh triggers, and cross-feature video seek selection.
+
 ## Phase-one feature: Match management, timeline events, position tracking, and synchronized video review
 
 ### Frontend (`apps/web`)

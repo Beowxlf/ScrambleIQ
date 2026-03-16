@@ -358,3 +358,87 @@ Why first:
 - creates stable seams for subsequent feature extraction
 - minimal behavior change risk
 - easy to validate with existing application tests
+
+## Final Phase-1 architecture (implemented)
+
+### Final architecture diagram
+
+```text
+App.tsx (composition root)
+  -> app/AppShell.tsx
+    -> pages/MatchListPage.tsx
+      -> components/MatchCreateForm.tsx
+      -> components/MatchList.tsx
+      -> hooks/useMatches.ts
+    -> pages/MatchDetailPage.tsx (page orchestrator)
+      -> features/dataset/DatasetToolsPanel.tsx
+      -> features/analytics/AnalyticsPanel.tsx
+      -> features/video/VideoPanel.tsx
+      -> features/events/EventPanel.tsx
+      -> features/positions/PositionPanel.tsx
+```
+
+### Final module layout (`apps/web/src`)
+
+```text
+app/
+  AppShell.tsx
+  router.ts
+
+pages/
+  MatchListPage.tsx
+  MatchDetailPage.tsx
+
+components/
+  MatchCreateForm.tsx
+  MatchList.tsx
+
+hooks/
+  useMatches.ts
+
+features/
+  events/
+    EventPanel.tsx
+    EventForm.tsx
+    EventList.tsx
+    useMatchEvents.ts
+  positions/
+    PositionPanel.tsx
+    PositionForm.tsx
+    PositionList.tsx
+    useMatchPositions.ts
+  video/
+    VideoPanel.tsx
+    VideoMetadataForm.tsx
+    useMatchVideo.ts
+  analytics/
+    AnalyticsPanel.tsx
+    AnalyticsSummary.tsx
+    useMatchAnalytics.ts
+  dataset/
+    DatasetToolsPanel.tsx
+    DatasetValidationReport.tsx
+    useMatchDatasetTools.ts
+```
+
+### Standardized feature module pattern
+
+Phase-1 features now follow one consistent convention:
+
+1. **Panel** (`*Panel.tsx`)
+   - feature container that wires the feature hook to presentational pieces
+   - renders loading/error/empty/data states
+2. **Form** (`*Form.tsx`, when needed)
+   - controlled input and validation error rendering
+3. **Renderer** (`*List.tsx`, `*Summary.tsx`, or `*Report.tsx`)
+   - purely presentational output mapping
+4. **Hook** (`useMatch*.ts`)
+   - API calls via `MatchesApi`
+   - mutation + local form state transitions
+   - feature-local UI state reset logic
+
+### Hardening outcomes
+
+- Events and positions now use the same mutation callback contract (`() => void`) to trigger page-level analytics refresh without unnecessary async wrappers.
+- Analytics fetch behavior is normalized into a single effect keyed by `matchId` and `refreshTrigger`, removing duplicated load/refresh paths.
+- `MatchDetailPage` remains the only cross-feature coordinator (analytics refresh trigger + video seek selection), preserving page-orchestrates/features-encapsulate boundaries.

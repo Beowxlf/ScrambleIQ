@@ -15,7 +15,7 @@ import {
 interface UseMatchEventsArgs {
   api: MatchesApi;
   matchId: string;
-  onEventsMutated: () => Promise<void>;
+  onEventsMutated: () => void;
 }
 
 export function useMatchEvents({ api, matchId, onEventsMutated }: UseMatchEventsArgs) {
@@ -102,7 +102,7 @@ export function useMatchEvents({ api, matchId, onEventsMutated }: UseMatchEvents
       setEventFormErrors({});
       setEditingEventId(null);
       setIsEventFormVisible(false);
-      await onEventsMutated();
+      onEventsMutated();
     } catch {
       setEventSubmissionError('Unable to save timeline event. Please try again.');
     } finally {
@@ -117,7 +117,7 @@ export function useMatchEvents({ api, matchId, onEventsMutated }: UseMatchEvents
       await api.deleteTimelineEvent(eventId);
       setEvents((previousEvents) => previousEvents.filter((timelineEvent) => timelineEvent.id !== eventId));
 
-      await onEventsMutated();
+      onEventsMutated();
 
       if (editingEventId === eventId) {
         setEditingEventId(null);
