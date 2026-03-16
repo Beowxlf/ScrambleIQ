@@ -20,3 +20,10 @@ The current goal is to establish the project structure and manual-first product 
 1. `Guidelines/Tech-Stack.md` for stack and architecture
 2. `README.md` for setup and developer workflow
 3. `Guidelines/` for project planning and product documents
+
+## Monorepo conventions
+
+- Use npm workspaces rooted at the repository `package.json`.
+- Frontend code lives in `apps/web` (React + TypeScript + Vite).
+- Backend code lives in `apps/api` (NestJS + TypeScript).
+- Prefer root scripts (`npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`) for full-repo validation.
