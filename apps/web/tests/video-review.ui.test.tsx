@@ -83,6 +83,9 @@ function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
       },
       totalTrackedPositionTimeSeconds: 0,
     }),
+    exportMatchDataset: async () => {
+      throw new Error('exportMatchDataset was not mocked');
+    },
     getMatchVideo: async () => {
       throw new Error('Match video not found');
     },

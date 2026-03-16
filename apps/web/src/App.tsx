@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
-import type { Match, MatchAnalyticsSummary, MatchVideo, PositionState, TimelineEvent } from '@scrambleiq/shared';
+import type { Match, MatchAnalyticsSummary, MatchDatasetExport, MatchVideo, PositionState, TimelineEvent } from '@scrambleiq/shared';
 
 import { hasValidationErrors, MatchFormValues, MatchValidationErrors, validateMatchForm } from './match';
 import { createHttpMatchesApi, MatchNotFoundError, MatchesApi } from './matches-api';
@@ -74,6 +74,16 @@ function parseRoute(pathname: string): AppRoute {
 function navigateTo(pathname: string) {
   window.history.pushState({}, '', pathname);
   window.dispatchEvent(new PopStateEvent('popstate'));
+}
+
+function downloadDatasetAsJson(dataset: MatchDatasetExport, matchId: string): void {
+  const blob = new Blob([JSON.stringify(dataset, null, 2)], { type: 'application/json' });
+  const href = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = href;
+  link.download = `match-${matchId}-dataset.json`;
+  link.click();
+  URL.revokeObjectURL(href);
 }
 
 function MatchListPage({ api }: { api: MatchesApi }) {
@@ -258,6 +268,8 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
   const [isDeleteConfirming, setIsDeleteConfirming] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isExportingDataset, setIsExportingDataset] = useState(false);
+  const [datasetExportError, setDatasetExportError] = useState<string | null>(null);
 
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [eventsError, setEventsError] = useState<string | null>(null);
@@ -733,6 +745,20 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
     }
   };
 
+  const exportDataset = async () => {
+    setIsExportingDataset(true);
+    setDatasetExportError(null);
+
+    try {
+      const dataset = await api.exportMatchDataset(matchId);
+      downloadDatasetAsJson(dataset, matchId);
+    } catch {
+      setDatasetExportError('Unable to export dataset right now. Please try again.');
+    } finally {
+      setIsExportingDataset(false);
+    }
+  };
+
   const deleteMatch = async () => {
     setIsDeleting(true);
     setDeleteError(null);
@@ -860,8 +886,12 @@ function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string })
               <p>
                 <button type="button" onClick={() => setIsEditMode(true)}>
                   Edit Match
+                </button>{' '}
+                <button type="button" onClick={() => void exportDataset()} disabled={isExportingDataset}>
+                  {isExportingDataset ? 'Exporting...' : 'Export Dataset'}
                 </button>
               </p>
+              {datasetExportError ? <p>{datasetExportError}</p> : null}
               <div>
                 {!isDeleteConfirming ? (
                   <button

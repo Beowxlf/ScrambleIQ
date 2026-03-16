@@ -5,6 +5,7 @@ import type {
   CreateTimelineEventDto,
   Match,
   MatchAnalyticsSummary,
+  MatchDatasetExport,
   MatchVideo,
   PositionState,
   TimelineEvent,
@@ -58,6 +59,7 @@ export interface MatchesApi {
   deletePositionState(id: string): Promise<void>;
   createMatchVideo(matchId: string, payload: CreateMatchVideoDto): Promise<MatchVideo>;
   getMatchAnalytics(matchId: string): Promise<MatchAnalyticsSummary>;
+  exportMatchDataset(matchId: string): Promise<MatchDatasetExport>;
   getMatchVideo(matchId: string): Promise<MatchVideo>;
   updateMatchVideo(id: string, payload: UpdateMatchVideoDto): Promise<MatchVideo>;
   deleteMatchVideo(id: string): Promise<void>;
@@ -323,6 +325,21 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       return (await response.json()) as MatchVideo;
+    },
+
+
+    async exportMatchDataset(matchId) {
+      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(matchId)}/export`);
+
+      if (response.status === 404) {
+        throw new MatchNotFoundError(matchId);
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to export match dataset.');
+      }
+
+      return (await response.json()) as MatchDatasetExport;
     },
 
     async getMatchVideo(matchId) {

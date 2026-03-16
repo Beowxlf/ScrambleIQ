@@ -1,5 +1,14 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { CompetitorSide, Match, MatchAnalyticsSummary, PositionType } from '@scrambleiq/shared';
+import type {
+  CompetitorSide,
+  Match,
+  MatchAnalyticsSummary,
+  MatchDatasetEvent,
+  MatchDatasetExport,
+  MatchDatasetPosition,
+  MatchDatasetVideo,
+  PositionType,
+} from '@scrambleiq/shared';
 import { POSITION_TYPES } from '@scrambleiq/shared';
 
 import { CreateMatchDto } from './create-match.dto';
@@ -58,6 +67,36 @@ export class MatchesService {
   }
 
 
+
+
+
+  exportDataset(id: string): MatchDatasetExport {
+    const match = this.matchStore.findById(id);
+
+    if (!match) {
+      throw new NotFoundException(`Match with id ${id} was not found.`);
+    }
+
+    const events = this.eventStore
+      .findByMatchId(id)
+      .slice()
+      .sort((a, b) => a.timestamp - b.timestamp) as MatchDatasetEvent[];
+
+    const positions = this.positionStore
+      .findPositionsByMatchId(id)
+      .slice()
+      .sort((a, b) => a.timestampStart - b.timestampStart) as MatchDatasetPosition[];
+
+    const video = (this.videoStore.findVideoByMatchId(id) ?? null) as MatchDatasetVideo | null;
+
+    return {
+      match,
+      video,
+      events,
+      positions,
+      analytics: this.getAnalytics(id),
+    };
+  }
 
   getAnalytics(id: string): MatchAnalyticsSummary {
     const match = this.matchStore.findById(id);

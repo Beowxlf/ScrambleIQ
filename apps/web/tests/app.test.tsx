@@ -90,6 +90,43 @@ function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
       },
       totalTrackedPositionTimeSeconds: 0,
     }),
+    exportMatchDataset: async () => ({
+      match: {
+        id: 'match-1',
+        title: 'State Finals',
+        date: '2026-03-01',
+        ruleset: 'Folkstyle',
+        competitorA: 'Alex Carter',
+        competitorB: 'Sam Jordan',
+        notes: '',
+      },
+      video: null,
+      events: [],
+      positions: [],
+      analytics: {
+        matchId: 'match-1',
+        totalEventCount: 0,
+        eventCountsByType: {},
+        totalPositionCount: 0,
+        timeInPositionByTypeSeconds: {
+          standing: 0,
+          closed_guard: 0,
+          open_guard: 0,
+          half_guard: 0,
+          side_control: 0,
+          mount: 0,
+          back_control: 0,
+          north_south: 0,
+          leg_entanglement: 0,
+          scramble: 0,
+        },
+        competitorTopTimeByPositionSeconds: {
+          A: { standing: 0, closed_guard: 0, open_guard: 0, half_guard: 0, side_control: 0, mount: 0, back_control: 0, north_south: 0, leg_entanglement: 0, scramble: 0 },
+          B: { standing: 0, closed_guard: 0, open_guard: 0, half_guard: 0, side_control: 0, mount: 0, back_control: 0, north_south: 0, leg_entanglement: 0, scramble: 0 },
+        },
+        totalTrackedPositionTimeSeconds: 0,
+      },
+    }),
     getMatchVideo: async () => {
       throw new Error('Match video not found');
     },
@@ -510,6 +547,70 @@ describe('App', () => {
     expect(window.location.pathname).toBe('/matches/match-1');
   });
 
+
+
+  it('exports dataset and triggers download', async () => {
+    const exportMatchDataset = vi.fn(async () => createMatchesApiMock().exportMatchDataset('match-1'));
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+    const originalCreateObjectUrl = URL.createObjectURL;
+    const originalRevokeObjectUrl = URL.revokeObjectURL;
+    URL.createObjectURL = vi.fn(() => 'blob:dataset');
+    URL.revokeObjectURL = vi.fn(() => undefined);
+
+    const matchesApi = createMatchesApiMock({
+      listMatches: async () => [],
+      getMatch: async (id: string) => ({
+        id,
+        title: 'Open Finals',
+        date: '2026-03-10',
+        ruleset: 'Freestyle',
+        competitorA: 'Jordan Lee',
+        competitorB: 'Chris Park',
+        notes: '',
+      }),
+      exportMatchDataset,
+    });
+
+    window.history.replaceState({}, '', '/matches/match-1');
+    render(<App matchesApi={matchesApi} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Export Dataset' }));
+
+    await waitFor(() => expect(exportMatchDataset).toHaveBeenCalledWith('match-1'));
+    expect(clickSpy).toHaveBeenCalledTimes(1);
+    expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:dataset');
+
+    clickSpy.mockRestore();
+    URL.createObjectURL = originalCreateObjectUrl;
+    URL.revokeObjectURL = originalRevokeObjectUrl;
+  });
+
+  it('shows dataset export loading and error state', async () => {
+    const matchesApi = createMatchesApiMock({
+      listMatches: async () => [],
+      getMatch: async (id: string) => ({
+        id,
+        title: 'Open Finals',
+        date: '2026-03-10',
+        ruleset: 'Freestyle',
+        competitorA: 'Jordan Lee',
+        competitorB: 'Chris Park',
+        notes: '',
+      }),
+      exportMatchDataset: async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        throw new Error('export failed');
+      },
+    });
+
+    window.history.replaceState({}, '', '/matches/match-1');
+    render(<App matchesApi={matchesApi} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Export Dataset' }));
+    expect(await screen.findByRole('button', { name: 'Exporting...' })).toBeInTheDocument();
+    expect(await screen.findByText('Unable to export dataset right now. Please try again.')).toBeInTheDocument();
+  });
 
   it('renders analytics section on match detail page', async () => {
     const matchesApi = createMatchesApiMock({
