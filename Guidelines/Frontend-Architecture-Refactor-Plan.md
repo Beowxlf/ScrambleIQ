@@ -472,3 +472,26 @@ This keeps domain/application logic independent from persistence details and pre
 Migrations are SQL files executed by a lightweight Node migration runner (`apps/api/src/database/database.migrations.ts`) that uses `psql` with `DATABASE_URL`.
 
 This keeps dependency footprint small while providing deterministic schema evolution.
+
+### PostgreSQL integration test strategy
+
+To reduce persistence risk, backend integration coverage now executes repository and service tests against a real PostgreSQL instance.
+
+Local workflow:
+
+- `npm run test:integration` starts a Dockerized Postgres test DB (`apps/api/docker-compose.integration.yml`)
+- integration tests set `DATABASE_URL` to that container
+- tests reset schema and run migrations from `apps/api/migrations` before assertions
+
+CI workflow:
+
+- GitHub Actions includes a dedicated PostgreSQL integration job (`.github/workflows/ci.yml`)
+- job starts a PostgreSQL service container and sets `DATABASE_URL`
+- job runs `npm run test:integration --workspace @scrambleiq/api`
+
+Current integration assertions include:
+
+- migration-applied schema existence (tables + foreign keys)
+- repository CRUD and cascade semantics
+- service-level persistence across app restarts
+- analytics and dataset validation behavior on persisted records

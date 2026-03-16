@@ -54,6 +54,41 @@ npm run start --workspace @scrambleiq/api
 
 - `PORT` (optional): API port (default: `3000`).
 - `WEB_ORIGIN` (optional): CORS origin (default: `http://localhost:5173`).
+- `DATABASE_URL` (optional for runtime, required for PostgreSQL integration tests): PostgreSQL connection URL.
+
+## PostgreSQL integration testing
+
+Phase-1 now includes PostgreSQL-backed integration tests that validate real repository/service behavior against a live database.
+
+### Local setup (containerized test database)
+
+Requirements:
+
+- Docker with `docker compose`
+- `psql` available on your machine (the API PostgreSQL client uses `psql` internally)
+
+Run the full integration test flow:
+
+```bash
+npm run test:integration
+```
+
+This command uses `apps/api/scripts/run-integration-tests.sh` to:
+
+1. start `postgres:16-alpine` using `apps/api/docker-compose.integration.yml`
+2. set `DATABASE_URL=postgresql://scrambleiq:scrambleiq@127.0.0.1:55432/scrambleiq_test`
+3. run API integration tests (`apps/api/test/integration/**/*.test.ts`)
+4. stop and remove the database container and volume
+
+### Migration execution during integration tests
+
+Before integration assertions run, tests reset the DB schema and apply SQL migrations from `apps/api/migrations` using `DatabaseMigrationService`.
+
+Integration coverage verifies:
+
+- expected tables are present
+- foreign keys exist
+- `ON DELETE CASCADE` behavior works for child records
 
 ## Frontend architecture planning
 
@@ -341,6 +376,7 @@ Example timeline event POST body:
 npm run lint
 npm run typecheck
 npm run test
+npm run test:integration
 npm run build
 ```
 
@@ -362,6 +398,13 @@ GitHub Actions runs on every `push` and `pull_request` with the following steps:
 4. `npm run test`
 5. `npm run build`
 6. API runtime smoke check against `GET /health`
+
+PostgreSQL integration coverage runs in a dedicated CI job that:
+
+1. starts a PostgreSQL service container
+2. sets `DATABASE_URL`
+3. installs `postgresql-client` (`psql`)
+4. runs `npm run test:integration --workspace @scrambleiq/api`
 
 Workflow file: `.github/workflows/ci.yml`.
 

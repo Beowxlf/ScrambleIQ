@@ -201,8 +201,13 @@ export class InMemoryVideoRepository implements VideoRepository {
 
 @Injectable()
 export class InMemoryDatasetValidationRepository implements DatasetValidationRepository {
+  private readonly reports = new Map<string, DatasetValidationReport>();
+
   async upsert(matchId: string, report: DatasetValidationReport): Promise<void> {
-    void matchId;
-    void report;
+    this.reports.set(matchId, report);
+  }
+
+  async findByMatchId(matchId: string): Promise<DatasetValidationReport | undefined> {
+    return this.reports.get(matchId);
   }
 }

@@ -14,6 +14,7 @@
     "lint": "npm run lint --workspaces",
     "typecheck": "npm run typecheck --workspaces",
     "test": "npm run test --workspaces",
+    "test:integration": "bash apps/api/scripts/run-integration-tests.sh",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
