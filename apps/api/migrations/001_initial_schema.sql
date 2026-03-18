@@ -1,3 +1,5 @@
+SET search_path TO public;
+
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 CREATE TABLE IF NOT EXISTS matches (
