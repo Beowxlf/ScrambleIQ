@@ -11,7 +11,7 @@ export class DatabaseMigrationService implements OnModuleInit {
 
   async onModuleInit(): Promise<void> {
     await this.client.execute(`
-      CREATE TABLE IF NOT EXISTS schema_migrations (
+      CREATE TABLE IF NOT EXISTS public.schema_migrations (
         id TEXT PRIMARY KEY,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
@@ -25,7 +25,7 @@ export class DatabaseMigrationService implements OnModuleInit {
     for (const migrationFile of migrationFiles) {
       const migrationId = migrationFile.replace('.sql', '');
       const rows = await this.client.rows<{ id: string }>(
-        `SELECT id FROM schema_migrations WHERE id = ${sqlLiteral(migrationId)}`,
+        `SELECT id FROM public.schema_migrations WHERE id = ${sqlLiteral(migrationId)}`,
       );
 
       if (rows.length > 0) {
@@ -34,7 +34,7 @@ export class DatabaseMigrationService implements OnModuleInit {
 
       const migrationPath = path.join(migrationDir, migrationFile);
       await this.client.execute(`\\i ${migrationPath}`);
-      await this.client.execute(`INSERT INTO schema_migrations (id) VALUES (${sqlLiteral(migrationId)})`);
+      await this.client.execute(`INSERT INTO public.schema_migrations (id) VALUES (${sqlLiteral(migrationId)})`);
     }
   }
 

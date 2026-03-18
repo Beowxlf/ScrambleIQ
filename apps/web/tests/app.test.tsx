@@ -144,6 +144,18 @@ function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
   };
 }
 
+function createDeferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+
+  return { promise, resolve, reject };
+}
+
 describe('App', () => {
   beforeEach(() => {
     window.history.replaceState({}, '', '/');
@@ -599,6 +611,7 @@ describe('App', () => {
   });
 
   it('shows dataset export loading and error state', async () => {
+    const exportRequest = createDeferred<Awaited<ReturnType<MatchesApi['exportMatchDataset']>>>();
     const matchesApi = createMatchesApiMock({
       listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       getMatch: async (id: string) => ({
@@ -610,10 +623,7 @@ describe('App', () => {
         competitorB: 'Chris Park',
         notes: '',
       }),
-      exportMatchDataset: async () => {
-        await new Promise((resolve) => setTimeout(resolve, 50));
-        throw new Error('export failed');
-      },
+      exportMatchDataset: async () => exportRequest.promise,
     });
 
     window.history.replaceState({}, '', '/matches/match-1');
@@ -621,6 +631,9 @@ describe('App', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Export Dataset' }));
     expect(await screen.findByRole('button', { name: 'Exporting...' })).toBeInTheDocument();
+
+    exportRequest.reject(new Error('export failed'));
+
     expect(await screen.findByText('Unable to export dataset right now. Please try again.')).toBeInTheDocument();
   });
 
@@ -646,6 +659,7 @@ describe('App', () => {
   });
 
   it('shows analytics loading state', async () => {
+    const analyticsRequest = createDeferred<Awaited<ReturnType<MatchesApi['getMatchAnalytics']>>>();
     const matchesApi = createMatchesApiMock({
       listMatches: async () => ({ matches: [], total: 0, limit: 50, offset: 0 }),
       getMatch: async (id: string) => ({
@@ -657,16 +671,61 @@ describe('App', () => {
         competitorB: 'Chris Park',
         notes: '',
       }),
-      getMatchAnalytics: async () => {
-        await new Promise((resolve) => setTimeout(resolve, 50));
-        return createMatchesApiMock().getMatchAnalytics('match-1');
-      },
+      getMatchAnalytics: async () => analyticsRequest.promise,
     });
 
     window.history.replaceState({}, '', '/matches/match-1');
     render(<App matchesApi={matchesApi} />);
 
     expect(await screen.findByText('Loading analytics summary...')).toBeInTheDocument();
+
+    analyticsRequest.resolve({
+      matchId: 'match-1',
+      totalEventCount: 0,
+      eventCountsByType: {},
+      totalPositionCount: 0,
+      timeInPositionByTypeSeconds: {
+        standing: 0,
+        closed_guard: 0,
+        open_guard: 0,
+        half_guard: 0,
+        side_control: 0,
+        mount: 0,
+        back_control: 0,
+        north_south: 0,
+        leg_entanglement: 0,
+        scramble: 0,
+      },
+      competitorTopTimeByPositionSeconds: {
+        A: {
+          standing: 0,
+          closed_guard: 0,
+          open_guard: 0,
+          half_guard: 0,
+          side_control: 0,
+          mount: 0,
+          back_control: 0,
+          north_south: 0,
+          leg_entanglement: 0,
+          scramble: 0,
+        },
+        B: {
+          standing: 0,
+          closed_guard: 0,
+          open_guard: 0,
+          half_guard: 0,
+          side_control: 0,
+          mount: 0,
+          back_control: 0,
+          north_south: 0,
+          leg_entanglement: 0,
+          scramble: 0,
+        },
+      },
+      totalTrackedPositionTimeSeconds: 0,
+    });
+
+    expect(await screen.findByText('Not enough annotation data yet. Add events or position states to generate analytics.')).toBeInTheDocument();
   });
 
   it('shows analytics error state', async () => {
