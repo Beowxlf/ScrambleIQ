@@ -104,7 +104,7 @@ describe('AnalyticsPanel', () => {
     vi.clearAllMocks();
   });
 
-  it('renders analytics summary details after loading completes', async () => {
+  it('renders coach-focused analytics summaries after loading completes', async () => {
     const api = createMatchesApiMock({
       getMatchAnalytics: async (matchId: string) => ({
         matchId,
@@ -156,10 +156,14 @@ describe('AnalyticsPanel', () => {
     render(<AnalyticsPanel api={api} matchId="match-1" refreshTrigger={0} />);
 
     expect(screen.getByText('Loading analytics summary...')).toBeInTheDocument();
-    expect(await screen.findByText('Total events:')).toBeInTheDocument();
-    expect(screen.getByText('takedown')).toBeInTheDocument();
-    expect(screen.getByText((_content, element) => element?.textContent === 'standing: 12')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Coach summary' })).toBeInTheDocument();
+    expect(screen.getByText('Annotation coverage:')).toBeInTheDocument();
+    expect(screen.getByText('Most frequent event:')).toBeInTheDocument();
+    expect(screen.getByText('Most tracked position:')).toBeInTheDocument();
+    expect(screen.getByText('Top-control leader:')).toBeInTheDocument();
+    expect(screen.getByText((_content, element) => element?.textContent === 'standing: 12s (60%)')).toBeInTheDocument();
     expect(screen.getByText('Competitor A')).toBeInTheDocument();
+    expect(screen.getByText((_content, element) => element?.textContent === 'Total top control time: 14s')).toBeInTheDocument();
   });
 
   it('renders analytics error state when analytics fetch fails', async () => {
@@ -228,7 +232,7 @@ describe('AnalyticsPanel', () => {
         eventCountsByType: { takedown: 1 },
         totalPositionCount: 0,
         timeInPositionByTypeSeconds: {
-          standing: 0,
+          standing: 60,
           closed_guard: 0,
           open_guard: 0,
           half_guard: 0,
@@ -241,7 +245,7 @@ describe('AnalyticsPanel', () => {
         },
         competitorTopTimeByPositionSeconds: {
           A: {
-            standing: 0,
+            standing: 30,
             closed_guard: 0,
             open_guard: 0,
             half_guard: 0,
@@ -253,7 +257,7 @@ describe('AnalyticsPanel', () => {
             scramble: 0,
           },
           B: {
-            standing: 0,
+            standing: 20,
             closed_guard: 0,
             open_guard: 0,
             half_guard: 0,
@@ -265,7 +269,7 @@ describe('AnalyticsPanel', () => {
             scramble: 0,
           },
         },
-        totalTrackedPositionTimeSeconds: 0,
+        totalTrackedPositionTimeSeconds: 60,
       });
 
     const api = createMatchesApiMock({ getMatchAnalytics });
@@ -276,6 +280,61 @@ describe('AnalyticsPanel', () => {
     rerender(<AnalyticsPanel api={api} matchId="match-1" refreshTrigger={1} />);
 
     await waitFor(() => expect(getMatchAnalytics).toHaveBeenCalledTimes(2));
-    expect(await screen.findByText('Total events:')).toBeInTheDocument();
+    expect(await screen.findByText('Competitor A led top control by 10 seconds.')).toBeInTheDocument();
+  });
+
+  it('classifies a substantial annotation set when event, position, and tracked time are high', async () => {
+    const api = createMatchesApiMock({
+      getMatchAnalytics: async (matchId: string) => ({
+        matchId,
+        totalEventCount: 16,
+        eventCountsByType: { takedown: 6, pass: 5, sweep: 5 },
+        totalPositionCount: 8,
+        timeInPositionByTypeSeconds: {
+          standing: 90,
+          closed_guard: 80,
+          open_guard: 60,
+          half_guard: 40,
+          side_control: 20,
+          mount: 10,
+          back_control: 0,
+          north_south: 0,
+          leg_entanglement: 0,
+          scramble: 0,
+        },
+        competitorTopTimeByPositionSeconds: {
+          A: {
+            standing: 120,
+            closed_guard: 30,
+            open_guard: 20,
+            half_guard: 10,
+            side_control: 0,
+            mount: 0,
+            back_control: 0,
+            north_south: 0,
+            leg_entanglement: 0,
+            scramble: 0,
+          },
+          B: {
+            standing: 40,
+            closed_guard: 10,
+            open_guard: 0,
+            half_guard: 0,
+            side_control: 0,
+            mount: 0,
+            back_control: 0,
+            north_south: 0,
+            leg_entanglement: 0,
+            scramble: 0,
+          },
+        },
+        totalTrackedPositionTimeSeconds: 300,
+      }),
+    });
+
+    render(<AnalyticsPanel api={api} matchId="match-2" refreshTrigger={0} />);
+
+    expect(await screen.findByText('Substantial (24 total annotations)')).toBeInTheDocument();
+    expect(screen.getByText('Competitor A led top control by 130 seconds.')).toBeInTheDocument();
   });
 });
