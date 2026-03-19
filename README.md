@@ -17,8 +17,10 @@ This repository includes a minimal full-stack TypeScript scaffold aligned to the
 ## Install
 
 ```bash
-npm install
+npm ci
 ```
+
+> Use `npm ci` for deterministic installs from `package-lock.json` in both local setup and CI.
 
 ## Run locally
 
@@ -73,7 +75,7 @@ Requirements:
 - Docker with `docker compose`
 - `psql` available on your machine (the API PostgreSQL client uses `psql` internally)
 
-Run the full integration test flow:
+Run the local integration test flow:
 
 ```bash
 npm run test:integration
@@ -85,6 +87,22 @@ This command uses `apps/api/scripts/run-integration-tests.sh` to:
 2. set `DATABASE_URL=postgresql://scrambleiq:scrambleiq@127.0.0.1:55432/scrambleiq_test`
 3. run API integration tests (`apps/api/test/integration/**/*.test.ts`)
 4. stop and remove the database container and volume
+
+### CI integration mode (GitHub Actions service container)
+
+CI does **not** run Docker Compose from this repository script. The workflow starts a GitHub Actions PostgreSQL service, sets `DATABASE_URL`, then runs API integration tests directly:
+
+```bash
+npm run test:integration:ci
+```
+
+This maps to:
+
+```bash
+npm run test:integration --workspace @scrambleiq/api
+```
+
+Use this command when you already have a PostgreSQL instance available and only need the API integration test suite.
 
 ### Migration execution during integration tests
 
@@ -398,7 +416,7 @@ curl http://127.0.0.1:3100/health
 
 GitHub Actions runs on every `push` and `pull_request` with the following steps:
 
-1. `npm install`
+1. `npm ci`
 2. `npm run lint`
 3. `npm run typecheck`
 4. `npm run test`
@@ -410,7 +428,7 @@ PostgreSQL integration coverage runs in a dedicated CI job that:
 1. starts a PostgreSQL service container
 2. sets `DATABASE_URL`
 3. installs `postgresql-client` (`psql`)
-4. runs `npm run test:integration --workspace @scrambleiq/api`
+4. runs `npm run test:integration:ci`
 
 Workflow file: `.github/workflows/ci.yml`.
 
