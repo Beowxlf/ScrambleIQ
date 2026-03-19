@@ -10,6 +10,8 @@ describe('AppController', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
+    process.env.API_AUTH_TOKEN = 'test-api-token';
+
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -20,6 +22,7 @@ describe('AppController', () => {
   });
 
   afterAll(async () => {
+    delete process.env.API_AUTH_TOKEN;
     await app.close();
   });
 
@@ -28,5 +31,9 @@ describe('AppController', () => {
       .get('/health')
       .expect(200)
       .expect({ status: 'ok', service: 'scrambleiq-api' });
+  });
+
+  it('rejects unauthenticated access to protected routes', async () => {
+    await request(app.getHttpServer()).get('/matches').expect(401);
   });
 });

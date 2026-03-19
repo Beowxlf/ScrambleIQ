@@ -10,7 +10,7 @@ describe('createHttpMatchesApi path parameter encoding', () => {
 
     await api.listMatches({ competitor: 'Alex Carter', dateFrom: '2026-01-01', dateTo: '2026-01-31', hasVideo: true, limit: 10, offset: 20 });
 
-    expect(fetchImpl).toHaveBeenCalledWith('http://localhost:3000/matches?competitor=Alex+Carter&dateFrom=2026-01-01&dateTo=2026-01-31&hasVideo=true&limit=10&offset=20');
+    expect(fetchImpl).toHaveBeenCalledWith('http://localhost:3000/matches?competitor=Alex+Carter&dateFrom=2026-01-01&dateTo=2026-01-31&hasVideo=true&limit=10&offset=20', expect.objectContaining({ headers: expect.objectContaining({ 'x-api-key': 'scrambleiq-local-dev-token' }) }));
   });
 
   it('encodes match id path params', async () => {
@@ -19,7 +19,7 @@ describe('createHttpMatchesApi path parameter encoding', () => {
 
     await api.getMatch('id/with?reserved#chars');
 
-    expect(fetchImpl).toHaveBeenCalledWith('http://localhost:3000/matches/id%2Fwith%3Freserved%23chars');
+    expect(fetchImpl).toHaveBeenCalledWith('http://localhost:3000/matches/id%2Fwith%3Freserved%23chars', expect.objectContaining({ headers: expect.objectContaining({ 'x-api-key': 'scrambleiq-local-dev-token' }) }));
   });
 
   it('encodes nested resource path params', async () => {
@@ -28,7 +28,7 @@ describe('createHttpMatchesApi path parameter encoding', () => {
 
     await api.listTimelineEvents('match/123');
 
-    expect(fetchImpl).toHaveBeenCalledWith('http://localhost:3000/matches/match%2F123/events');
+    expect(fetchImpl).toHaveBeenCalledWith('http://localhost:3000/matches/match%2F123/events', expect.objectContaining({ headers: expect.objectContaining({ 'x-api-key': 'scrambleiq-local-dev-token' }) }));
   });
 
   it('encodes analytics path params', async () => {
@@ -37,7 +37,7 @@ describe('createHttpMatchesApi path parameter encoding', () => {
 
     await api.getMatchAnalytics('match/with spaces');
 
-    expect(fetchImpl).toHaveBeenCalledWith('http://localhost:3000/matches/match%2Fwith%20spaces/analytics');
+    expect(fetchImpl).toHaveBeenCalledWith('http://localhost:3000/matches/match%2Fwith%20spaces/analytics', expect.objectContaining({ headers: expect.objectContaining({ 'x-api-key': 'scrambleiq-local-dev-token' }) }));
   });
 
   it('encodes export path params', async () => {
@@ -49,7 +49,7 @@ describe('createHttpMatchesApi path parameter encoding', () => {
 
     await api.exportMatchDataset('match/with spaces');
 
-    expect(fetchImpl).toHaveBeenCalledWith('http://localhost:3000/matches/match%2Fwith%20spaces/export');
+    expect(fetchImpl).toHaveBeenCalledWith('http://localhost:3000/matches/match%2Fwith%20spaces/export', expect.objectContaining({ headers: expect.objectContaining({ 'x-api-key': 'scrambleiq-local-dev-token' }) }));
   });
 
   it('encodes validation path params', async () => {
@@ -58,7 +58,7 @@ describe('createHttpMatchesApi path parameter encoding', () => {
 
     await api.validateMatchDataset('match/with spaces');
 
-    expect(fetchImpl).toHaveBeenCalledWith('http://localhost:3000/matches/match%2Fwith%20spaces/validate');
+    expect(fetchImpl).toHaveBeenCalledWith('http://localhost:3000/matches/match%2Fwith%20spaces/validate', expect.objectContaining({ headers: expect.objectContaining({ 'x-api-key': 'scrambleiq-local-dev-token' }) }));
   });
 
   it('surfaces backend validation messages for failed mutations', async () => {

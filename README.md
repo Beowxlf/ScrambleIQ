@@ -49,18 +49,43 @@ npm run start --workspace @scrambleiq/api
 
 - `VITE_API_BASE_URL` (optional): Base URL for the API (example: `http://localhost:3000`).
   - If omitted, the frontend falls back to `http://localhost:3000`.
+- `VITE_API_AUTH_TOKEN` (optional): Token sent as `x-api-key` on API requests. Defaults to `scrambleiq-local-dev-token`.
 
 ### Backend (`apps/api`)
 
 - `PORT` (optional): API port (default: `3000`).
 - `WEB_ORIGIN` (optional): CORS origin (default: `http://localhost:5173`).
 - `DATABASE_URL` (optional for runtime, required for PostgreSQL integration tests): PostgreSQL connection URL.
+- `API_AUTH_TOKEN` (optional): Shared API token required on all non-public routes. Defaults to `scrambleiq-local-dev-token` when unset.
 
 ### Persistence mode (runtime)
 
 - If `DATABASE_URL` is set, the API boots with PostgreSQL repositories and applies SQL migrations before serving requests.
 - If `DATABASE_URL` is not set, the API uses in-memory repositories as a development fallback.
 - The HTTP API surface is the same in both modes; only persistence backing changes.
+
+## API authentication baseline (phase-one)
+
+The API now enforces a minimal shared-token guard for all match-scoped endpoints (`/matches`, `/events`, `/positions`, `/video`, analytics/export/validate routes).
+
+- Public route: `GET /health`
+- Protected routes: all other current API routes
+- Accepted auth headers:
+  - `x-api-key: <token>`
+  - `Authorization: Bearer <token>`
+
+Local/dev defaults are deterministic to keep setup simple:
+
+- API default token (when `API_AUTH_TOKEN` is unset): `scrambleiq-local-dev-token`
+- Web default token (when `VITE_API_AUTH_TOKEN` is unset): `scrambleiq-local-dev-token`
+
+Example request:
+
+```bash
+curl -H "x-api-key: scrambleiq-local-dev-token" http://localhost:3000/matches
+```
+
+If you override `API_AUTH_TOKEN`, set the same value in `VITE_API_AUTH_TOKEN` for the frontend to continue working.
 
 ## PostgreSQL integration testing
 
