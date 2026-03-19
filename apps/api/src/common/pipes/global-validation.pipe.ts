@@ -31,11 +31,23 @@ const validatorsByMetatype = new Map<Type<unknown>, PayloadValidator>([
   [CreateMatchVideoDto, (value) => validateCreateMatchVideoPayload(value as CreateMatchVideoDto)],
   [UpdateMatchVideoDto, (value) => validateUpdateMatchVideoPayload(value as UpdateMatchVideoDto)],
 ]);
+const validatorsByMetatypeName = new Map<string, PayloadValidator>([
+  ['CreateMatchDto', (value) => validateCreateMatchPayload(value as CreateMatchDto)],
+  ['UpdateMatchDto', (value) => validateUpdateMatchPayload(value as UpdateMatchDto)],
+  ['CreateTimelineEventDto', (value) => validateCreateTimelineEventPayload(value as CreateTimelineEventDto)],
+  ['UpdateTimelineEventDto', (value) => validateUpdateTimelineEventPayload(value as UpdateTimelineEventDto)],
+  ['CreatePositionStateDto', (value) => validateCreatePositionStatePayload(value as CreatePositionStateDto)],
+  ['UpdatePositionStateDto', (value) => validateUpdatePositionStatePayload(value as UpdatePositionStateDto)],
+  ['CreateMatchVideoDto', (value) => validateCreateMatchVideoPayload(value as CreateMatchVideoDto)],
+  ['UpdateMatchVideoDto', (value) => validateUpdateMatchVideoPayload(value as UpdateMatchVideoDto)],
+]);
 
 @Injectable()
 export class GlobalValidationPipe implements PipeTransform {
   transform(value: unknown, metadata: ArgumentMetadata): unknown {
-    const validator = metadata.metatype ? validatorsByMetatype.get(metadata.metatype) : undefined;
+    const validator = metadata.metatype
+      ? (validatorsByMetatype.get(metadata.metatype) ?? validatorsByMetatypeName.get(metadata.metatype.name))
+      : undefined;
 
     if (!validator) {
       return value;

@@ -9,7 +9,6 @@ import type {
   MatchDatasetPosition,
   MatchDatasetVideo,
   MatchListResponse,
-  MatchSummary,
   PositionType,
 } from '@scrambleiq/shared';
 import { POSITION_TYPES } from '@scrambleiq/shared';
@@ -51,22 +50,7 @@ export class MatchesService {
   }
 
   async findAll(query: ValidatedMatchListQuery): Promise<MatchListResponse> {
-    const matches = await this.matchRepository.findAll();
-
-    const sortedMatches = matches
-      .slice()
-      .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
-
-    const summaries: MatchSummary[] = await Promise.all(sortedMatches.map(async (match) => ({
-      matchId: match.id,
-      title: match.title,
-      competitorA: match.competitorA,
-      competitorB: match.competitorB,
-      eventDate: match.date,
-      eventCount: (await this.eventRepository.findByMatchId(match.id)).length,
-      positionCount: (await this.positionRepository.findByMatchId(match.id)).length,
-      hasVideo: (await this.videoRepository.findByMatchId(match.id)) !== undefined,
-    })));
+    const summaries = await this.matchRepository.findAllSummaries();
 
     const filtered = summaries.filter((summary) => {
       if (query.competitor) {
@@ -107,10 +91,6 @@ export class MatchesService {
 
     if (errors.length > 0) {
       throw new BadRequestException(errors);
-    }
-
-    if (Object.keys(input).length === 0) {
-      throw new BadRequestException(['At least one field must be provided for update']);
     }
 
     const updatedMatch = await this.matchRepository.update(id, input);

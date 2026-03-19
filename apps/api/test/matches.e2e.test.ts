@@ -123,6 +123,57 @@ describe('MatchesController', () => {
     await requestWithAuth('get', `/matches/${id}`).expect(404);
   });
 
+  it('rejects empty PATCH payloads across mutable resources', async () => {
+    const matchId = await createMatch();
+
+    await request(app.getHttpServer())
+      .patch(`/matches/${matchId}`)
+      .send({})
+      .expect(400)
+      .expect(({ body }: { body: { message: string[] } }) => {
+        expect(body.message).toContain('At least one field must be provided for update');
+      });
+
+    const eventResponse = await request(app.getHttpServer())
+      .post(`/matches/${matchId}/events`)
+      .send({ timestamp: 10, eventType: 'takedown_attempt', competitor: 'A' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .patch(`/events/${eventResponse.body.id}`)
+      .send({})
+      .expect(400)
+      .expect(({ body }: { body: { message: string[] } }) => {
+        expect(body.message).toContain('At least one field must be provided for update');
+      });
+
+    const positionResponse = await request(app.getHttpServer())
+      .post(`/matches/${matchId}/positions`)
+      .send({ position: 'standing', competitorTop: 'A', timestampStart: 0, timestampEnd: 10 })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .patch(`/positions/${positionResponse.body.id}`)
+      .send({})
+      .expect(400)
+      .expect(({ body }: { body: { message: string[] } }) => {
+        expect(body.message).toContain('At least one field must be provided for update');
+      });
+
+    const videoResponse = await request(app.getHttpServer())
+      .post(`/matches/${matchId}/video`)
+      .send({ title: 'Angle A', sourceType: 'remote_url', sourceUrl: 'https://cdn.example.com/a.mp4' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .patch(`/video/${videoResponse.body.id}`)
+      .send({})
+      .expect(400)
+      .expect(({ body }: { body: { message: string[] } }) => {
+        expect(body.message).toContain('At least one field must be provided for update');
+      });
+  });
+
 
   it('lists match summaries with deterministic sorting', async () => {
     const olderId = await createMatch();

@@ -6,6 +6,7 @@ import type {
   CreateTimelineEventDto,
   DatasetValidationReport,
   Match,
+  MatchSummary,
   MatchVideo,
   PositionState,
   TimelineEvent,
@@ -33,6 +34,35 @@ export class PostgresMatchRepository implements MatchRepository {
     return rows[0];
   }
   async findAll(): Promise<Match[]> { return this.client.rows<Match>('SELECT id,title,date::text as date,ruleset,competitor_a as "competitorA",competitor_b as "competitorB",notes FROM matches ORDER BY date DESC, id DESC'); }
+  async findAllSummaries(): Promise<MatchSummary[]> {
+    return this.client.rows<MatchSummary>(`
+      SELECT
+        m.id AS "matchId",
+        m.title,
+        m.competitor_a AS "competitorA",
+        m.competitor_b AS "competitorB",
+        m.date::text AS "eventDate",
+        COALESCE(event_counts.event_count, 0)::integer AS "eventCount",
+        COALESCE(position_counts.position_count, 0)::integer AS "positionCount",
+        COALESCE(video_presence.has_video, false) AS "hasVideo"
+      FROM public.matches m
+      LEFT JOIN (
+        SELECT match_id, COUNT(*)::integer AS event_count
+        FROM public.events
+        GROUP BY match_id
+      ) event_counts ON event_counts.match_id = m.id
+      LEFT JOIN (
+        SELECT match_id, COUNT(*)::integer AS position_count
+        FROM public.positions
+        GROUP BY match_id
+      ) position_counts ON position_counts.match_id = m.id
+      LEFT JOIN (
+        SELECT match_id, true AS has_video
+        FROM public.videos
+      ) video_presence ON video_presence.match_id = m.id
+      ORDER BY m.date DESC, m.id DESC
+    `);
+  }
   async findById(id: string): Promise<Match | undefined> { return (await this.client.rows<Match>(`SELECT id,title,date::text as date,ruleset,competitor_a as "competitorA",competitor_b as "competitorB",notes FROM matches WHERE id=${sqlLiteral(id)}`))[0]; }
   async update(id: string, input: UpdateMatchDto): Promise<Match | undefined> {
     return (await this.client.rows<Match>(`UPDATE matches SET title=COALESCE(${sqlLiteral(input.title)},title),date=COALESCE(${sqlLiteral(input.date)},date),ruleset=COALESCE(${sqlLiteral(input.ruleset)},ruleset),competitor_a=COALESCE(${sqlLiteral(input.competitorA)},competitor_a),competitor_b=COALESCE(${sqlLiteral(input.competitorB)},competitor_b),notes=COALESCE(${sqlLiteral(input.notes)},notes),updated_at=NOW() WHERE id=${sqlLiteral(id)} RETURNING id,title,date::text as date,ruleset,competitor_a as "competitorA",competitor_b as "competitorB",notes`))[0];
