@@ -1,3 +1,5 @@
+> **Status: Historical / legacy planning document. Not implemented in the V1 manual-first baseline (no upload pipeline, AI/ML inference, or 3D replay in current product).**
+
 # ScrambleIQ
 ## Event Detection Taxonomy
 

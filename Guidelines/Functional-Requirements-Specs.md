@@ -1,319 +1,158 @@
 # ScrambleIQ
 ## Functional Requirements Specification (FRS)
 
+> **Status: Current source of truth (implemented V1 manual-first baseline).**
+
 ### Document Purpose
 
-This document defines the functional behavior required for ScrambleIQ Version 1. Functional requirements describe the system actions and responses necessary to support the core capabilities of the platform.
+This FRS defines required functional behavior for the currently implemented Version 1 system.
 
-These requirements define **what the system must do**, not the implementation details of how those functions are built.
-
----
-
-# System Overview
-
-ScrambleIQ is a grappling analysis platform that processes uploaded match footage and converts the video into structured analytical outputs.
-
-The system performs the following primary functions:
-
-1. Accept match footage uploads.
-2. Process video frames for athlete movement tracking.
-3. Detect and track athlete joint positions.
-4. Generate simplified 3D skeletal reconstructions of the match.
-5. Identify grappling events and match phases.
-6. Generate AI-assisted coaching commentary.
-7. Present results through an interactive match review interface.
+These requirements describe manual-first behavior only.
 
 ---
 
-# Functional Requirement Categories
+## System Overview (Implemented)
 
-The system functional requirements are divided into the following categories:
+ScrambleIQ Version 1 provides:
 
-1. Video Upload and Validation
-2. Video Processing Pipeline
-3. Joint Detection and Pose Tracking
-4. Athlete Identity Tracking
-5. 3D Reconstruction
-6. Event Detection
-7. AI Commentary Generation
-8. Match Review Interface
-9. Timeline Navigation
-10. Data Storage and Retrieval
+1. match CRUD
+2. manual event timeline annotation
+3. manual position timeline annotation
+4. video metadata attachment
+5. derived analytics from manual annotations
+6. dataset validation and deterministic JSON export
 
 ---
 
-# 1. Video Upload and Validation
+## Requirement Categories
 
-### FR-1.1 Video Upload
-
-The system shall allow users to upload match footage for analysis.
-
-Accepted video format:
-
-- MP4
-
----
-
-### FR-1.2 Upload Duration Limit
-
-The system shall reject videos exceeding the maximum match duration.
-
-Maximum duration:
-
-- 10 minutes
+1. Match Management
+2. Event Timeline (Manual)
+3. Position Timeline (Manual)
+4. Video Metadata Attachment + Playback Sync
+5. Derived Analytics
+6. Dataset Validation + Export
+7. Persistence Modes and Runtime Behavior
 
 ---
 
-### FR-1.3 File Validation
+## 1) Match Management
 
-The system shall validate uploaded files before processing.
+### FR-1.1 Create Match
 
-Validation checks include:
+System shall create a match with required fields and return persisted data.
 
-- file format
-- file size
-- video duration
+### FR-1.2 Read/List Matches
 
-If validation fails, the system shall return an error message to the user.
+System shall provide list and detail retrieval for matches.
 
----
+### FR-1.3 Update Match
 
-### FR-1.4 Upload Confirmation
+System shall update editable match fields with validation.
 
-The system shall notify the user when a video upload has been successfully received and queued for processing.
+### FR-1.4 Delete Match
 
----
-
-# 2. Video Processing Pipeline
-
-### FR-2.1 Frame Extraction
-
-The system shall extract video frames from uploaded match footage.
-
-Extracted frames will be used for movement analysis.
+System shall delete a match and associated records according to repository rules.
 
 ---
 
-### FR-2.2 Frame Sequencing
+## 2) Event Timeline (Manual)
 
-The system shall maintain chronological ordering of frames during processing.
+### FR-2.1 Create Event
 
-Frame timestamps must be preserved.
+System shall allow users to manually create timestamped events.
 
----
+### FR-2.2 List Events
 
-### FR-2.3 Processing Queue
+System shall return events sorted by ascending timestamp.
 
-Uploaded videos shall be placed into a processing queue.
+### FR-2.3 Update/Delete Event
 
-The system shall process queued jobs sequentially or through parallel workers.
-
----
-
-# 3. Joint Detection and Pose Tracking
-
-### FR-3.1 Joint Detection
-
-The system shall detect human body joints within video frames.
-
-Tracked joints may include:
-
-- shoulders
-- elbows
-- wrists
-- hips
-- knees
-- ankles
+System shall support editing and deleting manual events.
 
 ---
 
-### FR-3.2 Joint Tracking Across Frames
+## 3) Position Timeline (Manual)
 
-The system shall track detected joints across sequential video frames.
+### FR-3.1 Create Position Segment
 
-Joint motion trajectories shall be recorded.
+System shall allow users to create manual position segments with start/end timestamps.
 
----
+### FR-3.2 Position Integrity Validation
 
-### FR-3.3 Tracking Confidence
+System shall enforce timestamp integrity and configured overlap constraints.
 
-The system shall associate a confidence value with detected joints.
+### FR-3.3 Update/Delete Position Segment
 
-Low confidence detections may be flagged during analysis.
-
----
-
-# 4. Athlete Identity Tracking
-
-### FR-4.1 Athlete Separation
-
-The system shall attempt to maintain identity separation between two athletes throughout the match.
+System shall support editing and deleting manual position segments.
 
 ---
 
-### FR-4.2 Identity Continuity
+## 4) Video Metadata Attachment + Playback Sync
 
-The system shall track each athlete consistently across frames.
+### FR-4.1 Attach Video Metadata
 
-Identity tracking may degrade during full body overlap.
+System shall allow attaching one video metadata record per match.
 
----
+### FR-4.2 Edit/Remove Video Metadata
 
-# 5. Simplified 3D Reconstruction
+System shall allow updating and deleting attached video metadata.
 
-### FR-5.1 3D Skeleton Generation
+### FR-4.3 Playback Synchronization
 
-The system shall generate a simplified 3D skeletal representation of the match using tracked joint data.
-
----
-
-### FR-5.2 Perspective Rotation
-
-Users shall be able to rotate the viewing perspective of the reconstructed match.
+UI shall seek playback when an event or position timeline entry is selected.
 
 ---
 
-### FR-5.3 Motion Playback
+## 5) Derived Analytics
 
-The reconstructed 3D scene shall support playback synchronized with the original match timeline.
+### FR-5.1 Analytics Computation
 
----
+System shall compute analytics from stored manual annotations.
 
-# 6. Event Detection
+### FR-5.2 Deterministic Output
 
-### FR-6.1 Event Identification
-
-The system shall attempt to detect grappling events within the match.
-
-Target events include:
-
-- takedown attempts
-- guard pulls
-- sweeps
-- scrambles
-- guard passes
-- reversals
-- top control
-- submission attempts
+Analytics outputs shall be deterministic for equivalent stored state.
 
 ---
 
-### FR-6.2 Event Timestamping
+## 6) Dataset Validation + Export
 
-Detected events shall be associated with timestamps within the match timeline.
+### FR-6.1 Validation Report
 
----
+System shall provide dataset validation feedback using stored match/annotation/video metadata data.
 
-### FR-6.3 Event Confidence
+### FR-6.2 Deterministic JSON Export
 
-Each detected event shall include a confidence estimate.
-
----
-
-# 7. AI Commentary Generation
-
-### FR-7.1 Commentary Generation
-
-The system shall generate AI-assisted commentary based on detected movement patterns and events.
+System shall export deterministic JSON representing current stored dataset state.
 
 ---
 
-### FR-7.2 Timestamp Referencing
+## 7) Persistence Modes and Runtime Behavior
 
-Generated commentary shall reference specific timestamps within the match.
+### FR-7.1 PostgreSQL Mode
 
----
+When `DATABASE_URL` is configured, system shall use PostgreSQL repositories and migrations.
 
-### FR-7.3 Coaching Style Output
+### FR-7.2 In-Memory Mode
 
-Commentary output shall be written in a coaching analysis style.
-
----
-
-# 8. Match Review Interface
-
-### FR-8.1 Video Playback
-
-Users shall be able to view the original match footage.
+When `DATABASE_URL` is not configured, system shall use in-memory repositories with same API surface.
 
 ---
 
-### FR-8.2 Pose Overlay
+## Explicit Non-Requirements (Out of Scope for Implemented V1)
 
-The system shall display joint tracking overlays on the video playback.
+The system does not currently require:
 
----
-
-### FR-8.3 3D Replay View
-
-Users shall be able to view the simplified 3D reconstruction.
-
----
-
-### FR-8.4 Commentary Panel
-
-AI-generated commentary shall be displayed in a dedicated analysis panel.
+1. video upload pipeline
+2. cloud storage/transcoding
+3. pose estimation or 3D replay generation
+4. automated event detection
+5. AI commentary generation
 
 ---
 
-# 9. Timeline Navigation
+## Terminology Rules
 
-### FR-9.1 Timeline Scrubbing
-
-Users shall be able to navigate the match timeline.
-
----
-
-### FR-9.2 Event Highlighting
-
-Detected events shall be visually marked on the timeline.
-
----
-
-### FR-9.3 Timestamp Navigation
-
-Users shall be able to jump directly to timestamps referenced in commentary.
-
----
-
-# 10. Data Storage and Retrieval
-
-### FR-10.1 Video Storage
-
-Uploaded match footage shall be stored for the duration required to complete processing.
-
----
-
-### FR-10.2 Analysis Storage
-
-Generated analysis data shall be stored for later retrieval.
-
-Stored analysis data may include:
-
-- joint movement data
-- event detection results
-- AI commentary
-- 3D reconstruction data
-
----
-
-### FR-10.3 Result Retrieval
-
-Users shall be able to access analysis results after processing is complete.
-
----
-
-# Summary
-
-ScrambleIQ Version 1 must provide a complete analysis workflow that includes:
-
-1. video upload
-2. frame processing
-3. joint detection
-4. athlete tracking
-5. simplified 3D reconstruction
-6. grappling event detection
-7. AI-assisted coaching commentary
-8. interactive match review interface
-
-These functional requirements define the system capabilities necessary to deliver the core ScrambleIQ analysis experience.
+- Current implemented term: **video metadata attachment**.
+- Future planning term: **video upload pipeline**.
