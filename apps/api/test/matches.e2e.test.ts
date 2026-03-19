@@ -606,6 +606,54 @@ describe('MatchesController', () => {
     expect(response.body.competitorTopTimeByPositionSeconds.B.mount).toBe(5);
   });
 
+  it('recomputes analytics totals after event and position updates and deletions', async () => {
+    const matchId = await createMatch();
+
+    const createdEvent = await request(app.getHttpServer())
+      .post(`/matches/${matchId}/events`)
+      .send({ timestamp: 5, eventType: 'takedown_attempt', competitor: 'A' })
+      .expect(201);
+
+    const createdPosition = await request(app.getHttpServer())
+      .post(`/matches/${matchId}/positions`)
+      .send({ position: 'standing', competitorTop: 'A', timestampStart: 0, timestampEnd: 10 })
+      .expect(201);
+
+    const baselineAnalytics = await request(app.getHttpServer()).get(`/matches/${matchId}/analytics`).expect(200);
+    expect(baselineAnalytics.body.totalEventCount).toBe(1);
+    expect(baselineAnalytics.body.totalPositionCount).toBe(1);
+    expect(baselineAnalytics.body.totalTrackedPositionTimeSeconds).toBe(10);
+    expect(baselineAnalytics.body.timeInPositionByTypeSeconds.standing).toBe(10);
+
+    await request(app.getHttpServer())
+      .patch(`/events/${createdEvent.body.id}`)
+      .send({ eventType: 'guard_pass' })
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .patch(`/positions/${createdPosition.body.id}`)
+      .send({ position: 'mount', timestampStart: 2, timestampEnd: 14 })
+      .expect(200);
+
+    const updatedAnalytics = await request(app.getHttpServer()).get(`/matches/${matchId}/analytics`).expect(200);
+    expect(updatedAnalytics.body.totalEventCount).toBe(1);
+    expect(updatedAnalytics.body.eventCountsByType).toEqual({ guard_pass: 1 });
+    expect(updatedAnalytics.body.totalPositionCount).toBe(1);
+    expect(updatedAnalytics.body.timeInPositionByTypeSeconds.standing).toBe(0);
+    expect(updatedAnalytics.body.timeInPositionByTypeSeconds.mount).toBe(12);
+    expect(updatedAnalytics.body.totalTrackedPositionTimeSeconds).toBe(12);
+
+    await request(app.getHttpServer()).delete(`/events/${createdEvent.body.id}`).expect(204);
+    await request(app.getHttpServer()).delete(`/positions/${createdPosition.body.id}`).expect(204);
+
+    const afterDeletionAnalytics = await request(app.getHttpServer()).get(`/matches/${matchId}/analytics`).expect(200);
+    expect(afterDeletionAnalytics.body.totalEventCount).toBe(0);
+    expect(afterDeletionAnalytics.body.eventCountsByType).toEqual({});
+    expect(afterDeletionAnalytics.body.totalPositionCount).toBe(0);
+    expect(afterDeletionAnalytics.body.totalTrackedPositionTimeSeconds).toBe(0);
+    expect(afterDeletionAnalytics.body.timeInPositionByTypeSeconds.mount).toBe(0);
+  });
+
 
   it('returns structured match dataset export', async () => {
     const matchId = await createMatch();

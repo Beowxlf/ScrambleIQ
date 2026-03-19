@@ -133,7 +133,7 @@ describe('MatchDetailPage', () => {
     pushStateSpy.mockRestore();
   });
 
-  it('refreshes analytics after event and position mutations', async () => {
+  it('refreshes analytics after event and position create, edit, and delete mutations', async () => {
     const getMatchAnalytics = vi.fn(async (matchId: string) => ({
       matchId,
       totalEventCount: 0,
@@ -182,15 +182,35 @@ describe('MatchDetailPage', () => {
 
     const api = createMatchesApiMock({
       getMatchAnalytics,
-      createTimelineEvent: vi.fn(async () => ({ id: 'event-1', matchId: 'match-1', timestamp: 10, eventType: 'entry', competitor: 'A' as const })),
-      createPositionState: vi.fn(async () => ({
+      listTimelineEvents: vi.fn(async () => [{ id: 'event-1', matchId: 'match-1', timestamp: 8, eventType: 'entry', competitor: 'A' as const }]),
+      createTimelineEvent: vi.fn(async () => ({ id: 'event-2', matchId: 'match-1', timestamp: 10, eventType: 'entry', competitor: 'A' as const })),
+      updateTimelineEvent: vi.fn(async () => ({ id: 'event-1', matchId: 'match-1', timestamp: 8, eventType: 'sweep', competitor: 'A' as const })),
+      deleteTimelineEvent: vi.fn(async () => undefined),
+      listPositionStates: vi.fn(async () => [{
         id: 'position-1',
+        matchId: 'match-1',
+        position: 'standing' as const,
+        competitorTop: 'A' as const,
+        timestampStart: 4,
+        timestampEnd: 8,
+      }]),
+      createPositionState: vi.fn(async () => ({
+        id: 'position-2',
         matchId: 'match-1',
         position: 'closed_guard' as const,
         competitorTop: 'A' as const,
         timestampStart: 12,
         timestampEnd: 22,
       })),
+      updatePositionState: vi.fn(async () => ({
+        id: 'position-1',
+        matchId: 'match-1',
+        position: 'mount' as const,
+        competitorTop: 'A' as const,
+        timestampStart: 4,
+        timestampEnd: 10,
+      })),
+      deletePositionState: vi.fn(async () => undefined),
     });
 
     render(<MatchDetailPage api={api} matchId="match-1" />);
@@ -205,6 +225,17 @@ describe('MatchDetailPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create Event' }));
 
     await waitFor(() => expect(getMatchAnalytics).toHaveBeenCalledTimes(2));
+    expect(await screen.findByRole('button', { name: '00:10 entry A' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit Event' })[0]);
+    fireEvent.change(screen.getByLabelText('Event Type'), { target: { value: 'sweep' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Event' }));
+
+    await waitFor(() => expect(getMatchAnalytics).toHaveBeenCalledTimes(3));
+    expect(await screen.findByRole('button', { name: '00:08 sweep A' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Delete Event' })[0]);
+    await waitFor(() => expect(getMatchAnalytics).toHaveBeenCalledTimes(4));
 
     fireEvent.click(await screen.findByRole('button', { name: 'Add Position' }));
     fireEvent.change(screen.getByLabelText('Position'), { target: { value: 'closed_guard' } });
@@ -213,7 +244,19 @@ describe('MatchDetailPage', () => {
     fireEvent.change(screen.getByLabelText('End Timestamp (seconds)'), { target: { value: '22' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create Position' }));
 
-    await waitFor(() => expect(getMatchAnalytics).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(getMatchAnalytics).toHaveBeenCalledTimes(5));
+    expect(await screen.findByRole('button', { name: '00:12 - 00:22 closed_guard top: A' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit Position' })[0]);
+    fireEvent.change(screen.getByLabelText('Position'), { target: { value: 'mount' } });
+    fireEvent.change(screen.getByLabelText('End Timestamp (seconds)'), { target: { value: '10' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Position' }));
+
+    await waitFor(() => expect(getMatchAnalytics).toHaveBeenCalledTimes(6));
+    expect(await screen.findByRole('button', { name: '00:04 - 00:10 mount top: A' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Delete Position' })[0]);
+    await waitFor(() => expect(getMatchAnalytics).toHaveBeenCalledTimes(7));
   });
 
   it('keeps dataset tooling available within match detail orchestration', async () => {
