@@ -152,6 +152,8 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
     }
   };
 
+  const isWorkspaceReady = !isLoadingMatch && !isMatchNotFound && !matchError;
+
   return (
     <main className="app-page">
       <header className="app-header">
@@ -161,7 +163,10 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
         </button>
       </header>
 
-      <section aria-labelledby="match-detail-heading">
+      <section
+        aria-labelledby="match-detail-heading"
+        style={{ border: '1px solid #d4d4d8', borderRadius: '0.5rem', padding: '1rem', background: '#fafafa' }}
+      >
         <h2 id="match-detail-heading">Match Detail</h2>
 
         {isLoadingMatch ? <p>Loading match details...</p> : null}
@@ -254,7 +259,7 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
               {editSubmissionError ? <p className="status-error">{editSubmissionError}</p> : null}
             </form>
           ) : (
-            <article>
+            <article style={{ display: 'grid', gap: '0.5rem' }}>
               <h3>{match.title}</h3>
               <p>ID: {match.id}</p>
               <p>Date: {match.date}</p>
