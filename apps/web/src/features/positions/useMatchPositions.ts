@@ -62,6 +62,36 @@ export function useMatchPositions({ api, matchId, onPositionsMutated }: UseMatch
   const [positionSubmissionError, setPositionSubmissionError] = useState<string | null>(null);
   const [editingPositionId, setEditingPositionId] = useState<string | null>(null);
 
+  const updatePositionFormValues = (nextValues: PositionStateFormValues) => {
+    setPositionFormValues((currentValues) => {
+      if (editingPositionId !== null) {
+        return nextValues;
+      }
+
+      if (nextValues.timestampStart !== currentValues.timestampStart) {
+        const parsedStart = Number(nextValues.timestampStart);
+        const parsedEnd = Number(nextValues.timestampEnd);
+        const shouldAutoFillEnd =
+          nextValues.timestampStart.trim() !== '' &&
+          Number.isInteger(parsedStart) &&
+          parsedStart >= 0 &&
+          (nextValues.timestampEnd.trim() === '' || Number.isInteger(parsedEnd) === false || parsedEnd <= parsedStart);
+
+        if (shouldAutoFillEnd) {
+          return {
+            ...nextValues,
+            timestampEnd: String(parsedStart + 1),
+          };
+        }
+      }
+
+      return nextValues;
+    });
+
+    setPositionFormErrors({});
+    setPositionSubmissionError(null);
+  };
+
   useEffect(() => {
     let isMounted = true;
 

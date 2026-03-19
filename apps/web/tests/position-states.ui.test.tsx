@@ -162,6 +162,10 @@ describe('Position states UI', () => {
 
     await waitFor(() => expect(createPositionState).toHaveBeenCalledTimes(1));
     expect(await screen.findByText('00:12 - 00:20 closed_guard top: A')).toBeInTheDocument();
+    expect(screen.getByLabelText('Position')).toHaveValue('closed_guard');
+    expect(screen.getByLabelText('Top Competitor')).toHaveValue('A');
+    expect(screen.getByLabelText('Start Timestamp (seconds)')).toHaveValue(20);
+    expect(screen.getByLabelText('End Timestamp (seconds)')).toHaveValue(21);
   });
 
   it('handles position edit flow', async () => {
