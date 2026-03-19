@@ -204,4 +204,22 @@ describe('Timeline events UI', () => {
     expect(screen.getByText('Event type is required.')).toBeInTheDocument();
     expect(screen.getByText('Competitor is required.')).toBeInTheDocument();
   });
+
+  it('submits the event form with Ctrl+Enter from notes', async () => {
+    const createTimelineEvent = vi.fn(async () => baseEvent({ timestamp: 33, notes: 'quick annotation' }));
+    const matchesApi = createMatchesApiMock({ createTimelineEvent });
+
+    render(<App matchesApi={matchesApi} />);
+
+    await screen.findByText('No timeline events yet.');
+    fireEvent.click(screen.getByRole('button', { name: 'Add Event' }));
+    fireEvent.change(screen.getByLabelText('Timestamp (seconds)'), { target: { value: '33' } });
+    fireEvent.change(screen.getByLabelText('Event Type'), { target: { value: 'takedown_attempt' } });
+    fireEvent.change(screen.getByLabelText('Competitor'), { target: { value: 'A' } });
+    fireEvent.change(screen.getByLabelText('Notes'), { target: { value: 'quick annotation' } });
+    fireEvent.keyDown(screen.getByLabelText('Notes'), { key: 'Enter', ctrlKey: true });
+
+    await waitFor(() => expect(createTimelineEvent).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText('00:33 takedown_attempt A')).toBeInTheDocument();
+  });
 });
