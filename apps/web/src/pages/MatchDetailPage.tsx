@@ -152,21 +152,16 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
     }
   };
 
-  const isWorkspaceReady = !isLoadingMatch && !isMatchNotFound && !matchError;
-
   return (
     <main className="app-page">
       <header className="app-header">
-        <h1>ScrambleIQ</h1>
+        <h1>Match Workspace</h1>
         <button type="button" onClick={() => navigateTo('/')}>
           Back to matches
         </button>
       </header>
 
-      <section
-        aria-labelledby="match-detail-heading"
-        style={{ border: '1px solid #d4d4d8', borderRadius: '0.5rem', padding: '1rem', background: '#fafafa' }}
-      >
+      <section aria-labelledby="match-detail-heading" className="surface-card">
         <h2 id="match-detail-heading">Match Detail</h2>
 
         {isLoadingMatch ? <p>Loading match details...</p> : null}
@@ -313,25 +308,40 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
       </section>
 
       {!isLoadingMatch && !isMatchNotFound && !matchError ? (
-        <div className="section-stack">
-          <DatasetToolsPanel api={api} matchId={matchId} />
-          <AnalyticsPanel api={api} matchId={matchId} refreshTrigger={analyticsRefreshTrigger} />
-          <VideoPanel api={api} matchId={matchId} seekRequest={videoSeekRequest} />
-          <EventPanel
-            api={api}
-            matchId={matchId}
-            selectedEventId={selectedEventId}
-            onSeekToTimestamp={(timestamp, eventId) => seekToTimestamp(timestamp, { eventId })}
-            onEventsMutated={refreshAnalytics}
-          />
-          <PositionPanel
-            api={api}
-            matchId={matchId}
-            selectedPositionId={selectedPositionId}
-            onSeekToTimestamp={(timestamp, positionId) => seekToTimestamp(timestamp, { positionId })}
-            onPositionsMutated={refreshAnalytics}
-          />
-        </div>
+        <section aria-labelledby="review-workspace-heading">
+          <h2 id="review-workspace-heading">Review Workspace</h2>
+
+          <div className="section-stack">
+            <section aria-labelledby="review-context-heading">
+              <h3 id="review-context-heading">Review Context</h3>
+              <AnalyticsPanel api={api} matchId={matchId} refreshTrigger={analyticsRefreshTrigger} />
+              <VideoPanel api={api} matchId={matchId} seekRequest={videoSeekRequest} />
+            </section>
+
+            <section aria-labelledby="timeline-review-heading">
+              <h3 id="timeline-review-heading">Timeline Review</h3>
+              <EventPanel
+                api={api}
+                matchId={matchId}
+                selectedEventId={selectedEventId}
+                onSeekToTimestamp={(timestamp, eventId) => seekToTimestamp(timestamp, { eventId })}
+                onEventsMutated={refreshAnalytics}
+              />
+              <PositionPanel
+                api={api}
+                matchId={matchId}
+                selectedPositionId={selectedPositionId}
+                onSeekToTimestamp={(timestamp, positionId) => seekToTimestamp(timestamp, { positionId })}
+                onPositionsMutated={refreshAnalytics}
+              />
+            </section>
+
+            <section aria-labelledby="data-quality-tools-heading">
+              <h3 id="data-quality-tools-heading">Data Quality Tools</h3>
+              <DatasetToolsPanel api={api} matchId={matchId} />
+            </section>
+          </div>
+        </section>
       ) : null}
     </main>
   );
