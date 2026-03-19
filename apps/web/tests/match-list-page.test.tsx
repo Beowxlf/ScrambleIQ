@@ -3,9 +3,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { Match } from '@scrambleiq/shared';
 
-import { MatchListPage } from '../src/pages/MatchListPage';
 import type { MatchFormValues } from '../src/match';
 import type { MatchesApi } from '../src/matches-api';
+import { MatchListPage } from '../src/pages/MatchListPage';
 
 function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
   return {
@@ -215,5 +215,84 @@ describe('MatchListPage', () => {
         offset: 0,
       }),
     );
+  });
+
+  it('keeps latest filter request results when slower previous requests resolve later', async () => {
+    interface MatchListResponse {
+      matches: Array<{
+        matchId: string;
+        title: string;
+        competitorA: string;
+        competitorB: string;
+        eventDate: string;
+        hasVideo: boolean;
+        eventCount: number;
+        positionCount: number;
+      }>;
+      total: number;
+      limit: number;
+      offset: number;
+    }
+
+    let resolveFirstRequest: ((response: MatchListResponse) => void) | undefined;
+
+    const listMatches = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<MatchListResponse>((resolve) => {
+            resolveFirstRequest = resolve;
+          }),
+      )
+      .mockResolvedValueOnce({
+        matches: [
+          {
+            matchId: 'match-new',
+            title: 'Newest Response Match',
+            competitorA: 'Alex Carter',
+            competitorB: 'Sam Jordan',
+            eventDate: '2026-03-02',
+            hasVideo: true,
+            eventCount: 2,
+            positionCount: 1,
+          },
+        ],
+        total: 1,
+        limit: 25,
+        offset: 0,
+      });
+
+    const api = createMatchesApiMock({ listMatches });
+
+    render(<MatchListPage api={api} onOpenMatch={vi.fn()} />);
+
+    fireEvent.change(screen.getByLabelText('Filter by competitor'), { target: { value: 'Alex' } });
+
+    expect(await screen.findByRole('heading', { name: 'Newest Response Match' })).toBeInTheDocument();
+
+    if (!resolveFirstRequest) {
+      throw new Error('Expected first request resolver to be captured');
+    }
+
+    resolveFirstRequest({
+      matches: [
+        {
+          matchId: 'match-old',
+          title: 'Stale Response Match',
+          competitorA: 'Old A',
+          competitorB: 'Old B',
+          eventDate: '2026-01-01',
+          hasVideo: false,
+          eventCount: 0,
+          positionCount: 0,
+        },
+      ],
+      total: 1,
+      limit: 25,
+      offset: 0,
+    });
+
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Stale Response Match' })).not.toBeInTheDocument());
+    expect(screen.getByRole('heading', { name: 'Newest Response Match' })).toBeInTheDocument();
   });
 });

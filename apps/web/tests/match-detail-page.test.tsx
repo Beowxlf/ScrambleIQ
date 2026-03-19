@@ -324,4 +324,34 @@ describe('MatchDetailPage', () => {
     expect(scrollIntoViewMock).toHaveBeenCalledTimes(1);
   });
 
+
+  it('keeps page orchestration intact while metadata CRUD is handled through extracted module', async () => {
+    const updateMatch = vi.fn(async (id: string, payload) => ({
+      id,
+      title: payload.title,
+      date: payload.date,
+      ruleset: payload.ruleset,
+      competitorA: payload.competitorA,
+      competitorB: payload.competitorB,
+      notes: payload.notes ?? '',
+    }));
+
+    const api = createMatchesApiMock({ updateMatch });
+
+    render(<MatchDetailPage api={api} matchId="match-1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Review Workspace' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Match' }));
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Updated Finals' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => expect(updateMatch).toHaveBeenCalledTimes(1));
+
+    expect(await screen.findByText('Updated Finals')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Review Workspace' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Validate Dataset' })).toBeInTheDocument();
+  });
+
+
 });

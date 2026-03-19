@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { MatchSummary } from '@scrambleiq/shared';
 
@@ -21,8 +21,12 @@ export function useMatches({ api }: UseMatchesOptions) {
   const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
   const [offset, setOffset] = useState(0);
   const [total, setTotal] = useState(0);
+  const latestRequestId = useRef(0);
 
   const loadMatches = useCallback(async () => {
+    const requestId = latestRequestId.current + 1;
+    latestRequestId.current = requestId;
+
     setIsLoadingMatches(true);
     setMatchesError(null);
 
@@ -36,12 +40,22 @@ export function useMatches({ api }: UseMatchesOptions) {
         offset,
       });
 
+      if (requestId !== latestRequestId.current) {
+        return;
+      }
+
       setMatches(fetchedMatches.matches);
       setTotal(fetchedMatches.total);
     } catch {
+      if (requestId !== latestRequestId.current) {
+        return;
+      }
+
       setMatchesError('Unable to load matches right now.');
     } finally {
-      setIsLoadingMatches(false);
+      if (requestId === latestRequestId.current) {
+        setIsLoadingMatches(false);
+      }
     }
   }, [api, competitorFilter, dateFromFilter, dateToFilter, hasVideoOnly, limit, offset]);
 
