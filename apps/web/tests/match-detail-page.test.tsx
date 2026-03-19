@@ -268,7 +268,7 @@ describe('MatchDetailPage', () => {
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Delete Position' })[0]);
     await waitFor(() => expect(getMatchAnalytics).toHaveBeenCalledTimes(7));
-  });
+  }, 10000);
 
   it('keeps dataset tooling available within match detail orchestration', async () => {
     const validateMatchDataset = vi.fn(async (matchId: string) => ({

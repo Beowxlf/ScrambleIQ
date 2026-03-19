@@ -77,7 +77,7 @@ describe('VideoPanel', () => {
       },
     });
 
-    render(<VideoPanel api={api} matchId="match-1" seekRequest={null} />);
+    render(<VideoPanel api={api} matchId="match-1" seekRequest={null} onVideoMetadataMutated={() => undefined} />);
 
     expect(await screen.findByText('Failed to load match video. Internal server error')).toBeInTheDocument();
     expect(screen.queryByText('No video attached yet.')).not.toBeInTheDocument();
