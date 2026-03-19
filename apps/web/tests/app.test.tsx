@@ -955,20 +955,47 @@ describe('App', () => {
 
 
   it('passes list filters to the API', async () => {
-    const listMatches = vi.fn(async () => ({ matches: [], total: 0, limit: 50, offset: 0 }));
+    const listMatches = vi.fn(async () => ({ matches: [], total: 0, limit: 25, offset: 0 }));
     const matchesApi = createMatchesApiMock({ listMatches });
 
     render(<App matchesApi={matchesApi} />);
 
-    await waitFor(() => expect(listMatches).toHaveBeenCalledWith({ competitor: undefined, hasVideo: undefined }));
+    await waitFor(() =>
+      expect(listMatches).toHaveBeenCalledWith({
+        competitor: undefined,
+        dateFrom: undefined,
+        dateTo: undefined,
+        hasVideo: undefined,
+        limit: 25,
+        offset: 0,
+      }),
+    );
 
     fireEvent.change(screen.getByLabelText('Filter by competitor'), { target: { value: 'Alex' } });
 
-    await waitFor(() => expect(listMatches).toHaveBeenLastCalledWith({ competitor: 'Alex', hasVideo: undefined }));
+    await waitFor(() =>
+      expect(listMatches).toHaveBeenLastCalledWith({
+        competitor: 'Alex',
+        dateFrom: undefined,
+        dateTo: undefined,
+        hasVideo: undefined,
+        limit: 25,
+        offset: 0,
+      }),
+    );
 
     fireEvent.click(screen.getByLabelText('Has video only'));
 
-    await waitFor(() => expect(listMatches).toHaveBeenLastCalledWith({ competitor: 'Alex', hasVideo: true }));
+    await waitFor(() =>
+      expect(listMatches).toHaveBeenLastCalledWith({
+        competitor: 'Alex',
+        dateFrom: undefined,
+        dateTo: undefined,
+        hasVideo: true,
+        limit: 25,
+        offset: 0,
+      }),
+    );
   });
 
 });

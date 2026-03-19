@@ -65,10 +65,10 @@ function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
   };
 }
 
-
 afterEach(() => {
   cleanup();
 });
+
 describe('MatchListPage', () => {
   it('renders create form and list section', async () => {
     const api = createMatchesApiMock();
@@ -102,20 +102,118 @@ describe('MatchListPage', () => {
     expect(onOpenMatch).toHaveBeenCalledWith('match-88');
   });
 
-  it('applies competitor and video filters through list API calls', async () => {
-    const listMatches = vi.fn(async () => ({ matches: [], total: 0, limit: 50, offset: 0 }));
+  it('applies competitor, date, and video filters through list API calls', async () => {
+    const listMatches = vi.fn(async () => ({ matches: [], total: 0, limit: 25, offset: 0 }));
     const api = createMatchesApiMock({ listMatches });
 
     render(<MatchListPage api={api} onOpenMatch={vi.fn()} />);
 
-    await waitFor(() => expect(listMatches).toHaveBeenCalledWith({ competitor: undefined, hasVideo: undefined }));
+    await waitFor(() =>
+      expect(listMatches).toHaveBeenCalledWith({
+        competitor: undefined,
+        dateFrom: undefined,
+        dateTo: undefined,
+        hasVideo: undefined,
+        limit: 25,
+        offset: 0,
+      }),
+    );
 
     fireEvent.change(screen.getByLabelText('Filter by competitor'), { target: { value: 'Alex' } });
 
-    await waitFor(() => expect(listMatches).toHaveBeenLastCalledWith({ competitor: 'Alex', hasVideo: undefined }));
+    await waitFor(() =>
+      expect(listMatches).toHaveBeenLastCalledWith({
+        competitor: 'Alex',
+        dateFrom: undefined,
+        dateTo: undefined,
+        hasVideo: undefined,
+        limit: 25,
+        offset: 0,
+      }),
+    );
 
+    fireEvent.change(screen.getByLabelText('Date from'), { target: { value: '2026-01-01' } });
+
+    await waitFor(() =>
+      expect(listMatches).toHaveBeenLastCalledWith({
+        competitor: 'Alex',
+        dateFrom: '2026-01-01',
+        dateTo: undefined,
+        hasVideo: undefined,
+        limit: 25,
+        offset: 0,
+      }),
+    );
+
+    fireEvent.change(screen.getByLabelText('Date to'), { target: { value: '2026-01-31' } });
     fireEvent.click(screen.getByLabelText('Has video only'));
 
-    await waitFor(() => expect(listMatches).toHaveBeenLastCalledWith({ competitor: 'Alex', hasVideo: true }));
+    await waitFor(() =>
+      expect(listMatches).toHaveBeenLastCalledWith({
+        competitor: 'Alex',
+        dateFrom: '2026-01-01',
+        dateTo: '2026-01-31',
+        hasVideo: true,
+        limit: 25,
+        offset: 0,
+      }),
+    );
+  });
+
+  it('supports pagination controls for match discovery workflow', async () => {
+    const listMatches = vi.fn(async () => ({ matches: [], total: 80, limit: 25, offset: 0 }));
+    const api = createMatchesApiMock({ listMatches });
+
+    render(<MatchListPage api={api} onOpenMatch={vi.fn()} />);
+
+    await waitFor(() =>
+      expect(listMatches).toHaveBeenCalledWith({
+        competitor: undefined,
+        dateFrom: undefined,
+        dateTo: undefined,
+        hasVideo: undefined,
+        limit: 25,
+        offset: 0,
+      }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next Page' }));
+
+    await waitFor(() =>
+      expect(listMatches).toHaveBeenLastCalledWith({
+        competitor: undefined,
+        dateFrom: undefined,
+        dateTo: undefined,
+        hasVideo: undefined,
+        limit: 25,
+        offset: 25,
+      }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Previous Page' }));
+
+    await waitFor(() =>
+      expect(listMatches).toHaveBeenLastCalledWith({
+        competitor: undefined,
+        dateFrom: undefined,
+        dateTo: undefined,
+        hasVideo: undefined,
+        limit: 25,
+        offset: 0,
+      }),
+    );
+
+    fireEvent.change(screen.getByLabelText('Matches per page'), { target: { value: '10' } });
+
+    await waitFor(() =>
+      expect(listMatches).toHaveBeenLastCalledWith({
+        competitor: undefined,
+        dateFrom: undefined,
+        dateTo: undefined,
+        hasVideo: undefined,
+        limit: 10,
+        offset: 0,
+      }),
+    );
   });
 });
