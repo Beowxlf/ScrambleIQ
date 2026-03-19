@@ -95,15 +95,11 @@ export function MatchListPage({ api, onOpenMatch }: MatchListPageProps) {
   };
 
   return (
-    <main style={pageStyles.layout}>
-      <section style={pageStyles.introCard} aria-labelledby="match-discovery-heading">
-        <h2 id="match-discovery-heading" style={pageStyles.introHeading}>
-          Match Discovery
-        </h2>
-        <p style={pageStyles.introText}>
-          Create a new match for analysis or quickly find an existing match with coach-focused filters.
-        </p>
-      </section>
+    <main className="app-page">
+      <header className="app-header">
+        <h1>ScrambleIQ</h1>
+        <p className="muted">Create a match to begin manual-first tracking and review.</p>
+      </header>
 
       <div style={pageStyles.columns}>
         <aside aria-label="Create match panel">
@@ -115,17 +111,8 @@ export function MatchListPage({ api, onOpenMatch }: MatchListPageProps) {
             onSubmit={onSubmit}
           />
 
-          {submissionMessage ? (
-            <p role="status" style={{ ...pageStyles.statusMessage, ...pageStyles.statusSuccess }}>
-              {submissionMessage}
-            </p>
-          ) : null}
-          {submissionError ? (
-            <p role="alert" style={{ ...pageStyles.statusMessage, ...pageStyles.statusError }}>
-              {submissionError}
-            </p>
-          ) : null}
-        </aside>
+      {submissionMessage ? <p>{submissionMessage}</p> : null}
+      {submissionError ? <p className="status-error">{submissionError}</p> : null}
 
         <section aria-label="Match list panel">
           <MatchList

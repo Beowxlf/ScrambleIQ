@@ -35,7 +35,7 @@ export function VideoPanel({ api, matchId, seekRequest }: VideoPanelProps) {
       <h2 id="video-review-heading">Video Review</h2>
 
       {isLoadingVideo ? <p>Loading video metadata...</p> : null}
-      {videoError ? <p>{videoError}</p> : null}
+      {videoError ? <p className="status-error">{videoError}</p> : null}
 
       {!isLoadingVideo && !video ? <p>No video attached yet.</p> : null}
 
@@ -48,22 +48,24 @@ export function VideoPanel({ api, matchId, seekRequest }: VideoPanelProps) {
           {video.durationSeconds !== undefined ? <p>Duration (seconds): {video.durationSeconds}</p> : null}
           {video.notes ? <p>Notes: {video.notes}</p> : null}
           {!isVideoFormVisible ? (
-            <p>
+            <div className="button-row">
               <button type="button" onClick={startEditVideo}>
                 Edit Video
-              </button>{' '}
+              </button>
               <button type="button" onClick={() => void deleteVideo()}>
                 Remove Video
               </button>
-            </p>
+            </div>
           ) : null}
         </>
       ) : null}
 
       {!isVideoFormVisible ? (
-        <button type="button" onClick={showVideoForm}>
-          {video ? 'Update Video Metadata' : 'Attach Video'}
-        </button>
+        <div className="button-row">
+          <button type="button" onClick={showVideoForm}>
+            {video ? 'Update Video Metadata' : 'Attach Video'}
+          </button>
+        </div>
       ) : null}
 
       {isVideoFormVisible ? (

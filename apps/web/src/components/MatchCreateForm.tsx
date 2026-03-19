@@ -67,76 +67,46 @@ export function MatchCreateForm({ formValues, errors, isSubmitting, onChange, on
       </h3>
       <p style={formStyles.subheading}>Capture the key details and jump into review immediately.</p>
 
-      <div style={formStyles.fieldGroup}>
-        <label htmlFor="title" style={formStyles.label}>
-          Title
-        </label>
-        <input
-          id="title"
-          name="title"
-          style={formStyles.input}
-          value={formValues.title}
-          onChange={(event) => onChange({ ...formValues, title: event.target.value })}
-        />
-        {errors.title ? <p style={formStyles.error}>{errors.title}</p> : null}
-      </div>
+      <label htmlFor="title">Title</label>
+      <input id="title" name="title" value={formValues.title} onChange={(event) => onChange({ ...formValues, title: event.target.value })} />
+      {errors.title ? <p className="form-error">{errors.title}</p> : null}
 
-      <div style={formStyles.fieldGroup}>
-        <label htmlFor="date" style={formStyles.label}>
-          Date
-        </label>
-        <input
-          id="date"
-          name="date"
-          type="date"
-          style={formStyles.input}
-          value={formValues.date}
-          onChange={(event) => onChange({ ...formValues, date: event.target.value })}
-        />
-        {errors.date ? <p style={formStyles.error}>{errors.date}</p> : null}
-      </div>
+      <label htmlFor="date">Date</label>
+      <input
+        id="date"
+        name="date"
+        type="date"
+        value={formValues.date}
+        onChange={(event) => onChange({ ...formValues, date: event.target.value })}
+      />
+      {errors.date ? <p className="form-error">{errors.date}</p> : null}
 
-      <div style={formStyles.fieldGroup}>
-        <label htmlFor="ruleset" style={formStyles.label}>
-          Ruleset
-        </label>
-        <input
-          id="ruleset"
-          name="ruleset"
-          style={formStyles.input}
-          value={formValues.ruleset}
-          onChange={(event) => onChange({ ...formValues, ruleset: event.target.value })}
-        />
-        {errors.ruleset ? <p style={formStyles.error}>{errors.ruleset}</p> : null}
-      </div>
+      <label htmlFor="ruleset">Ruleset</label>
+      <input
+        id="ruleset"
+        name="ruleset"
+        value={formValues.ruleset}
+        onChange={(event) => onChange({ ...formValues, ruleset: event.target.value })}
+      />
+      {errors.ruleset ? <p className="form-error">{errors.ruleset}</p> : null}
 
-      <div style={formStyles.fieldGroup}>
-        <label htmlFor="competitorA" style={formStyles.label}>
-          Competitor A
-        </label>
-        <input
-          id="competitorA"
-          name="competitorA"
-          style={formStyles.input}
-          value={formValues.competitorA}
-          onChange={(event) => onChange({ ...formValues, competitorA: event.target.value })}
-        />
-        {errors.competitorA ? <p style={formStyles.error}>{errors.competitorA}</p> : null}
-      </div>
+      <label htmlFor="competitorA">Competitor A</label>
+      <input
+        id="competitorA"
+        name="competitorA"
+        value={formValues.competitorA}
+        onChange={(event) => onChange({ ...formValues, competitorA: event.target.value })}
+      />
+      {errors.competitorA ? <p className="form-error">{errors.competitorA}</p> : null}
 
-      <div style={formStyles.fieldGroup}>
-        <label htmlFor="competitorB" style={formStyles.label}>
-          Competitor B
-        </label>
-        <input
-          id="competitorB"
-          name="competitorB"
-          style={formStyles.input}
-          value={formValues.competitorB}
-          onChange={(event) => onChange({ ...formValues, competitorB: event.target.value })}
-        />
-        {errors.competitorB ? <p style={formStyles.error}>{errors.competitorB}</p> : null}
-      </div>
+      <label htmlFor="competitorB">Competitor B</label>
+      <input
+        id="competitorB"
+        name="competitorB"
+        value={formValues.competitorB}
+        onChange={(event) => onChange({ ...formValues, competitorB: event.target.value })}
+      />
+      {errors.competitorB ? <p className="form-error">{errors.competitorB}</p> : null}
 
       <div style={formStyles.fieldGroup}>
         <label htmlFor="notes" style={formStyles.label}>
@@ -151,9 +121,11 @@ export function MatchCreateForm({ formValues, errors, isSubmitting, onChange, on
         />
       </div>
 
-      <button type="submit" disabled={isSubmitting} style={formStyles.button}>
-        {isSubmitting ? 'Creating...' : 'Create Match'}
-      </button>
+      <div className="button-row">
+        <button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Creating...' : 'Create Match'}
+        </button>
+      </div>
     </form>
   );
 }

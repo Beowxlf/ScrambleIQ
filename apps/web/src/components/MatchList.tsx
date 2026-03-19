@@ -153,102 +153,75 @@ export function MatchList({
   const canGoNext = pageOffset + pageSize < totalMatches;
 
   return (
-    <section aria-labelledby="match-list-heading" style={listStyles.card}>
-      <h2 id="match-list-heading" style={listStyles.heading}>
-        Matches
-      </h2>
-      <p style={listStyles.subheading}>Filter and scan results quickly before opening a match.</p>
+    <section aria-labelledby="match-list-heading">
+      <h2 id="match-list-heading">Matches</h2>
 
-      <div aria-label="Match filters" style={listStyles.filterGrid}>
-        <div style={listStyles.filterField}>
-          <label htmlFor="competitor-filter" style={listStyles.filterLabel}>
-            Filter by competitor
-          </label>
-          <input
-            id="competitor-filter"
-            name="competitor-filter"
-            style={listStyles.input}
-            value={competitorFilter}
-            onChange={(event) => onCompetitorFilterChange(event.target.value)}
-          />
-        </div>
+      <label htmlFor="competitor-filter">Filter by competitor</label>
+      <input
+        id="competitor-filter"
+        name="competitor-filter"
+        value={competitorFilter}
+        onChange={(event) => onCompetitorFilterChange(event.target.value)}
+      />
 
-        <div style={listStyles.filterField}>
-          <label htmlFor="date-from-filter" style={listStyles.filterLabel}>
-            Date from
-          </label>
-          <input
-            id="date-from-filter"
-            name="date-from-filter"
-            type="date"
-            style={listStyles.input}
-            value={dateFromFilter}
-            onChange={(event) => onDateFromFilterChange(event.target.value)}
-          />
-        </div>
+      <label htmlFor="date-from-filter">Date from</label>
+      <input
+        id="date-from-filter"
+        name="date-from-filter"
+        type="date"
+        value={dateFromFilter}
+        onChange={(event) => onDateFromFilterChange(event.target.value)}
+      />
 
-        <div style={listStyles.filterField}>
-          <label htmlFor="date-to-filter" style={listStyles.filterLabel}>
-            Date to
-          </label>
-          <input
-            id="date-to-filter"
-            name="date-to-filter"
-            type="date"
-            style={listStyles.input}
-            value={dateToFilter}
-            onChange={(event) => onDateToFilterChange(event.target.value)}
-          />
-        </div>
+      <label htmlFor="date-to-filter">Date to</label>
+      <input
+        id="date-to-filter"
+        name="date-to-filter"
+        type="date"
+        value={dateToFilter}
+        onChange={(event) => onDateToFilterChange(event.target.value)}
+      />
+
+      <label htmlFor="has-video-filter" className="muted">
+        <input
+          id="has-video-filter"
+          name="has-video-filter"
+          type="checkbox"
+          checked={hasVideoOnly}
+          onChange={(event) => onHasVideoOnlyChange(event.target.checked)}
+        />
+        Has video only
+      </label>
+
+      <label htmlFor="page-size">Matches per page</label>
+      <select
+        id="page-size"
+        name="page-size"
+        value={pageSize}
+        onChange={(event) => onPageSizeChange(Number(event.target.value))}
+      >
+        <option value={10}>10</option>
+        <option value={25}>25</option>
+        <option value={50}>50</option>
+      </select>
+
+      <p>
+        Page {currentPage} of {totalPages} ({totalMatches} total)
+      </p>
+
+      <div className="button-row">
+        <button type="button" onClick={onPreviousPage} disabled={!canGoPrevious}>
+          Previous Page
+        </button>
+        <button type="button" onClick={onNextPage} disabled={!canGoNext}>
+          Next Page
+        </button>
       </div>
 
-      <div style={listStyles.filterFooter}>
-        <div style={{ ...listStyles.filterField, marginBottom: 0 }}>
-          <label htmlFor="page-size" style={listStyles.filterLabel}>
-            Matches per page
-          </label>
-          <select
-            id="page-size"
-            name="page-size"
-            style={listStyles.input}
-            value={pageSize}
-            onChange={(event) => onPageSizeChange(Number(event.target.value))}
-          >
-            <option value={10}>10</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-          </select>
-        </div>
+      {isLoadingMatches ? <p>Loading matches...</p> : null}
+      {matchesError ? <p>{matchesError}</p> : null}
 
-        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600, fontSize: '0.9rem' }} htmlFor="has-video-filter">
-          <input
-            id="has-video-filter"
-            name="has-video-filter"
-            type="checkbox"
-            checked={hasVideoOnly}
-            onChange={(event) => onHasVideoOnlyChange(event.target.checked)}
-          />
-          Has video only
-        </label>
-
-        <p style={{ ...listStyles.status, margin: 0 }}>
-          Page {currentPage} of {totalPages} ({totalMatches} total)
-        </p>
-
-        <div style={listStyles.pager}>
-          <button type="button" onClick={onPreviousPage} disabled={!canGoPrevious} style={listStyles.pagerButton}>
-            Previous Page
-          </button>
-          <button type="button" onClick={onNextPage} disabled={!canGoNext} style={listStyles.pagerButton}>
-            Next Page
-          </button>
-        </div>
-      </div>
-
-      {isLoadingMatches ? <p style={listStyles.status}>Loading matches...</p> : null}
-      {matchesError ? <p style={listStyles.status}>{matchesError}</p> : null}
-
-      {!isLoadingMatches && !matchesError && matches.length === 0 ? <p style={listStyles.status}>No matches yet.</p> : null}
+      {!isLoadingMatches && !matchesError && matches.length === 0 ? <p>No matches yet.</p> : null}
 
       {!isLoadingMatches && !matchesError && matches.length > 0 ? (
         <ul style={listStyles.list}>
