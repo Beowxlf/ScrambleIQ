@@ -9,7 +9,7 @@ import {
   PostgresPositionRepository,
   PostgresVideoRepository,
 } from '../../src/repositories/postgres.repositories';
-import { prepareDatabase, requireDatabaseUrl } from './postgres-test.utils';
+import { prepareDatabase, requireDatabaseUrl, truncateDomainTables } from './postgres-test.utils';
 
 describe('PostgreSQL repositories integration', () => {
   const client = new PsqlClient(requireDatabaseUrl());
@@ -24,7 +24,7 @@ describe('PostgreSQL repositories integration', () => {
   });
 
   beforeEach(async () => {
-    await client.execute('TRUNCATE TABLE dataset_validation_results, videos, positions, events, matches RESTART IDENTITY CASCADE');
+    await truncateDomainTables(client);
   });
 
   it('applies migrations and creates expected tables + fk constraints', async () => {
@@ -195,6 +195,7 @@ describe('PostgreSQL repositories integration', () => {
       competitorB: 'B',
       notes: '',
     });
+    await expect(matchRepository.findById(match.id)).resolves.toBeDefined();
 
     const report: DatasetValidationReport = {
       matchId: match.id,
