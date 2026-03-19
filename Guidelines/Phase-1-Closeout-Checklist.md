@@ -1,44 +1,50 @@
 # ScrambleIQ
 ## Phase 1 Closeout Checklist
 
-This checklist defines binary gates for Phase 1 closeout.
+This checklist defines binary closeout gates for Phase 1.
 
-A gate is complete only when evidence exists in local validation output and/or CI results.
+Each gate is **PASS** or **FAIL** only (no partial credit).
+Phase 1 closeout is approved only when every gate is PASS with evidence.
 
 ---
 
 ## Quality and Build Gates
 
-- [ ] `npm run lint` passes
-- [ ] `npm run typecheck` passes
-- [ ] `npm run test` passes
-- [ ] `npm run build` passes
-- [ ] `npm run test:integration` passes
+- [ ] **PASS / FAIL:** `npm run lint`
+- [ ] **PASS / FAIL:** `npm run typecheck`
+- [ ] **PASS / FAIL:** `npm run test`
+- [ ] **PASS / FAIL:** `npm run build`
+- [ ] **PASS / FAIL:** `npm run test:integration`
 
 ## CI Gates
 
-- [ ] `validate` job is green
-- [ ] `integration-postgres` job is green
+- [ ] **PASS / FAIL:** `validate` job is green
+- [ ] **PASS / FAIL:** `integration-postgres` job is green
 
 ## Documentation Alignment Gates
 
-- [ ] `Guidelines/Roadmap.md` reflects manual-first implemented baseline
-- [ ] `Guidelines/Version-1-Scope.md` matches implemented Version 1 capabilities
-- [ ] `README.md` persistence/runtime wording is internally consistent (PostgreSQL when `DATABASE_URL` is set, in-memory fallback otherwise)
+- [ ] **PASS / FAIL:** `Guidelines/Roadmap.md` reflects the implemented manual-first direction
+- [ ] **PASS / FAIL:** `Guidelines/Version-1-Scope.md` matches implemented Version 1 capabilities
+- [ ] **PASS / FAIL:** `README.md` persistence/runtime wording is consistent (`DATABASE_URL` => PostgreSQL, otherwise in-memory fallback)
 
-## Product Acceptance Documentation Gate
+## Minimum Coach Workflow Acceptance Scenarios (Documented)
 
-- [ ] Minimum coach workflow acceptance scenarios are documented and phase-appropriate:
-  - [ ] create/edit/delete match
-  - [ ] create/edit/delete event annotations
-  - [ ] create/edit/delete position annotations
-  - [ ] attach/edit/delete video metadata
-  - [ ] synchronized playback seek from event and position selections
-  - [ ] analytics review from manual annotations
-  - [ ] dataset validation and JSON export
+The scenarios below define the minimum end-to-end manual coaching workflow that must be available for Phase 1 closeout:
+
+1. [ ] **PASS / FAIL:** Create, edit, and delete a match
+2. [ ] **PASS / FAIL:** Create, edit, and delete event annotations
+3. [ ] **PASS / FAIL:** Create, edit, and delete position annotations
+4. [ ] **PASS / FAIL:** Attach, edit, and delete video metadata
+5. [ ] **PASS / FAIL:** Seek synchronized playback from event and position timeline selections
+6. [ ] **PASS / FAIL:** Review derived analytics generated from manual annotations
+7. [ ] **PASS / FAIL:** Run dataset validation and produce deterministic JSON export
 
 ---
 
 ## Exit Criteria
 
-Phase 1 closeout is approved only when every gate above is checked.
+Phase 1 is formally complete only when:
+
+1. every gate above is marked PASS
+2. local validation evidence is captured
+3. CI evidence is captured for both required jobs

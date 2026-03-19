@@ -9,6 +9,8 @@ Version 1 is a manual-first match annotation and review system. It provides stru
 
 Version 1 does **not** include automated analysis pipelines.
 
+Version 1 supports two runtime persistence modes for the same API surface: PostgreSQL when `DATABASE_URL` is configured, and in-memory fallback when it is not.
+
 ---
 
 ## Supported Users and Workflow

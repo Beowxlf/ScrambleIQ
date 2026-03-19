@@ -1,6 +1,6 @@
 # ScrambleIQ
 
-ScrambleIQ is in scaffold and early phase-one development.
+ScrambleIQ Phase 1 (manual-first foundation) is implemented and in closeout validation.
 
 This repository includes a minimal full-stack TypeScript scaffold aligned to the project tech stack:
 
@@ -55,6 +55,12 @@ npm run start --workspace @scrambleiq/api
 - `PORT` (optional): API port (default: `3000`).
 - `WEB_ORIGIN` (optional): CORS origin (default: `http://localhost:5173`).
 - `DATABASE_URL` (optional for runtime, required for PostgreSQL integration tests): PostgreSQL connection URL.
+
+### Persistence mode (runtime)
+
+- If `DATABASE_URL` is set, the API boots with PostgreSQL repositories and applies SQL migrations before serving requests.
+- If `DATABASE_URL` is not set, the API uses in-memory repositories as a development fallback.
+- The HTTP API surface is the same in both modes; only persistence backing changes.
 
 ## PostgreSQL integration testing
 
