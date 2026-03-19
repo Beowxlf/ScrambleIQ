@@ -47,10 +47,6 @@ export class EventsService {
       throw new BadRequestException(errors);
     }
 
-    if (Object.keys(input).length === 0) {
-      throw new BadRequestException(['At least one field must be provided for update']);
-    }
-
     const existingEvent = await this.eventRepository.findById(id);
 
     if (!existingEvent) {

@@ -29,6 +29,11 @@ export function validateUpdateMatchVideoPayload(payload: UpdateMatchVideoDto): s
   const errors: string[] = [];
   const body = payload as unknown as Record<string, unknown>;
 
+  if (Object.keys(body).length === 0) {
+    errors.push('At least one field must be provided for update');
+    return errors;
+  }
+
   if ('title' in body) {
     validateTitleValue(body.title, errors);
   }

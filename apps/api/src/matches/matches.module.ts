@@ -57,7 +57,11 @@ interface InMemoryState {
     },
     {
       provide: MATCH_REPOSITORY,
-      useFactory: (client: PsqlClient | null, state: InMemoryState) => (client ? new PostgresMatchRepository(client) : new InMemoryMatchRepository(state.matches)),
+      useFactory: (client: PsqlClient | null, state: InMemoryState) => (
+        client
+          ? new PostgresMatchRepository(client)
+          : new InMemoryMatchRepository(state.matches, state.events, state.positions, state.videos)
+      ),
       inject: [DATABASE_CLIENT, IN_MEMORY_STATE],
     },
     {

@@ -35,6 +35,11 @@ export function validateUpdateMatchPayload(payload: UpdateMatchDto): string[] {
   const errors: string[] = [];
   const body = payload as unknown as Record<string, unknown>;
 
+  if (Object.keys(body).length === 0) {
+    errors.push('At least one field must be provided for update');
+    return errors;
+  }
+
   for (const field of requiredStringFields) {
     if (field in body) {
       validateStringField(body, field, errors);

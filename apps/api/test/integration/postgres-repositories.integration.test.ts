@@ -85,6 +85,73 @@ describe('PostgreSQL repositories integration', () => {
     await expect(matchRepository.findById(created.id)).resolves.toBeUndefined();
   });
 
+  it('returns aggregated match summaries without per-match fan-out', async () => {
+    const olderMatch = await matchRepository.create({
+      title: 'Older Match',
+      date: '2026-05-01',
+      ruleset: 'Gi',
+      competitorA: 'Older A',
+      competitorB: 'Older B',
+      notes: '',
+    });
+
+    const newerMatch = await matchRepository.create({
+      title: 'Newer Match',
+      date: '2026-06-01',
+      ruleset: 'No-Gi',
+      competitorA: 'Newer A',
+      competitorB: 'Newer B',
+      notes: '',
+    });
+
+    await eventRepository.create(newerMatch.id, {
+      timestamp: 10,
+      eventType: 'takedown_attempt',
+      competitor: 'A',
+      notes: undefined,
+    });
+    await eventRepository.create(newerMatch.id, {
+      timestamp: 15,
+      eventType: 'guard_pass',
+      competitor: 'B',
+      notes: undefined,
+    });
+    await positionRepository.create(newerMatch.id, {
+      position: 'standing',
+      competitorTop: 'A',
+      timestampStart: 0,
+      timestampEnd: 10,
+      notes: undefined,
+    });
+    await videoRepository.create(newerMatch.id, {
+      title: 'Main camera',
+      sourceType: 'remote_url',
+      sourceUrl: 'https://example.com/video.mp4',
+      durationSeconds: undefined,
+      notes: undefined,
+    });
+
+    const summaries = await matchRepository.findAllSummaries();
+
+    expect(summaries).toHaveLength(2);
+    expect(summaries[0]).toMatchObject({
+      matchId: newerMatch.id,
+      title: 'Newer Match',
+      eventDate: '2026-06-01',
+      eventCount: 2,
+      positionCount: 1,
+      hasVideo: true,
+    });
+    expect(summaries[1]).toMatchObject({
+      matchId: olderMatch.id,
+      title: 'Older Match',
+      eventDate: '2026-05-01',
+      eventCount: 0,
+      positionCount: 0,
+      hasVideo: false,
+    });
+  });
+
   it('supports EventRepository operations and ON DELETE CASCADE', async () => {
     const match = await matchRepository.create({
       title: 'Events Match',

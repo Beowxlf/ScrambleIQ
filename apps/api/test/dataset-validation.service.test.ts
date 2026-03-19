@@ -22,6 +22,7 @@ function createServiceFixture(params: {
       throw new Error('unused');
     },
     findAll: async () => [],
+    findAllSummaries: async () => [],
     findById: async () => params.match,
     update: async () => undefined,
     delete: async () => false,

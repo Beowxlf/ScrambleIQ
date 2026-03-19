@@ -31,6 +31,11 @@ export function validateUpdatePositionStatePayload(payload: UpdatePositionStateD
   const errors: string[] = [];
   const body = payload as unknown as Record<string, unknown>;
 
+  if (Object.keys(body).length === 0) {
+    errors.push('At least one field must be provided for update');
+    return errors;
+  }
+
   if ('position' in body) {
     validatePositionValue(body.position, errors);
   }

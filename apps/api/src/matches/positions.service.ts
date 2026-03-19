@@ -49,10 +49,6 @@ export class PositionsService {
       throw new BadRequestException(errors);
     }
 
-    if (Object.keys(input).length === 0) {
-      throw new BadRequestException(['At least one field must be provided for update']);
-    }
-
     const currentPosition = await this.positionRepository.findById(id);
 
     if (!currentPosition) {

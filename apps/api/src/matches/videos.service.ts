@@ -53,10 +53,6 @@ export class VideosService {
       throw new BadRequestException(errors);
     }
 
-    if (Object.keys(input).length === 0) {
-      throw new BadRequestException(['At least one field must be provided for update']);
-    }
-
     const existing = await this.videoRepository.findById(id);
 
     if (!existing) {

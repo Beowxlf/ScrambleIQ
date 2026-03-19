@@ -6,6 +6,7 @@ import type {
   CreateTimelineEventDto,
   DatasetValidationReport,
   Match,
+  MatchSummary,
   MatchVideo,
   PositionState,
   TimelineEvent,
@@ -23,7 +24,12 @@ import { VideoRepository } from './video.repository';
 
 @Injectable()
 export class InMemoryMatchRepository implements MatchRepository {
-  constructor(private readonly matches: Match[]) {}
+  constructor(
+    private readonly matches: Match[],
+    private readonly events: TimelineEvent[],
+    private readonly positions: PositionState[],
+    private readonly videos: MatchVideo[],
+  ) {}
 
   async create(input: CreateMatchDto): Promise<Match> {
     const match: Match = { id: crypto.randomUUID(), notes: input.notes ?? '', ...input };
@@ -33,6 +39,33 @@ export class InMemoryMatchRepository implements MatchRepository {
 
   async findAll(): Promise<Match[]> {
     return [...this.matches].sort((a, b) => b.date.localeCompare(a.date));
+  }
+
+  async findAllSummaries(): Promise<MatchSummary[]> {
+    const eventCounts = this.events.reduce<Map<string, number>>((acc, event) => {
+      acc.set(event.matchId, (acc.get(event.matchId) ?? 0) + 1);
+      return acc;
+    }, new Map());
+
+    const positionCounts = this.positions.reduce<Map<string, number>>((acc, position) => {
+      acc.set(position.matchId, (acc.get(position.matchId) ?? 0) + 1);
+      return acc;
+    }, new Map());
+
+    const matchIdsWithVideo = new Set(this.videos.map((video) => video.matchId));
+
+    return this.matches
+      .map((match) => ({
+        matchId: match.id,
+        title: match.title,
+        competitorA: match.competitorA,
+        competitorB: match.competitorB,
+        eventDate: match.date,
+        eventCount: eventCounts.get(match.id) ?? 0,
+        positionCount: positionCounts.get(match.id) ?? 0,
+        hasVideo: matchIdsWithVideo.has(match.id),
+      }))
+      .sort((a, b) => b.eventDate.localeCompare(a.eventDate) || b.matchId.localeCompare(a.matchId));
   }
 
   async findById(id: string): Promise<Match | undefined> {

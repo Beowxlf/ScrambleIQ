@@ -21,6 +21,11 @@ export function validateUpdateTimelineEventPayload(payload: UpdateTimelineEventD
   const errors: string[] = [];
   const body = payload as unknown as Record<string, unknown>;
 
+  if (Object.keys(body).length === 0) {
+    errors.push('At least one field must be provided for update');
+    return errors;
+  }
+
   if ('timestamp' in body) {
     validateTimestampValue(body.timestamp, errors);
   }
