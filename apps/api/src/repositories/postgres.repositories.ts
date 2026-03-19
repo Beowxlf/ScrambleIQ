@@ -86,12 +86,12 @@ export class PostgresVideoRepository implements VideoRepository {
 export class PostgresDatasetValidationRepository implements DatasetValidationRepository {
   constructor(@Inject(DATABASE_CLIENT) private readonly client: PsqlClient) {}
   async upsert(matchId: string, report: DatasetValidationReport): Promise<void> {
-    await this.client.execute(`INSERT INTO dataset_validation_results (match_id,is_valid,issue_count,report) VALUES (${sqlLiteral(matchId)},${sqlLiteral(report.isValid)},${sqlLiteral(report.issueCount)},${sqlLiteral(JSON.stringify(report))}::jsonb) ON CONFLICT (match_id) DO UPDATE SET is_valid=EXCLUDED.is_valid,issue_count=EXCLUDED.issue_count,report=EXCLUDED.report,updated_at=NOW()`);
+    await this.client.execute(`INSERT INTO public.dataset_validation_results (match_id,is_valid,issue_count,report) VALUES (${sqlLiteral(matchId)},${sqlLiteral(report.isValid)},${sqlLiteral(report.issueCount)},${sqlLiteral(JSON.stringify(report))}::jsonb) ON CONFLICT (match_id) DO UPDATE SET is_valid=EXCLUDED.is_valid,issue_count=EXCLUDED.issue_count,report=EXCLUDED.report,updated_at=NOW()`);
   }
 
   async findByMatchId(matchId: string): Promise<DatasetValidationReport | undefined> {
     const rows = await this.client.rows<{ report: DatasetValidationReport }>(
-      `SELECT report FROM dataset_validation_results WHERE match_id=${sqlLiteral(matchId)}`,
+      `SELECT report FROM public.dataset_validation_results WHERE match_id=${sqlLiteral(matchId)}`,
     );
 
     return rows[0]?.report;

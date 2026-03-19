@@ -7,7 +7,7 @@ import { AppModule } from '../../src/app.module';
 import { configureApp } from '../../src/configure-app';
 import { PsqlClient } from '../../src/database/database.client';
 import { PostgresDatasetValidationRepository } from '../../src/repositories/postgres.repositories';
-import { prepareDatabase, requireDatabaseUrl } from './postgres-test.utils';
+import { prepareDatabase, requireDatabaseUrl, truncateDomainTables } from './postgres-test.utils';
 
 async function createTestApp(): Promise<INestApplication> {
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
@@ -26,7 +26,7 @@ describe('PostgreSQL services integration', () => {
   });
 
   beforeEach(async () => {
-    await client.execute('TRUNCATE TABLE dataset_validation_results, videos, positions, events, matches RESTART IDENTITY CASCADE');
+    await truncateDomainTables(client);
   });
 
   it('persists events across API restarts and keeps analytics on persisted data', async () => {

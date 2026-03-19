@@ -25,3 +25,9 @@ export async function prepareDatabase(client: PsqlClient): Promise<void> {
   await resetDatabase(client);
   await runMigrations(client);
 }
+
+export async function truncateDomainTables(client: PsqlClient): Promise<void> {
+  await client.execute(
+    'TRUNCATE TABLE public.dataset_validation_results, public.videos, public.positions, public.events, public.matches RESTART IDENTITY CASCADE',
+  );
+}
