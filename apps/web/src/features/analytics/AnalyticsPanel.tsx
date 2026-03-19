@@ -14,6 +14,7 @@ export function AnalyticsPanel({ api, matchId, refreshTrigger }: AnalyticsPanelP
   return (
     <section aria-labelledby="analytics-summary-heading">
       <h2 id="analytics-summary-heading">Analytics Summary</h2>
+      <p>Derived from currently saved timeline events and position states.</p>
 
       {isLoadingAnalytics ? <p>Loading analytics summary...</p> : null}
       {analyticsError ? <p>{analyticsError}</p> : null}

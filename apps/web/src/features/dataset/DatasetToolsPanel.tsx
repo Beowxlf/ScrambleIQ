@@ -18,6 +18,8 @@ export function DatasetToolsPanel({ api, matchId }: DatasetToolsPanelProps) {
     validationReport,
   } = useMatchDatasetTools({ api, matchId });
 
+  const hasBlockingValidationIssues = validationReport ? validationReport.issues.some((issue) => issue.severity === 'ERROR') : false;
+
   return (
       <section aria-labelledby="dataset-validation-heading">
       <h2 id="dataset-validation-heading">Dataset Validation</h2>
@@ -27,6 +29,9 @@ export function DatasetToolsPanel({ api, matchId }: DatasetToolsPanelProps) {
         </button>
         <button type="button" onClick={() => void validateDataset()} disabled={isValidatingDataset}>
           {isValidatingDataset ? 'Validating...' : 'Validate Dataset'}
+        </button>{' '}
+        <button type="button" onClick={() => void exportDataset()} disabled={isExportingDataset}>
+          {isExportingDataset ? 'Exporting...' : 'Export Dataset'}
         </button>
       </div>
 
@@ -39,7 +44,17 @@ export function DatasetToolsPanel({ api, matchId }: DatasetToolsPanelProps) {
       ) : null}
 
       {!isValidatingDataset && !datasetValidationError && validationReport ? (
-        <DatasetValidationReport validationReport={validationReport} />
+        <>
+          <h3>Export readiness</h3>
+          <p>
+            {validationReport.isValid
+              ? 'Ready to export: no blocking validation issues were found.'
+              : hasBlockingValidationIssues
+                ? 'Blocked for export: resolve blocking issues before relying on this dataset.'
+                : 'Export with caution: no blocking issues, but warnings should be reviewed.'}
+          </p>
+          <DatasetValidationReport validationReport={validationReport} />
+        </>
       ) : null}
     </section>
   );

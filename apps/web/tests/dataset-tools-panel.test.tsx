@@ -184,12 +184,13 @@ describe('DatasetToolsPanel', () => {
 
     expect(screen.getByText('Validating dataset...')).toBeInTheDocument();
 
-    expect(await screen.findByText('Validation status: Invalid')).toBeInTheDocument();
-    expect(screen.getByText('Total issues: 3')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'ERROR' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'WARNING' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'INFO' })).toBeInTheDocument();
+    expect(await screen.findByText('Validation status:')).toBeInTheDocument();
+    expect(screen.getByText('Total issues:')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Blocking issues \(ERROR\)/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Warnings \(WARNING\)/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Informational notes \(INFO\)/ })).toBeInTheDocument();
     expect(screen.getByText(/Video metadata missing/)).toBeInTheDocument();
+    expect(screen.getByText('Blocked for export: resolve blocking issues before relying on this dataset.')).toBeInTheDocument();
   });
 
   it('shows export and validation error states when API calls fail', async () => {

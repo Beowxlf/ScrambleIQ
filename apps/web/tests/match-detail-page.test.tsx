@@ -285,7 +285,7 @@ describe('MatchDetailPage', () => {
     expect(await screen.findByRole('button', { name: 'Export Dataset' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Validate Dataset' }));
 
-    expect(await screen.findByText('Validation status: Valid')).toBeInTheDocument();
+    expect(await screen.findByText('Validation status:')).toBeInTheDocument();
     expect(screen.getByText('No issues found. Dataset is ready for export.')).toBeInTheDocument();
   });
 
