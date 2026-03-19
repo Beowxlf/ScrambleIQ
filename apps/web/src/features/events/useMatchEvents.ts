@@ -74,6 +74,10 @@ export function useMatchEvents({ api, matchId, onEventsMutated }: UseMatchEvents
 
   const submitEvent = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const submitMode =
+      event.nativeEvent instanceof SubmitEvent && event.nativeEvent.submitter instanceof HTMLButtonElement
+        ? event.nativeEvent.submitter.value
+        : 'close';
 
     const validationErrors = validateTimelineEventForm(eventFormValues);
     setEventFormErrors(validationErrors);
@@ -98,10 +102,20 @@ export function useMatchEvents({ api, matchId, onEventsMutated }: UseMatchEvents
         setEvents((previousEvents) => [...previousEvents, createdEvent].sort((a, b) => a.timestamp - b.timestamp));
       }
 
-      setEventFormValues(initialTimelineEventValues);
+      const isAddingAnother = !editingEventId && submitMode === 'addAnother';
+
+      setEventFormValues(
+        isAddingAnother
+          ? {
+              ...initialTimelineEventValues,
+              eventType: eventFormValues.eventType,
+              competitor: eventFormValues.competitor,
+            }
+          : initialTimelineEventValues,
+      );
       setEventFormErrors({});
       setEditingEventId(null);
-      setIsEventFormVisible(false);
+      setIsEventFormVisible(isAddingAnother);
       onEventsMutated();
     } catch {
       setEventSubmissionError('Unable to save timeline event. Please try again.');
