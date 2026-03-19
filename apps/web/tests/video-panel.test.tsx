@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { VideoPanel } from '../src/features/video/VideoPanel';
+import { HttpRequestError, MatchVideoNotFoundError } from '../src/matches-api';
 import type { MatchesApi } from '../src/matches-api';
 
 function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
@@ -37,7 +38,7 @@ function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
       throw new Error('createMatchVideo was not mocked');
     },
     getMatchVideo: async () => {
-      throw new Error('Match video not found');
+      throw new MatchVideoNotFoundError('match-1');
     },
     updateMatchVideo: async () => {
       throw new Error('updateMatchVideo was not mocked');
@@ -67,6 +68,19 @@ describe('VideoPanel', () => {
     render(<VideoPanel api={api} matchId="match-1" seekRequest={null} />);
 
     expect(await screen.findByText('No video attached yet.')).toBeInTheDocument();
+  });
+
+  it('shows load error when video metadata request fails for non-not-found reasons', async () => {
+    const api = createMatchesApiMock({
+      getMatchVideo: async () => {
+        throw new HttpRequestError('Failed to load match video. Internal server error', 500, ['Internal server error']);
+      },
+    });
+
+    render(<VideoPanel api={api} matchId="match-1" seekRequest={null} />);
+
+    expect(await screen.findByText('Failed to load match video. Internal server error')).toBeInTheDocument();
+    expect(screen.queryByText('No video attached yet.')).not.toBeInTheDocument();
   });
 
   it('supports attach metadata flow', async () => {

@@ -317,6 +317,13 @@ describe('MatchesController', () => {
   it('rejects invalid route ids before hitting services', async () => {
     const response = await request(app.getHttpServer()).get('/matches/not-a-uuid').expect(400);
     expect(response.body.message).toContain('Validation failed (uuid is expected)');
+
+    await request(app.getHttpServer()).patch('/events/not-a-uuid').send({ eventType: 'sweep' }).expect(400);
+    await request(app.getHttpServer()).patch('/positions/not-a-uuid').send({ position: 'mount' }).expect(400);
+    await request(app.getHttpServer()).patch('/video/not-a-uuid').send({ title: 'Angle B' }).expect(400);
+    await request(app.getHttpServer()).get('/matches/not-a-uuid/events').expect(400);
+    await request(app.getHttpServer()).get('/matches/not-a-uuid/positions').expect(400);
+    await request(app.getHttpServer()).get('/matches/not-a-uuid/video').expect(400);
   });
 
   it('creates a position with POST /matches/:id/positions', async () => {

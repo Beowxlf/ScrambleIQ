@@ -59,6 +59,8 @@ export function EventPanel({ api, matchId, selectedEventId, onSeekToTimestamp, o
         />
       ) : null}
 
+      {!isEventFormVisible && eventSubmissionError ? <p className="status-error">{eventSubmissionError}</p> : null}
+
       {isLoadingEvents ? <p>Loading timeline events...</p> : null}
       {eventsError ? <p>{eventsError}</p> : null}
 

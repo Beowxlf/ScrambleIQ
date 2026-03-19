@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { createHttpMatchesApi } from '../src/matches-api';
+import { createHttpMatchesApi, HttpRequestError } from '../src/matches-api';
 
 describe('createHttpMatchesApi path parameter encoding', () => {
 
@@ -59,6 +59,27 @@ describe('createHttpMatchesApi path parameter encoding', () => {
     await api.validateMatchDataset('match/with spaces');
 
     expect(fetchImpl).toHaveBeenCalledWith('http://localhost:3000/matches/match%2Fwith%20spaces/validate');
+  });
+
+  it('surfaces backend validation messages for failed mutations', async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ message: ['title should not be empty'] }), { status: 400 }));
+    const api = createHttpMatchesApi({ baseUrl: 'http://localhost:3000', fetchImpl });
+
+    await expect(
+      api.createMatch({
+        title: '',
+        date: '2026-03-01',
+        ruleset: 'folkstyle',
+        competitorA: 'A',
+        competitorB: 'B',
+        notes: '',
+      }),
+    ).rejects.toEqual(expect.objectContaining<HttpRequestError>({
+      name: 'HttpRequestError',
+      status: 400,
+      details: ['title should not be empty'],
+      message: 'Failed to create match. title should not be empty',
+    }));
   });
 
 });

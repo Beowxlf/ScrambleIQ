@@ -37,7 +37,7 @@ export function VideoPanel({ api, matchId, seekRequest }: VideoPanelProps) {
       {isLoadingVideo ? <p>Loading video metadata...</p> : null}
       {videoError ? <p className="status-error">{videoError}</p> : null}
 
-      {!isLoadingVideo && !video ? <p>No video attached yet.</p> : null}
+      {!isLoadingVideo && !video && !videoError ? <p>No video attached yet.</p> : null}
 
       {!isLoadingVideo && video ? (
         <>

@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { EventPanel } from '../src/features/events/EventPanel';
+import { HttpRequestError, TimelineEventNotFoundError } from '../src/matches-api';
 import type { MatchesApi } from '../src/matches-api';
 
 function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
@@ -187,5 +188,56 @@ describe('EventPanel', () => {
 
     await waitFor(() => expect(createTimelineEvent).toHaveBeenCalledTimes(2));
     expect(await screen.findByRole('button', { name: '00:18 sweep B' })).toBeInTheDocument();
+  });
+
+  it('surfaces backend validation error details when event save fails', async () => {
+    const createTimelineEvent = vi.fn(async () => {
+      throw new HttpRequestError('Failed to create timeline event. timestamp must not be less than 0', 400, [
+        'timestamp must not be less than 0',
+      ]);
+    });
+    const api = createMatchesApiMock({ createTimelineEvent });
+
+    render(
+      <EventPanel
+        api={api}
+        matchId="match-1"
+        selectedEventId={null}
+        onSeekToTimestamp={vi.fn()}
+        onEventsMutated={vi.fn(async () => undefined)}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Add Event' }));
+    fireEvent.change(screen.getByLabelText('Timestamp (seconds)'), { target: { value: '12' } });
+    fireEvent.change(screen.getByLabelText('Event Type'), { target: { value: 'sweep' } });
+    fireEvent.change(screen.getByLabelText('Competitor'), { target: { value: 'B' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create Event' }));
+
+    expect(await screen.findByText('Failed to create timeline event. timestamp must not be less than 0')).toBeInTheDocument();
+  });
+
+  it('removes stale events and informs users when delete targets missing resources', async () => {
+    const api = createMatchesApiMock({
+      listTimelineEvents: async () => [{ id: 'event-1', matchId: 'match-1', timestamp: 12, eventType: 'entry', competitor: 'A' as const }],
+      deleteTimelineEvent: async () => {
+        throw new TimelineEventNotFoundError('event-1');
+      },
+    });
+
+    render(
+      <EventPanel
+        api={api}
+        matchId="match-1"
+        selectedEventId={null}
+        onSeekToTimestamp={vi.fn()}
+        onEventsMutated={vi.fn(async () => undefined)}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Delete Event' }));
+
+    expect(await screen.findByText('This timeline event no longer exists. The list has been refreshed.')).toBeInTheDocument();
+    expect(screen.getByText('No timeline events yet.')).toBeInTheDocument();
   });
 });

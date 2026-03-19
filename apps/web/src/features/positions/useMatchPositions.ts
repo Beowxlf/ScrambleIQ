@@ -2,7 +2,12 @@ import { FormEvent, useEffect, useState } from 'react';
 
 import type { PositionState } from '@scrambleiq/shared';
 
-import { MatchNotFoundError, MatchesApi } from '../../matches-api';
+import {
+  HttpRequestError,
+  MatchNotFoundError,
+  MatchesApi,
+  PositionStateNotFoundError,
+} from '../../matches-api';
 import {
   hasPositionStateValidationErrors,
   initialPositionStateValues,
@@ -16,6 +21,14 @@ interface UseMatchPositionsArgs {
   api: MatchesApi;
   matchId: string;
   onPositionsMutated: () => void;
+}
+
+function getRequestErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof HttpRequestError) {
+    return error.message;
+  }
+
+  return fallback;
 }
 
 function getLastPositionEnd(positions: PositionState[]): number | null {
@@ -158,8 +171,23 @@ export function useMatchPositions({ api, matchId, onPositionsMutated }: UseMatch
       }
 
       onPositionsMutated();
-    } catch {
-      setPositionSubmissionError('Unable to save position state. Please try again.');
+    } catch (error) {
+      if (error instanceof MatchNotFoundError) {
+        setPositionSubmissionError('This match is no longer available. Return to the match list and refresh.');
+        return;
+      }
+
+      if (error instanceof PositionStateNotFoundError && editingPositionId) {
+        setPositions((previous) => previous.filter((position) => position.id !== editingPositionId));
+        setEditingPositionId(null);
+        setIsPositionFormVisible(false);
+        setPositionFormValues(initialPositionStateValues);
+        setPositionFormErrors({});
+        setPositionSubmissionError('This position state no longer exists. The list has been refreshed.');
+        return;
+      }
+
+      setPositionSubmissionError(getRequestErrorMessage(error, 'Unable to save position state. Please try again.'));
     } finally {
       setIsSubmittingPosition(false);
     }
@@ -179,8 +207,14 @@ export function useMatchPositions({ api, matchId, onPositionsMutated }: UseMatch
         setPositionFormValues(initialPositionStateValues);
         setPositionFormErrors({});
       }
-    } catch {
-      setPositionSubmissionError('Unable to delete position state. Please try again.');
+    } catch (error) {
+      if (error instanceof PositionStateNotFoundError) {
+        setPositions((previous) => previous.filter((position) => position.id !== positionId));
+        setPositionSubmissionError('This position state no longer exists. The list has been refreshed.');
+        return;
+      }
+
+      setPositionSubmissionError(getRequestErrorMessage(error, 'Unable to delete position state. Please try again.'));
     }
   };
 

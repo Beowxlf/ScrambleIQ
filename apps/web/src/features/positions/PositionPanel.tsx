@@ -59,6 +59,8 @@ export function PositionPanel({ api, matchId, selectedPositionId, onSeekToTimest
         />
       ) : null}
 
+      {!isPositionFormVisible && positionSubmissionError ? <p className="status-error">{positionSubmissionError}</p> : null}
+
       {isLoadingPositions ? <p>Loading position states...</p> : null}
       {positionsError ? <p>{positionsError}</p> : null}
 

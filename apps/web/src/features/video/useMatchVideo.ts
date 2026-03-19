@@ -2,7 +2,12 @@ import { FormEvent, useEffect, useState } from 'react';
 
 import type { MatchVideo } from '@scrambleiq/shared';
 
-import type { MatchesApi } from '../../matches-api';
+import {
+  HttpRequestError,
+  MatchNotFoundError,
+  MatchVideoNotFoundError,
+  type MatchesApi,
+} from '../../matches-api';
 import {
   hasMatchVideoValidationErrors,
   initialMatchVideoValues,
@@ -35,6 +40,14 @@ export function useMatchVideo({ api, matchId, seekRequest }: UseMatchVideoProps)
   const [isEditingVideo, setIsEditingVideo] = useState(false);
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
 
+  const getRequestErrorMessage = (error: unknown, fallback: string): string => {
+    if (error instanceof HttpRequestError) {
+      return error.message;
+    }
+
+    return fallback;
+  };
+
   useEffect(() => {
     let isMounted = true;
 
@@ -54,10 +67,22 @@ export function useMatchVideo({ api, matchId, seekRequest }: UseMatchVideoProps)
         if (isMounted) {
           setVideo(fetchedVideo);
         }
-      } catch {
-        if (isMounted) {
-          setVideoError(null);
+      } catch (error) {
+        if (!isMounted) {
+          return;
         }
+
+        if (error instanceof MatchVideoNotFoundError) {
+          setVideoError(null);
+          return;
+        }
+
+        if (error instanceof MatchNotFoundError) {
+          setVideoError('This match no longer exists. Return to the match list and refresh.');
+          return;
+        }
+
+        setVideoError(getRequestErrorMessage(error, 'Unable to load video metadata right now.'));
       } finally {
         if (isMounted) {
           setIsLoadingVideo(false);
@@ -102,8 +127,23 @@ export function useMatchVideo({ api, matchId, seekRequest }: UseMatchVideoProps)
       setIsEditingVideo(false);
       setVideoFormErrors({});
       setVideoFormValues(initialMatchVideoValues);
-    } catch {
-      setVideoSubmissionError('Unable to save match video metadata. Please try again.');
+    } catch (error) {
+      if (error instanceof MatchNotFoundError) {
+        setVideoSubmissionError('This match is no longer available. Return to the match list and refresh.');
+        return;
+      }
+
+      if (error instanceof MatchVideoNotFoundError && video) {
+        setVideo(null);
+        setIsEditingVideo(false);
+        setIsVideoFormVisible(false);
+        setVideoFormValues(initialMatchVideoValues);
+        setVideoFormErrors({});
+        setVideoSubmissionError('This video no longer exists. The view has been refreshed.');
+        return;
+      }
+
+      setVideoSubmissionError(getRequestErrorMessage(error, 'Unable to save match video metadata. Please try again.'));
     } finally {
       setIsSubmittingVideo(false);
     }
@@ -140,8 +180,18 @@ export function useMatchVideo({ api, matchId, seekRequest }: UseMatchVideoProps)
       setIsEditingVideo(false);
       setVideoFormValues(initialMatchVideoValues);
       setIsVideoFormVisible(false);
-    } catch {
-      setVideoSubmissionError('Unable to remove match video metadata. Please try again.');
+    } catch (error) {
+      if (error instanceof MatchVideoNotFoundError) {
+        setVideo(null);
+        setIsEditingVideo(false);
+        setIsVideoFormVisible(false);
+        setVideoFormValues(initialMatchVideoValues);
+        setVideoFormErrors({});
+        setVideoSubmissionError('This video no longer exists. The view has been refreshed.');
+        return;
+      }
+
+      setVideoSubmissionError(getRequestErrorMessage(error, 'Unable to remove match video metadata. Please try again.'));
     }
   };
 
