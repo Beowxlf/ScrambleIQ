@@ -47,7 +47,7 @@ export class MatchVideoNotFoundError extends Error {
 }
 export interface MatchesApi {
   createMatch(payload: CreateMatchDto): Promise<Match>;
-  listMatches(query?: { competitor?: string; hasVideo?: boolean; limit?: number; offset?: number }): Promise<MatchListResponse>;
+  listMatches(query?: { competitor?: string; dateFrom?: string; dateTo?: string; hasVideo?: boolean; limit?: number; offset?: number }): Promise<MatchListResponse>;
   getMatch(id: string): Promise<Match>;
   updateMatch(id: string, payload: UpdateMatchDto): Promise<Match>;
   deleteMatch(id: string): Promise<void>;
@@ -107,6 +107,14 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
 
       if (query?.competitor) {
         searchParams.set('competitor', query.competitor);
+      }
+
+      if (query?.dateFrom) {
+        searchParams.set('dateFrom', query.dateFrom);
+      }
+
+      if (query?.dateTo) {
+        searchParams.set('dateTo', query.dateTo);
       }
 
       if (query?.hasVideo !== undefined) {

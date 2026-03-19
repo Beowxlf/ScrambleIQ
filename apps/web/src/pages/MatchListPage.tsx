@@ -78,9 +78,19 @@ export function MatchListPage({ api, onOpenMatch }: MatchListPageProps) {
         isLoadingMatches={isLoadingMatches}
         matchesError={matchesError}
         competitorFilter={filters.competitorFilter}
+        dateFromFilter={filters.dateFromFilter}
+        dateToFilter={filters.dateToFilter}
         hasVideoOnly={filters.hasVideoOnly}
+        pageSize={filters.limit}
+        pageOffset={filters.offset}
+        totalMatches={filters.total}
         onCompetitorFilterChange={filters.setCompetitorFilter}
+        onDateFromFilterChange={filters.setDateFromFilter}
+        onDateToFilterChange={filters.setDateToFilter}
         onHasVideoOnlyChange={filters.setHasVideoOnly}
+        onPageSizeChange={filters.setLimit}
+        onPreviousPage={filters.goToPreviousPage}
+        onNextPage={filters.goToNextPage}
         onViewMatch={onOpenMatch}
       />
     </main>
