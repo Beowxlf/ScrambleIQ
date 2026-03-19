@@ -8,9 +8,10 @@ interface VideoPanelProps {
   api: MatchesApi;
   matchId: string;
   seekRequest: VideoSeekRequest | null;
+  onVideoMetadataMutated: () => void;
 }
 
-export function VideoPanel({ api, matchId, seekRequest }: VideoPanelProps) {
+export function VideoPanel({ api, matchId, seekRequest, onVideoMetadataMutated }: VideoPanelProps) {
   const {
     video,
     isLoadingVideo,
@@ -28,7 +29,7 @@ export function VideoPanel({ api, matchId, seekRequest }: VideoPanelProps) {
     deleteVideo,
     cancelVideoForm,
     showVideoForm,
-  } = useMatchVideo({ api, matchId, seekRequest });
+  } = useMatchVideo({ api, matchId, seekRequest, onVideoMetadataMutated });
 
   return (
     <section aria-labelledby="video-review-heading">

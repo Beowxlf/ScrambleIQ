@@ -5,9 +5,10 @@ import { useMatchDatasetTools } from './useMatchDatasetTools';
 interface DatasetToolsPanelProps {
   api: MatchesApi;
   matchId: string;
+  refreshTrigger: number;
 }
 
-export function DatasetToolsPanel({ api, matchId }: DatasetToolsPanelProps) {
+export function DatasetToolsPanel({ api, matchId, refreshTrigger }: DatasetToolsPanelProps) {
   const {
     datasetExportError,
     datasetValidationError,
@@ -16,7 +17,7 @@ export function DatasetToolsPanel({ api, matchId }: DatasetToolsPanelProps) {
     isValidatingDataset,
     validateDataset,
     validationReport,
-  } = useMatchDatasetTools({ api, matchId });
+  } = useMatchDatasetTools({ api, matchId, refreshTrigger });
 
   const hasBlockingValidationIssues = validationReport ? validationReport.issues.some((issue) => issue.severity === 'ERROR') : false;
 

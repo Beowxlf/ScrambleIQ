@@ -35,7 +35,7 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
   const [isDeleteConfirming, setIsDeleteConfirming] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [analyticsRefreshTrigger, setAnalyticsRefreshTrigger] = useState(0);
+  const [workspaceRefreshTrigger, setWorkspaceRefreshTrigger] = useState(0);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [selectedPositionId, setSelectedPositionId] = useState<string | null>(null);
   const [videoSeekRequest, setVideoSeekRequest] = useState<VideoSeekRequest | null>(null);
@@ -134,8 +134,15 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
     }
   };
 
-  const refreshAnalytics = () => {
-    setAnalyticsRefreshTrigger((currentValue) => currentValue + 1);
+  const refreshWorkspaceData = () => {
+    setWorkspaceRefreshTrigger((currentValue) => currentValue + 1);
+  };
+
+  const handleVideoMetadataMutated = () => {
+    refreshWorkspaceData();
+    setVideoSeekRequest(null);
+    setSelectedEventId(null);
+    setSelectedPositionId(null);
   };
 
   const deleteMatch = async () => {
@@ -314,8 +321,8 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
           <div className="section-stack">
             <section aria-labelledby="review-context-heading">
               <h3 id="review-context-heading">Review Context</h3>
-              <AnalyticsPanel api={api} matchId={matchId} refreshTrigger={analyticsRefreshTrigger} />
-              <VideoPanel api={api} matchId={matchId} seekRequest={videoSeekRequest} />
+              <AnalyticsPanel api={api} matchId={matchId} refreshTrigger={workspaceRefreshTrigger} />
+              <VideoPanel api={api} matchId={matchId} seekRequest={videoSeekRequest} onVideoMetadataMutated={handleVideoMetadataMutated} />
             </section>
 
             <section aria-labelledby="timeline-review-heading">
@@ -325,20 +332,20 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
                 matchId={matchId}
                 selectedEventId={selectedEventId}
                 onSeekToTimestamp={(timestamp, eventId) => seekToTimestamp(timestamp, { eventId })}
-                onEventsMutated={refreshAnalytics}
+                onEventsMutated={refreshWorkspaceData}
               />
               <PositionPanel
                 api={api}
                 matchId={matchId}
                 selectedPositionId={selectedPositionId}
                 onSeekToTimestamp={(timestamp, positionId) => seekToTimestamp(timestamp, { positionId })}
-                onPositionsMutated={refreshAnalytics}
+                onPositionsMutated={refreshWorkspaceData}
               />
             </section>
 
             <section aria-labelledby="data-quality-tools-heading">
               <h3 id="data-quality-tools-heading">Data Quality Tools</h3>
-              <DatasetToolsPanel api={api} matchId={matchId} />
+              <DatasetToolsPanel api={api} matchId={matchId} refreshTrigger={workspaceRefreshTrigger} />
             </section>
           </div>
         </section>

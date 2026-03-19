@@ -289,4 +289,65 @@ describe('MatchDetailPage', () => {
     expect(screen.getByText('No issues found. Dataset is ready for export.')).toBeInTheDocument();
   });
 
+  it('clears stale dataset validation results after timeline mutations', async () => {
+    const validateMatchDataset = vi.fn(async (matchId: string) => ({
+      matchId,
+      isValid: true,
+      issueCount: 0,
+      issues: [],
+    }));
+
+    const api = createMatchesApiMock({
+      validateMatchDataset,
+      createTimelineEvent: vi.fn(async () => ({ id: 'event-2', matchId: 'match-1', timestamp: 10, eventType: 'entry', competitor: 'A' as const })),
+    });
+
+    render(<MatchDetailPage api={api} matchId="match-1" />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Validate Dataset' }));
+    expect(await screen.findByText('Validation status:')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add Event' }));
+    fireEvent.change(screen.getByLabelText('Timestamp (seconds)'), { target: { value: '10' } });
+    fireEvent.change(screen.getByLabelText('Event Type'), { target: { value: 'entry' } });
+    fireEvent.change(screen.getByLabelText('Competitor'), { target: { value: 'A' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create Event' }));
+
+    expect(await screen.findByText('Run validation to inspect dataset integrity before exporting.')).toBeInTheDocument();
+  });
+
+  it('resets timeline selection after video metadata updates', async () => {
+    const api = createMatchesApiMock({
+      getMatchVideo: vi.fn(async () => ({
+        id: 'video-1',
+        matchId: 'match-1',
+        title: 'Main camera',
+        sourceType: 'remote_url' as const,
+        sourceUrl: 'https://cdn.example.com/match.mp4',
+      })),
+      listTimelineEvents: vi.fn(async () => [{ id: 'event-1', matchId: 'match-1', timestamp: 8, eventType: 'entry', competitor: 'A' as const }]),
+      updateMatchVideo: vi.fn(async () => ({
+        id: 'video-1',
+        matchId: 'match-1',
+        title: 'Main camera updated',
+        sourceType: 'remote_url' as const,
+        sourceUrl: 'https://cdn.example.com/match-v2.mp4',
+      })),
+    });
+
+    render(<MatchDetailPage api={api} matchId="match-1" />);
+
+    const eventSeekButton = await screen.findByRole('button', { name: '00:08 entry A' });
+    fireEvent.click(eventSeekButton);
+    expect(eventSeekButton).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Video' }));
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Main camera updated' } });
+    fireEvent.change(screen.getByLabelText('Source URL'), { target: { value: 'https://cdn.example.com/match-v2.mp4' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Video' }));
+
+    await screen.findByText('Title: Main camera updated');
+    expect(screen.getByRole('button', { name: '00:08 entry A' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
 });

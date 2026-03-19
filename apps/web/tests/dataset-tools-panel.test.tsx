@@ -151,7 +151,7 @@ describe('DatasetToolsPanel', () => {
 
     const api = createMatchesApiMock({ exportMatchDataset });
 
-    render(<DatasetToolsPanel api={api} matchId="match-7" />);
+    render(<DatasetToolsPanel api={api} matchId="match-7" refreshTrigger={0} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Export Dataset' }));
 
@@ -178,7 +178,7 @@ describe('DatasetToolsPanel', () => {
 
     const api = createMatchesApiMock({ validateMatchDataset });
 
-    render(<DatasetToolsPanel api={api} matchId="match-1" />);
+    render(<DatasetToolsPanel api={api} matchId="match-1" refreshTrigger={0} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Validate Dataset' }));
 
@@ -203,7 +203,7 @@ describe('DatasetToolsPanel', () => {
       }),
     });
 
-    render(<DatasetToolsPanel api={api} matchId="match-1" />);
+    render(<DatasetToolsPanel api={api} matchId="match-1" refreshTrigger={0} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Export Dataset' }));
     expect(await screen.findByText('Unable to export dataset right now. Please try again.')).toBeInTheDocument();
