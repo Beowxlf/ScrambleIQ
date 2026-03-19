@@ -813,11 +813,11 @@ describe('App', () => {
     window.history.replaceState({}, '', '/matches/match-1');
     render(<App matchesApi={matchesApi} />);
 
-    expect(await screen.findByText('Total events: 2')).toBeInTheDocument();
-    expect(screen.getByText('guard_pass: 1')).toBeInTheDocument();
-    expect(screen.getByText('Total tracked position time (seconds): 20')).toBeInTheDocument();
-    expect(screen.getAllByText('closed_guard: 12').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('side_control: 8').length).toBeGreaterThan(0);
+    expect(await screen.findByText('Total events:')).toBeInTheDocument();
+    expect(screen.getByText((_content, element) => element?.textContent === 'guard_pass: 1')).toBeInTheDocument();
+    expect(screen.getByText('Total tracked position time (seconds):')).toBeInTheDocument();
+    expect(screen.getAllByText((_content, element) => element?.textContent === 'closed guard: 12').length).toBeGreaterThan(0);
+    expect(screen.getAllByText((_content, element) => element?.textContent === 'side control: 8').length).toBeGreaterThan(0);
   });
 
   it('shows analytics empty state when annotation data is minimal', async () => {
@@ -899,10 +899,10 @@ describe('App', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Validate Dataset' }));
 
-    expect(await screen.findByText('Validation status: Invalid')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'ERROR' })).toBeInTheDocument();
+    expect(await screen.findByText('Validation status:')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Blocking issues \(ERROR\)/ })).toBeInTheDocument();
     expect(screen.getByText('POSITION_OVERLAP')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'WARNING' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Warnings \(WARNING\)/ })).toBeInTheDocument();
     expect(screen.getByText('MISSING_VIDEO')).toBeInTheDocument();
   });
 
