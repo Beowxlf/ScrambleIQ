@@ -153,11 +153,16 @@ describe('PositionPanel', () => {
     fireEvent.change(screen.getByLabelText('Position'), { target: { value: 'half_guard' } });
     fireEvent.change(screen.getByLabelText('Top Competitor'), { target: { value: 'B' } });
     fireEvent.change(screen.getByLabelText('Start Timestamp (seconds)'), { target: { value: '24' } });
+    expect(screen.getByLabelText('End Timestamp (seconds)')).toHaveValue(25);
     fireEvent.change(screen.getByLabelText('End Timestamp (seconds)'), { target: { value: '30' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create Position' }));
 
     await waitFor(() => expect(createPositionState).toHaveBeenCalledTimes(1));
     expect(await screen.findByRole('button', { name: '00:24 - 00:30 half_guard top: B' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Position')).toHaveValue('half_guard');
+    expect(screen.getByLabelText('Top Competitor')).toHaveValue('B');
+    expect(screen.getByLabelText('Start Timestamp (seconds)')).toHaveValue(30);
+    expect(screen.getByLabelText('End Timestamp (seconds)')).toHaveValue(31);
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit Position' })[0]);
     fireEvent.change(screen.getByLabelText('Position'), { target: { value: 'mount' } });
@@ -196,5 +201,24 @@ describe('PositionPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create Position' }));
 
     expect(await screen.findByText('Unable to save position state. Please try again.')).toBeInTheDocument();
+  });
+
+  it('autofills end timestamp when start timestamp is entered during create flow', async () => {
+    const api = createMatchesApiMock();
+
+    render(
+      <PositionPanel
+        api={api}
+        matchId="match-1"
+        selectedPositionId={null}
+        onSeekToTimestamp={vi.fn()}
+        onPositionsMutated={vi.fn(async () => undefined)}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Add Position' }));
+    fireEvent.change(screen.getByLabelText('Start Timestamp (seconds)'), { target: { value: '41' } });
+
+    expect(screen.getByLabelText('End Timestamp (seconds)')).toHaveValue(42);
   });
 });
