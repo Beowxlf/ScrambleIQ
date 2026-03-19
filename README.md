@@ -438,6 +438,8 @@ Migrations are SQL-first and live in `apps/api/migrations/`.
 
 Current base migration: `001_initial_schema.sql`.
 
+Migrations explicitly target the `public` schema (`CREATE SCHEMA IF NOT EXISTS public` + schema-qualified table creation) so execution is deterministic on clean test databases.
+
 Tables:
 
 - `matches`

@@ -1,8 +1,9 @@
-SET search_path TO public;
+CREATE SCHEMA IF NOT EXISTS public;
+SET search_path TO public, pg_catalog;
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
-CREATE TABLE IF NOT EXISTS matches (
+CREATE TABLE IF NOT EXISTS public.matches (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   date DATE NOT NULL,
@@ -14,9 +15,9 @@ CREATE TABLE IF NOT EXISTS matches (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS events (
+CREATE TABLE IF NOT EXISTS public.events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  match_id UUID NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
+  match_id UUID NOT NULL REFERENCES public.matches(id) ON DELETE CASCADE,
   timestamp_seconds INTEGER NOT NULL,
   event_type TEXT NOT NULL,
   competitor CHAR(1) NOT NULL,
@@ -26,11 +27,11 @@ CREATE TABLE IF NOT EXISTS events (
   CONSTRAINT events_competitor_check CHECK (competitor IN ('A', 'B'))
 );
 
-CREATE INDEX IF NOT EXISTS events_match_id_timestamp_idx ON events(match_id, timestamp_seconds ASC);
+CREATE INDEX IF NOT EXISTS events_match_id_timestamp_idx ON public.events(match_id, timestamp_seconds ASC);
 
-CREATE TABLE IF NOT EXISTS positions (
+CREATE TABLE IF NOT EXISTS public.positions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  match_id UUID NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
+  match_id UUID NOT NULL REFERENCES public.matches(id) ON DELETE CASCADE,
   position TEXT NOT NULL,
   competitor_top CHAR(1) NOT NULL,
   timestamp_start INTEGER NOT NULL,
@@ -42,11 +43,11 @@ CREATE TABLE IF NOT EXISTS positions (
   CONSTRAINT positions_timestamp_order_check CHECK (timestamp_end > timestamp_start)
 );
 
-CREATE INDEX IF NOT EXISTS positions_match_id_timestamp_idx ON positions(match_id, timestamp_start ASC);
+CREATE INDEX IF NOT EXISTS positions_match_id_timestamp_idx ON public.positions(match_id, timestamp_start ASC);
 
-CREATE TABLE IF NOT EXISTS videos (
+CREATE TABLE IF NOT EXISTS public.videos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  match_id UUID NOT NULL UNIQUE REFERENCES matches(id) ON DELETE CASCADE,
+  match_id UUID NOT NULL UNIQUE REFERENCES public.matches(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   source_type TEXT NOT NULL,
   source_url TEXT NOT NULL,
@@ -56,9 +57,9 @@ CREATE TABLE IF NOT EXISTS videos (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS dataset_validation_results (
+CREATE TABLE IF NOT EXISTS public.dataset_validation_results (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  match_id UUID NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
+  match_id UUID NOT NULL REFERENCES public.matches(id) ON DELETE CASCADE,
   is_valid BOOLEAN NOT NULL,
   issue_count INTEGER NOT NULL,
   report JSONB NOT NULL,
@@ -67,4 +68,4 @@ CREATE TABLE IF NOT EXISTS dataset_validation_results (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS dataset_validation_results_match_id_idx
-  ON dataset_validation_results(match_id);
+  ON public.dataset_validation_results(match_id);
