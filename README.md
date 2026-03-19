@@ -220,7 +220,7 @@ Timeline event form validation requires:
 
 ### Backend (`apps/api`)
 
-The API exposes match and timeline endpoints backed by in-memory stores:
+The API exposes match and timeline endpoints backed by the configured repository mode (PostgreSQL when `DATABASE_URL` is set, otherwise in-memory fallback):
 
 - `GET http://localhost:3000/health`
 - `POST http://localhost:3000/matches`
@@ -302,7 +302,7 @@ List response shape:
 - `competitorTopTimeByPositionSeconds`
 - `totalTrackedPositionTimeSeconds`
 
-Analytics are computed on read from current timeline events and position states in memory and are **not persisted**.
+Analytics are computed on read from current timeline events and position states and are **not persisted as standalone records**.
 These analytics are based only on manual annotations and are **not ML-generated**.
 
 
@@ -412,8 +412,8 @@ Workflow file: `.github/workflows/ci.yml`.
 
 ```text
 apps/
-  api/     # NestJS backend scaffold + in-memory match and timeline event APIs
-  web/     # React + Vite frontend scaffold + match and timeline event UI
+  api/     # NestJS backend scaffold + repository-backed APIs (PostgreSQL or in-memory fallback)
+  web/     # React + Vite frontend scaffold + manual-first match annotation UI
 packages/
   shared/  # shared domain types consumed by web and api
 Guidelines/
