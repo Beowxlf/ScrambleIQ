@@ -289,4 +289,39 @@ describe('MatchDetailPage', () => {
     expect(screen.getByText('No issues found. Dataset is ready for export.')).toBeInTheDocument();
   });
 
+  it('improves review efficiency with active seek feedback and quick navigation controls', async () => {
+    const scrollIntoViewMock = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollIntoViewMock,
+    });
+
+    const api = createMatchesApiMock({
+      listTimelineEvents: vi.fn(async () => [{ id: 'event-1', matchId: 'match-1', timestamp: 8, eventType: 'entry', competitor: 'A' as const }]),
+      listPositionStates: vi.fn(async () => [
+        {
+          id: 'position-1',
+          matchId: 'match-1',
+          position: 'standing' as const,
+          competitorTop: 'A' as const,
+          timestampStart: 4,
+          timestampEnd: 8,
+        },
+      ]),
+    });
+
+    render(<MatchDetailPage api={api} matchId="match-1" />);
+
+    fireEvent.click(await screen.findByRole('button', { name: '00:08 entry A' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('Seeking video to 00:08 from event: entry A.');
+    expect(screen.getByRole('button', { name: '00:08 entry A' })).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(await screen.findByRole('button', { name: '00:04 - 00:08 standing top: A' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('Seeking video to 00:04 from position: standing top: A.');
+    expect(screen.getByRole('button', { name: '00:04 - 00:08 standing top: A' })).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Jump to Timeline Review' }));
+    expect(scrollIntoViewMock).toHaveBeenCalledTimes(1);
+  });
+
 });
