@@ -21,7 +21,7 @@ export function DatasetToolsPanel({ api, matchId }: DatasetToolsPanelProps) {
   const hasBlockingValidationIssues = validationReport ? validationReport.issues.some((issue) => issue.severity === 'ERROR') : false;
 
   return (
-      <section aria-labelledby="dataset-validation-heading">
+    <section aria-labelledby="dataset-validation-heading">
       <h2 id="dataset-validation-heading">Dataset Validation</h2>
       <div className="button-row">
         <button type="button" onClick={() => void exportDataset()} disabled={isExportingDataset}>
@@ -29,9 +29,6 @@ export function DatasetToolsPanel({ api, matchId }: DatasetToolsPanelProps) {
         </button>
         <button type="button" onClick={() => void validateDataset()} disabled={isValidatingDataset}>
           {isValidatingDataset ? 'Validating...' : 'Validate Dataset'}
-        </button>{' '}
-        <button type="button" onClick={() => void exportDataset()} disabled={isExportingDataset}>
-          {isExportingDataset ? 'Exporting...' : 'Export Dataset'}
         </button>
       </div>
 
