@@ -216,4 +216,38 @@ describe('PostgreSQL repositories integration', () => {
     const fetched = await validationRepository.findByMatchId(match.id);
     expect(fetched).toEqual(report);
   });
+
+  it('surfaces repository failures for foreign-key violations on unknown matches', async () => {
+    const unknownMatchId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+
+    await expect(eventRepository.create(unknownMatchId, {
+      timestamp: 10,
+      eventType: 'entry',
+      competitor: 'A',
+      notes: 'should fail',
+    })).rejects.toThrow();
+
+    await expect(positionRepository.create(unknownMatchId, {
+      position: 'standing',
+      competitorTop: 'A',
+      timestampStart: 0,
+      timestampEnd: 5,
+      notes: 'should fail',
+    })).rejects.toThrow();
+
+    await expect(videoRepository.create(unknownMatchId, {
+      title: 'Orphaned',
+      sourceType: 'remote_url',
+      sourceUrl: 'https://example.com/video.mp4',
+      durationSeconds: 10,
+      notes: 'should fail',
+    })).rejects.toThrow();
+
+    await expect(validationRepository.upsert(unknownMatchId, {
+      matchId: unknownMatchId,
+      isValid: true,
+      issueCount: 0,
+      issues: [],
+    })).rejects.toThrow();
+  });
 });

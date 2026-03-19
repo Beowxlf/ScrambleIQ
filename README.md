@@ -66,6 +66,8 @@ npm run start --workspace @scrambleiq/api
 
 Phase-1 now includes PostgreSQL-backed integration tests that validate real repository/service behavior against a live database.
 
+`npm run test:integration` is a required quality gate for CI alongside the root lint/typecheck/test/build scripts.
+
 ### Local setup (containerized test database)
 
 Requirements:
@@ -76,6 +78,16 @@ Requirements:
 Run the full integration test flow:
 
 ```bash
+npm run test:integration
+```
+
+Recommended full local verification order before opening a PR:
+
+```bash
+npm run lint
+npm run typecheck
+npm run test
+npm run build
 npm run test:integration
 ```
 
