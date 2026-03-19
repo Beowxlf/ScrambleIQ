@@ -53,6 +53,8 @@ Version 1.0 establishes a reliable manual-first platform for match review and st
 
 Version 1.1 focuses on faster, clearer manual workflows without changing the manual-first model.
 
+Phase 2 detailed scope and acceptance contract: `Guidelines/Phase-2-Kickoff.md`.
+
 ### Objectives
 
 1. reduce annotation friction and click depth
