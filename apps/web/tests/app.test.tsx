@@ -598,7 +598,7 @@ describe('App', () => {
     window.history.replaceState({}, '', '/matches/match-1');
     render(<App matchesApi={matchesApi} />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Export Dataset' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Export Dataset JSON' }));
 
     await waitFor(() => expect(exportMatchDataset).toHaveBeenCalledWith('match-1'));
     expect(clickSpy).toHaveBeenCalledTimes(1);
@@ -629,7 +629,7 @@ describe('App', () => {
     window.history.replaceState({}, '', '/matches/match-1');
     render(<App matchesApi={matchesApi} />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Export Dataset' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Export Dataset JSON' }));
     expect(await screen.findByRole('button', { name: 'Exporting...' })).toBeInTheDocument();
 
     exportRequest.reject(new Error('export failed'));
@@ -814,10 +814,10 @@ describe('App', () => {
     render(<App matchesApi={matchesApi} />);
 
     expect(await screen.findByText('Total events:')).toBeInTheDocument();
-    expect(screen.getByText((_content, element) => element?.textContent === 'guard_pass: 1')).toBeInTheDocument();
+    expect(screen.getByText((_content, element) => element?.textContent === 'guard_pass: 1 (50%)')).toBeInTheDocument();
     expect(screen.getByText('Total tracked position time (seconds):')).toBeInTheDocument();
-    expect(screen.getAllByText((_content, element) => element?.textContent === 'closed guard: 12').length).toBeGreaterThan(0);
-    expect(screen.getAllByText((_content, element) => element?.textContent === 'side control: 8').length).toBeGreaterThan(0);
+    expect(screen.getByText((_content, element) => element?.textContent === 'closed guard: 12s (60%)')).toBeInTheDocument();
+    expect(screen.getByText((_content, element) => element?.textContent === 'side control: 8s (40%)')).toBeInTheDocument();
   });
 
   it('shows analytics empty state when annotation data is minimal', async () => {

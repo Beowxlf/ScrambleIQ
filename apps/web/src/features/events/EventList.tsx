@@ -18,21 +18,22 @@ export function EventList({ events, selectedEventId, onSeekToEvent, onEdit, onDe
 
         return (
           <li key={timelineEvent.id}>
-          <button
-            type="button"
-            onClick={() => onSeekToEvent(timelineEvent)}
-            aria-pressed={selectedEventId === timelineEvent.id}
-            aria-label={eventLabel}
-          >
-            {eventLabel}
-          </button>{' '}
-          <button type="button" onClick={() => onEdit(timelineEvent)}>
-            Edit Event
-          </button>{' '}
-          <button type="button" onClick={() => onDelete(timelineEvent.id)}>
-            Delete Event
-          </button>
-          {timelineEvent.notes ? <p>Notes: {timelineEvent.notes}</p> : null}
+            <button
+              type="button"
+              onClick={() => onSeekToEvent(timelineEvent)}
+              aria-pressed={selectedEventId === timelineEvent.id}
+              aria-label={eventLabel}
+              className={selectedEventId === timelineEvent.id ? 'timeline-seek-button timeline-seek-button--active' : 'timeline-seek-button'}
+            >
+              {eventLabel}
+            </button>{' '}
+            <button type="button" onClick={() => onEdit(timelineEvent)}>
+              Edit Event
+            </button>{' '}
+            <button type="button" onClick={() => onDelete(timelineEvent.id)}>
+              Delete Event
+            </button>
+            {timelineEvent.notes ? <p>Notes: {timelineEvent.notes}</p> : null}
           </li>
         );
       })}

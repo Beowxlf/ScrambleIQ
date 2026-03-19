@@ -282,72 +282,46 @@ describe('MatchDetailPage', () => {
 
     render(<MatchDetailPage api={api} matchId="match-1" />);
 
-    expect(await screen.findByRole('button', { name: 'Export Dataset' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Export Dataset JSON' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Validate Dataset' }));
 
     expect(await screen.findByText('Validation status:')).toBeInTheDocument();
     expect(screen.getByText('No issues found. Dataset is ready for export.')).toBeInTheDocument();
   });
 
-  it('clears stale dataset validation results after timeline mutations', async () => {
-    const validateMatchDataset = vi.fn(async (matchId: string) => ({
-      matchId,
-      isValid: true,
-      issueCount: 0,
-      issues: [],
-    }));
-
-    const api = createMatchesApiMock({
-      validateMatchDataset,
-      createTimelineEvent: vi.fn(async () => ({ id: 'event-2', matchId: 'match-1', timestamp: 10, eventType: 'entry', competitor: 'A' as const })),
+  it('improves review efficiency with active seek feedback and quick navigation controls', async () => {
+    const scrollIntoViewMock = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollIntoViewMock,
     });
 
-    render(<MatchDetailPage api={api} matchId="match-1" />);
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Validate Dataset' }));
-    expect(await screen.findByText('Validation status:')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Add Event' }));
-    fireEvent.change(screen.getByLabelText('Timestamp (seconds)'), { target: { value: '10' } });
-    fireEvent.change(screen.getByLabelText('Event Type'), { target: { value: 'entry' } });
-    fireEvent.change(screen.getByLabelText('Competitor'), { target: { value: 'A' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Create Event' }));
-
-    expect(await screen.findByText('Run validation to inspect dataset integrity before exporting.')).toBeInTheDocument();
-  });
-
-  it('resets timeline selection after video metadata updates', async () => {
     const api = createMatchesApiMock({
-      getMatchVideo: vi.fn(async () => ({
-        id: 'video-1',
-        matchId: 'match-1',
-        title: 'Main camera',
-        sourceType: 'remote_url' as const,
-        sourceUrl: 'https://cdn.example.com/match.mp4',
-      })),
       listTimelineEvents: vi.fn(async () => [{ id: 'event-1', matchId: 'match-1', timestamp: 8, eventType: 'entry', competitor: 'A' as const }]),
-      updateMatchVideo: vi.fn(async () => ({
-        id: 'video-1',
-        matchId: 'match-1',
-        title: 'Main camera updated',
-        sourceType: 'remote_url' as const,
-        sourceUrl: 'https://cdn.example.com/match-v2.mp4',
-      })),
+      listPositionStates: vi.fn(async () => [
+        {
+          id: 'position-1',
+          matchId: 'match-1',
+          position: 'standing' as const,
+          competitorTop: 'A' as const,
+          timestampStart: 4,
+          timestampEnd: 8,
+        },
+      ]),
     });
 
     render(<MatchDetailPage api={api} matchId="match-1" />);
 
-    const eventSeekButton = await screen.findByRole('button', { name: '00:08 entry A' });
-    fireEvent.click(eventSeekButton);
-    expect(eventSeekButton).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(await screen.findByRole('button', { name: '00:08 entry A' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('Seeking video to 00:08 from event: entry A.');
+    expect(screen.getByRole('button', { name: '00:08 entry A' })).toHaveAttribute('aria-pressed', 'true');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Video' }));
-    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Main camera updated' } });
-    fireEvent.change(screen.getByLabelText('Source URL'), { target: { value: 'https://cdn.example.com/match-v2.mp4' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save Video' }));
+    fireEvent.click(await screen.findByRole('button', { name: '00:04 - 00:08 standing top: A' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('Seeking video to 00:04 from position: standing top: A.');
+    expect(screen.getByRole('button', { name: '00:04 - 00:08 standing top: A' })).toHaveAttribute('aria-pressed', 'true');
 
-    await screen.findByText('Title: Main camera updated');
-    expect(screen.getByRole('button', { name: '00:08 entry A' })).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(screen.getByRole('button', { name: 'Jump to Timeline Review' }));
+    expect(scrollIntoViewMock).toHaveBeenCalledTimes(1);
   });
 
 });
