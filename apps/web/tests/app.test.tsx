@@ -598,7 +598,7 @@ describe('App', () => {
     window.history.replaceState({}, '', '/matches/match-1');
     render(<App matchesApi={matchesApi} />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Export Dataset' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Export Dataset JSON' }));
 
     await waitFor(() => expect(exportMatchDataset).toHaveBeenCalledWith('match-1'));
     expect(clickSpy).toHaveBeenCalledTimes(1);
@@ -629,7 +629,7 @@ describe('App', () => {
     window.history.replaceState({}, '', '/matches/match-1');
     render(<App matchesApi={matchesApi} />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Export Dataset' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Export Dataset JSON' }));
     expect(await screen.findByRole('button', { name: 'Exporting...' })).toBeInTheDocument();
 
     exportRequest.reject(new Error('export failed'));

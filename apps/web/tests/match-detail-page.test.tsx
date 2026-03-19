@@ -282,7 +282,7 @@ describe('MatchDetailPage', () => {
 
     render(<MatchDetailPage api={api} matchId="match-1" />);
 
-    expect(await screen.findByRole('button', { name: 'Export Dataset' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Export Dataset JSON' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Validate Dataset' }));
 
     expect(await screen.findByText('Validation status:')).toBeInTheDocument();
