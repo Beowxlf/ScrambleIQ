@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { CSSProperties, FormEvent, useState } from 'react';
 
 import { MatchCreateForm } from '../components/MatchCreateForm';
 import { MatchList } from '../components/MatchList';
@@ -19,6 +19,43 @@ interface MatchListPageProps {
   api: MatchesApi;
   onOpenMatch: (matchId: string) => void;
 }
+
+const pageStyles: Record<string, CSSProperties> = {
+  layout: {
+    display: 'grid',
+    gap: '1.25rem',
+  },
+  introCard: {
+    backgroundColor: '#f4f7fc',
+    border: '1px solid #d8e0ec',
+    borderRadius: '10px',
+    padding: '1rem 1.1rem',
+  },
+  introHeading: {
+    fontSize: '1.25rem',
+    margin: 0,
+  },
+  introText: {
+    margin: '0.5rem 0 0',
+    color: '#3b4a61',
+  },
+  columns: {
+    display: 'grid',
+    gap: '1.25rem',
+    gridTemplateColumns: 'minmax(280px, 340px) minmax(0, 1fr)',
+    alignItems: 'start',
+  },
+  statusMessage: {
+    margin: '0.65rem 0 0',
+    fontWeight: 500,
+  },
+  statusSuccess: {
+    color: '#1b5e20',
+  },
+  statusError: {
+    color: '#842029',
+  },
+};
 
 export function MatchListPage({ api, onOpenMatch }: MatchListPageProps) {
   const [formValues, setFormValues] = useState<MatchFormValues>(initialValues);
@@ -58,41 +95,48 @@ export function MatchListPage({ api, onOpenMatch }: MatchListPageProps) {
   };
 
   return (
-    <main>
-      <h1>ScrambleIQ</h1>
-      <p>Create a match to begin manual-first tracking and review.</p>
+    <main className="app-page">
+      <header className="app-header">
+        <h1>ScrambleIQ</h1>
+        <p className="muted">Create a match to begin manual-first tracking and review.</p>
+      </header>
 
-      <MatchCreateForm
-        formValues={formValues}
-        errors={errors}
-        isSubmitting={isSubmitting}
-        onChange={setFormValues}
-        onSubmit={onSubmit}
-      />
+      <div style={pageStyles.columns}>
+        <aside aria-label="Create match panel">
+          <MatchCreateForm
+            formValues={formValues}
+            errors={errors}
+            isSubmitting={isSubmitting}
+            onChange={setFormValues}
+            onSubmit={onSubmit}
+          />
 
       {submissionMessage ? <p>{submissionMessage}</p> : null}
-      {submissionError ? <p>{submissionError}</p> : null}
+      {submissionError ? <p className="status-error">{submissionError}</p> : null}
 
-      <MatchList
-        matches={matches}
-        isLoadingMatches={isLoadingMatches}
-        matchesError={matchesError}
-        competitorFilter={filters.competitorFilter}
-        dateFromFilter={filters.dateFromFilter}
-        dateToFilter={filters.dateToFilter}
-        hasVideoOnly={filters.hasVideoOnly}
-        pageSize={filters.limit}
-        pageOffset={filters.offset}
-        totalMatches={filters.total}
-        onCompetitorFilterChange={filters.setCompetitorFilter}
-        onDateFromFilterChange={filters.setDateFromFilter}
-        onDateToFilterChange={filters.setDateToFilter}
-        onHasVideoOnlyChange={filters.setHasVideoOnly}
-        onPageSizeChange={filters.setLimit}
-        onPreviousPage={filters.goToPreviousPage}
-        onNextPage={filters.goToNextPage}
-        onViewMatch={onOpenMatch}
-      />
+        <section aria-label="Match list panel">
+          <MatchList
+            matches={matches}
+            isLoadingMatches={isLoadingMatches}
+            matchesError={matchesError}
+            competitorFilter={filters.competitorFilter}
+            dateFromFilter={filters.dateFromFilter}
+            dateToFilter={filters.dateToFilter}
+            hasVideoOnly={filters.hasVideoOnly}
+            pageSize={filters.limit}
+            pageOffset={filters.offset}
+            totalMatches={filters.total}
+            onCompetitorFilterChange={filters.setCompetitorFilter}
+            onDateFromFilterChange={filters.setDateFromFilter}
+            onDateToFilterChange={filters.setDateToFilter}
+            onHasVideoOnlyChange={filters.setHasVideoOnly}
+            onPageSizeChange={filters.setLimit}
+            onPreviousPage={filters.goToPreviousPage}
+            onNextPage={filters.goToNextPage}
+            onViewMatch={onOpenMatch}
+          />
+        </section>
+      </div>
     </main>
   );
 }

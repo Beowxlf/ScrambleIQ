@@ -155,13 +155,13 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
   const isWorkspaceReady = !isLoadingMatch && !isMatchNotFound && !matchError;
 
   return (
-    <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '1rem', display: 'grid', gap: '1rem' }}>
-      <h1>ScrambleIQ</h1>
-      <p>
+    <main className="app-page">
+      <header className="app-header">
+        <h1>ScrambleIQ</h1>
         <button type="button" onClick={() => navigateTo('/')}>
           Back to matches
         </button>
-      </p>
+      </header>
 
       <section
         aria-labelledby="match-detail-heading"
@@ -185,7 +185,7 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
                 value={editValues.title}
                 onChange={(event) => setEditValues({ ...editValues, title: event.target.value })}
               />
-              {editErrors.title ? <p>{editErrors.title}</p> : null}
+              {editErrors.title ? <p className="form-error">{editErrors.title}</p> : null}
 
               <label htmlFor="edit-date">Date</label>
               <input
@@ -195,7 +195,7 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
                 value={editValues.date}
                 onChange={(event) => setEditValues({ ...editValues, date: event.target.value })}
               />
-              {editErrors.date ? <p>{editErrors.date}</p> : null}
+              {editErrors.date ? <p className="form-error">{editErrors.date}</p> : null}
 
               <label htmlFor="edit-ruleset">Ruleset</label>
               <input
@@ -204,7 +204,7 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
                 value={editValues.ruleset}
                 onChange={(event) => setEditValues({ ...editValues, ruleset: event.target.value })}
               />
-              {editErrors.ruleset ? <p>{editErrors.ruleset}</p> : null}
+              {editErrors.ruleset ? <p className="form-error">{editErrors.ruleset}</p> : null}
 
               <label htmlFor="edit-competitorA">Competitor A</label>
               <input
@@ -213,7 +213,7 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
                 value={editValues.competitorA}
                 onChange={(event) => setEditValues({ ...editValues, competitorA: event.target.value })}
               />
-              {editErrors.competitorA ? <p>{editErrors.competitorA}</p> : null}
+              {editErrors.competitorA ? <p className="form-error">{editErrors.competitorA}</p> : null}
 
               <label htmlFor="edit-competitorB">Competitor B</label>
               <input
@@ -222,7 +222,7 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
                 value={editValues.competitorB}
                 onChange={(event) => setEditValues({ ...editValues, competitorB: event.target.value })}
               />
-              {editErrors.competitorB ? <p>{editErrors.competitorB}</p> : null}
+              {editErrors.competitorB ? <p className="form-error">{editErrors.competitorB}</p> : null}
 
               <label htmlFor="edit-notes">Notes</label>
               <textarea
@@ -232,10 +232,10 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
                 onChange={(event) => setEditValues({ ...editValues, notes: event.target.value })}
               />
 
-              <p>
+              <div className="button-row">
                 <button type="submit" disabled={isSubmittingEdit}>
                   {isSubmittingEdit ? 'Saving...' : 'Save Changes'}
-                </button>{' '}
+                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -254,49 +254,44 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
                 >
                   Cancel
                 </button>
-              </p>
+              </div>
 
-              {editSubmissionError ? <p>{editSubmissionError}</p> : null}
+              {editSubmissionError ? <p className="status-error">{editSubmissionError}</p> : null}
             </form>
           ) : (
             <article style={{ display: 'grid', gap: '0.5rem' }}>
               <h3>{match.title}</h3>
-              <div>
-                <h4 style={{ marginBottom: '0.25rem' }}>Metadata</h4>
-                <p>ID: {match.id}</p>
-                <p>Date: {match.date}</p>
-                <p>Ruleset: {match.ruleset}</p>
-                <p>Competitor A: {match.competitorA}</p>
-                <p>Competitor B: {match.competitorB}</p>
-                <p>Notes: {match.notes || 'No notes provided.'}</p>
+              <p>ID: {match.id}</p>
+              <p>Date: {match.date}</p>
+              <p>Ruleset: {match.ruleset}</p>
+              <p>Competitor A: {match.competitorA}</p>
+              <p>Competitor B: {match.competitorB}</p>
+              <p>Notes: {match.notes || 'No notes provided.'}</p>
+              <div className="button-row">
+                <button type="button" onClick={() => setIsEditMode(true)}>
+                  Edit Match
+                </button>
               </div>
-
               <div>
-                <h4 style={{ marginBottom: '0.25rem' }}>Actions</h4>
-                <p style={{ marginTop: 0 }}>Use these controls to maintain match details before or during review.</p>
-                <p>
-                  <button type="button" onClick={() => setIsEditMode(true)}>
-                    Edit Match
+                {!isDeleteConfirming ? (
+                  <button
+                    type="button"
+                    className="button-danger"
+                    onClick={() => {
+                      setIsDeleteConfirming(true);
+                      setDeleteError(null);
+                    }}
+                    disabled={isDeleting}
+                  >
+                    Delete Match
                   </button>
-                </p>
-                <div>
-                  {!isDeleteConfirming ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsDeleteConfirming(true);
-                        setDeleteError(null);
-                      }}
-                      disabled={isDeleting}
-                    >
-                      Delete Match
-                    </button>
-                  ) : (
-                    <>
-                      <p>Are you sure you want to delete this match?</p>
-                      <button type="button" onClick={() => void deleteMatch()} disabled={isDeleting}>
+                ) : (
+                  <>
+                    <p>Are you sure you want to delete this match?</p>
+                    <div className="button-row">
+                      <button type="button" className="button-danger" onClick={() => void deleteMatch()} disabled={isDeleting}>
                         {isDeleting ? 'Deleting...' : 'Confirm Delete'}
-                      </button>{' '}
+                      </button>
                       <button
                         type="button"
                         onClick={() => {
@@ -307,75 +302,36 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
                       >
                         Cancel
                       </button>
-                    </>
-                  )}
-                </div>
-                {deleteError ? <p>{deleteError}</p> : null}
+                    </div>
+                  </>
+                )}
               </div>
+              {deleteError ? <p className="status-error">{deleteError}</p> : null}
             </article>
           )
         ) : null}
       </section>
 
-      {isWorkspaceReady ? (
-        <section aria-labelledby="review-workspace-heading" style={{ display: 'grid', gap: '1rem' }}>
-          <h2 id="review-workspace-heading">Review Workspace</h2>
-          <p style={{ margin: 0 }}>Start with video context, then move through timelines and summary checks while reviewing the match.</p>
-
-          <div
-            style={{
-              display: 'grid',
-              gap: '1rem',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-              alignItems: 'start',
-            }}
-          >
-            <section
-              aria-labelledby="video-and-analytics-heading"
-              style={{ border: '1px solid #d4d4d8', borderRadius: '0.5rem', padding: '1rem', display: 'grid', gap: '1rem' }}
-            >
-              <h3 id="video-and-analytics-heading" style={{ margin: 0 }}>
-                Review Context
-              </h3>
-              <VideoPanel api={api} matchId={matchId} seekRequest={videoSeekRequest} />
-              <AnalyticsPanel api={api} matchId={matchId} refreshTrigger={analyticsRefreshTrigger} />
-            </section>
-
-            <section
-              aria-labelledby="timelines-heading"
-              style={{ border: '1px solid #d4d4d8', borderRadius: '0.5rem', padding: '1rem', display: 'grid', gap: '1rem' }}
-            >
-              <h3 id="timelines-heading" style={{ margin: 0 }}>
-                Timeline Review
-              </h3>
-              <p style={{ margin: 0 }}>Select an event or position to sync the video and focus on sequence details.</p>
-              <EventPanel
-                api={api}
-                matchId={matchId}
-                selectedEventId={selectedEventId}
-                onSeekToTimestamp={(timestamp, eventId) => seekToTimestamp(timestamp, { eventId })}
-                onEventsMutated={refreshAnalytics}
-              />
-              <PositionPanel
-                api={api}
-                matchId={matchId}
-                selectedPositionId={selectedPositionId}
-                onSeekToTimestamp={(timestamp, positionId) => seekToTimestamp(timestamp, { positionId })}
-                onPositionsMutated={refreshAnalytics}
-              />
-            </section>
-          </div>
-
-          <section
-            aria-labelledby="dataset-tools-heading"
-            style={{ border: '1px solid #d4d4d8', borderRadius: '0.5rem', padding: '1rem' }}
-          >
-            <h3 id="dataset-tools-heading" style={{ marginTop: 0 }}>
-              Data Quality Tools
-            </h3>
-            <DatasetToolsPanel api={api} matchId={matchId} />
-          </section>
-        </section>
+      {!isLoadingMatch && !isMatchNotFound && !matchError ? (
+        <div className="section-stack">
+          <DatasetToolsPanel api={api} matchId={matchId} />
+          <AnalyticsPanel api={api} matchId={matchId} refreshTrigger={analyticsRefreshTrigger} />
+          <VideoPanel api={api} matchId={matchId} seekRequest={videoSeekRequest} />
+          <EventPanel
+            api={api}
+            matchId={matchId}
+            selectedEventId={selectedEventId}
+            onSeekToTimestamp={(timestamp, eventId) => seekToTimestamp(timestamp, { eventId })}
+            onEventsMutated={refreshAnalytics}
+          />
+          <PositionPanel
+            api={api}
+            matchId={matchId}
+            selectedPositionId={selectedPositionId}
+            onSeekToTimestamp={(timestamp, positionId) => seekToTimestamp(timestamp, { positionId })}
+            onPositionsMutated={refreshAnalytics}
+          />
+        </div>
       ) : null}
     </main>
   );
