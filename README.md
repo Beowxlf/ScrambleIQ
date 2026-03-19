@@ -181,12 +181,12 @@ Video review in this phase supports:
 
 Current limitations (demo stage):
 
-- no cloud storage integration
+- no cloud video storage integration
 - no file upload or transcoding pipeline
 - no ML/automatic analysis
 - analytics are derived only from currently stored manual annotations (no inferred or predictive metrics)
 - dataset export provides structured JSON only; no automated model training or labeling augmentation is included
-- in-memory persistence only (all data resets when API restarts)
+- without `DATABASE_URL`, the API uses in-memory repositories (data resets on restart)
 
 The detail page also includes a **Position Timeline** section for positional state tracking.
 
