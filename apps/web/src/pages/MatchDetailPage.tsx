@@ -389,7 +389,7 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
                 onSeekToTimestamp={(timestamp, eventId, eventLabel) =>
                   seekToTimestamp(timestamp, { eventId }, eventLabel, 'event')
                 }
-                onEventsMutated={refreshAnalytics}
+                onEventsMutated={refreshWorkspaceData}
               />
               <PositionPanel
                 api={api}
@@ -398,7 +398,7 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
                 onSeekToTimestamp={(timestamp, positionId, positionLabel) =>
                   seekToTimestamp(timestamp, { positionId }, positionLabel, 'position')
                 }
-                onPositionsMutated={refreshAnalytics}
+                onPositionsMutated={refreshWorkspaceData}
               />
             </section>
 
