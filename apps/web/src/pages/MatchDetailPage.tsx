@@ -3,7 +3,7 @@ import { FormEvent, RefObject, useEffect, useRef, useState } from 'react';
 import type { Match } from '@scrambleiq/shared';
 
 import { hasValidationErrors, MatchFormValues, MatchValidationErrors, validateMatchForm } from '../match';
-import { MatchNotFoundError } from '../matches-api';
+import { HttpRequestError, MatchNotFoundError } from '../matches-api';
 import type { MatchesApi } from '../matches-api';
 import { navigateTo } from '../app/router';
 import { EventPanel } from '../features/events/EventPanel';
@@ -22,6 +22,14 @@ const initialValues: MatchFormValues = {
   competitorB: '',
   notes: '',
 };
+
+function getRequestErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof HttpRequestError) {
+    return error.message;
+  }
+
+  return fallback;
+}
 
 export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: string }) {
   const [match, setMatch] = useState<Match | null>(null);
@@ -146,8 +154,15 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
       });
       setEditErrors({});
       setIsEditMode(false);
-    } catch {
-      setEditSubmissionError('Unable to update match. Please try again.');
+    } catch (error) {
+      if (error instanceof MatchNotFoundError) {
+        setMatch(null);
+        setIsMatchNotFound(true);
+        setIsEditMode(false);
+        return;
+      }
+
+      setEditSubmissionError(getRequestErrorMessage(error, 'Unable to update match. Please try again.'));
     } finally {
       setIsSubmittingEdit(false);
     }
@@ -171,8 +186,13 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
     try {
       await api.deleteMatch(matchId);
       navigateTo('/');
-    } catch {
-      setDeleteError('Unable to delete match. Please try again.');
+    } catch (error) {
+      if (error instanceof MatchNotFoundError) {
+        navigateTo('/');
+        return;
+      }
+
+      setDeleteError(getRequestErrorMessage(error, 'Unable to delete match. Please try again.'));
     } finally {
       setIsDeleting(false);
     }

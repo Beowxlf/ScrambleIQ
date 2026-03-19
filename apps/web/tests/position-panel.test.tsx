@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { PositionPanel } from '../src/features/positions/PositionPanel';
+import { HttpRequestError, PositionStateNotFoundError } from '../src/matches-api';
 import type { MatchesApi } from '../src/matches-api';
 
 function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
@@ -306,5 +307,70 @@ describe('PositionPanel', () => {
     fireEvent.change(screen.getByLabelText('Start Timestamp (seconds)'), { target: { value: '41' } });
 
     expect(screen.getByLabelText('End Timestamp (seconds)')).toHaveValue(42);
+  });
+
+  it('surfaces backend validation error details when position save fails', async () => {
+    const createPositionState = vi.fn(async () => {
+      throw new HttpRequestError(
+        'Failed to create position state. Position state timestamps must not overlap existing segments',
+        400,
+        ['Position state timestamps must not overlap existing segments'],
+      );
+    });
+    const api = createMatchesApiMock({ createPositionState });
+
+    render(
+      <PositionPanel
+        api={api}
+        matchId="match-1"
+        selectedPositionId={null}
+        onSeekToTimestamp={vi.fn()}
+        onPositionsMutated={vi.fn(async () => undefined)}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Add Position' }));
+    fireEvent.change(screen.getByLabelText('Position'), { target: { value: 'half_guard' } });
+    fireEvent.change(screen.getByLabelText('Top Competitor'), { target: { value: 'B' } });
+    fireEvent.change(screen.getByLabelText('Start Timestamp (seconds)'), { target: { value: '24' } });
+    fireEvent.change(screen.getByLabelText('End Timestamp (seconds)'), { target: { value: '30' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create Position' }));
+
+    expect(
+      await screen.findByText('Failed to create position state. Position state timestamps must not overlap existing segments'),
+    ).toBeInTheDocument();
+  });
+
+  it('removes stale positions and informs users when delete targets missing resources', async () => {
+    const api = createMatchesApiMock({
+      listPositionStates: async () => [
+        {
+          id: 'position-1',
+          matchId: 'match-1',
+          position: 'closed_guard',
+          competitorTop: 'A',
+          timestampStart: 12,
+          timestampEnd: 20,
+        },
+      ],
+      deletePositionState: async () => {
+        throw new PositionStateNotFoundError('position-1');
+      },
+    });
+
+    render(
+      <PositionPanel
+        api={api}
+        matchId="match-1"
+        selectedPositionId={null}
+        onSeekToTimestamp={vi.fn()}
+        onPositionsMutated={vi.fn(async () => undefined)}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Delete Position' }));
+
+    expect(await screen.findByText('This position state no longer exists. The list has been refreshed.')).toBeInTheDocument();
+    expect(screen.getByText('No position states yet.')).toBeInTheDocument();
   });
 });

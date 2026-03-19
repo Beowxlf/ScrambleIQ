@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from '../src/App';
-import { MatchesApi } from '../src/matches-api';
+import { MatchVideoNotFoundError, MatchesApi } from '../src/matches-api';
 
 function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
   return {
@@ -93,7 +93,7 @@ function createMatchesApiMock(overrides: Partial<MatchesApi> = {}): MatchesApi {
       issues: [],
     }),
     getMatchVideo: async () => {
-      throw new Error('Match video not found');
+      throw new MatchVideoNotFoundError('match-1');
     },
     updateMatchVideo: async () => {
       throw new Error('updateMatchVideo was not mocked');

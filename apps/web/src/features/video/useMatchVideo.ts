@@ -2,7 +2,12 @@ import { FormEvent, useEffect, useState } from 'react';
 
 import type { MatchVideo } from '@scrambleiq/shared';
 
-import type { MatchesApi } from '../../matches-api';
+import {
+  HttpRequestError,
+  MatchNotFoundError,
+  MatchVideoNotFoundError,
+  type MatchesApi,
+} from '../../matches-api';
 import {
   hasMatchVideoValidationErrors,
   initialMatchVideoValues,
@@ -36,6 +41,14 @@ export function useMatchVideo({ api, matchId, seekRequest, onVideoMetadataMutate
   const [isEditingVideo, setIsEditingVideo] = useState(false);
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
 
+  const getRequestErrorMessage = (error: unknown, fallback: string): string => {
+    if (error instanceof HttpRequestError) {
+      return error.message;
+    }
+
+    return fallback;
+  };
+
   useEffect(() => {
     let isMounted = true;
 
@@ -56,10 +69,22 @@ export function useMatchVideo({ api, matchId, seekRequest, onVideoMetadataMutate
         if (isMounted) {
           setVideo(fetchedVideo);
         }
-      } catch {
-        if (isMounted) {
-          setVideoError(null);
+      } catch (error) {
+        if (!isMounted) {
+          return;
         }
+
+        if (error instanceof MatchVideoNotFoundError) {
+          setVideoError(null);
+          return;
+        }
+
+        if (error instanceof MatchNotFoundError) {
+          setVideoError('This match no longer exists. Return to the match list and refresh.');
+          return;
+        }
+
+        setVideoError(getRequestErrorMessage(error, 'Unable to load video metadata right now.'));
       } finally {
         if (isMounted) {
           setIsLoadingVideo(false);

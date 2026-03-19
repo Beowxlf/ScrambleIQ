@@ -24,6 +24,19 @@ export class MatchNotFoundError extends Error {
   }
 }
 
+export class HttpRequestError extends Error {
+  readonly status: number;
+
+  readonly details: string[];
+
+  constructor(message: string, status: number, details: string[] = []) {
+    super(message);
+    this.name = 'HttpRequestError';
+    this.status = status;
+    this.details = details;
+  }
+}
+
 export class TimelineEventNotFoundError extends Error {
   constructor(eventId: string) {
     super(`Timeline event with id ${eventId} was not found.`);
@@ -73,6 +86,37 @@ interface HttpMatchesApiOptions {
   fetchImpl?: typeof fetch;
 }
 
+async function parseErrorDetails(response: Response): Promise<string[]> {
+  try {
+    const payload = (await response.json()) as { message?: string | string[] };
+
+    if (Array.isArray(payload.message)) {
+      return payload.message.filter((message): message is string => typeof message === 'string');
+    }
+
+    if (typeof payload.message === 'string' && payload.message.trim().length > 0) {
+      return [payload.message];
+    }
+
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+function formatErrorMessage(defaultMessage: string, details: string[]): string {
+  if (details.length === 0) {
+    return defaultMessage;
+  }
+
+  return `${defaultMessage} ${details.join(' ')}`;
+}
+
+async function throwHttpRequestError(response: Response, defaultMessage: string): Promise<never> {
+  const details = await parseErrorDetails(response);
+  throw new HttpRequestError(formatErrorMessage(defaultMessage, details), response.status, details);
+}
+
 function resolveApiBaseUrl(override?: string): string {
   if (override) {
     return override;
@@ -96,7 +140,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create match.');
+        await throwHttpRequestError(response, 'Failed to create match.');
       }
 
       return (await response.json()) as Match;
@@ -133,7 +177,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       const response = await fetchImpl(`${baseUrl}/matches${queryString ? `?${queryString}` : ''}`);
 
       if (!response.ok) {
-        throw new Error('Failed to load matches.');
+        await throwHttpRequestError(response, 'Failed to load matches.');
       }
 
       return (await response.json()) as MatchListResponse;
@@ -147,7 +191,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       if (!response.ok) {
-        throw new Error('Failed to load match.');
+        await throwHttpRequestError(response, 'Failed to load match.');
       }
 
       return (await response.json()) as Match;
@@ -167,7 +211,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       if (!response.ok) {
-        throw new Error('Failed to update match.');
+        await throwHttpRequestError(response, 'Failed to update match.');
       }
 
       return (await response.json()) as Match;
@@ -183,7 +227,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       if (!response.ok) {
-        throw new Error('Failed to delete match.');
+        await throwHttpRequestError(response, 'Failed to delete match.');
       }
     },
 
@@ -201,7 +245,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       if (!response.ok) {
-        throw new Error('Failed to create timeline event.');
+        await throwHttpRequestError(response, 'Failed to create timeline event.');
       }
 
       return (await response.json()) as TimelineEvent;
@@ -215,7 +259,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       if (!response.ok) {
-        throw new Error('Failed to load timeline events.');
+        await throwHttpRequestError(response, 'Failed to load timeline events.');
       }
 
       return (await response.json()) as TimelineEvent[];
@@ -235,7 +279,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       if (!response.ok) {
-        throw new Error('Failed to update timeline event.');
+        await throwHttpRequestError(response, 'Failed to update timeline event.');
       }
 
       return (await response.json()) as TimelineEvent;
@@ -251,7 +295,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       if (!response.ok) {
-        throw new Error('Failed to delete timeline event.');
+        await throwHttpRequestError(response, 'Failed to delete timeline event.');
       }
     },
 
@@ -269,7 +313,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       if (!response.ok) {
-        throw new Error('Failed to create position state.');
+        await throwHttpRequestError(response, 'Failed to create position state.');
       }
 
       return (await response.json()) as PositionState;
@@ -283,7 +327,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       if (!response.ok) {
-        throw new Error('Failed to load position states.');
+        await throwHttpRequestError(response, 'Failed to load position states.');
       }
 
       return (await response.json()) as PositionState[];
@@ -303,7 +347,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       if (!response.ok) {
-        throw new Error('Failed to update position state.');
+        await throwHttpRequestError(response, 'Failed to update position state.');
       }
 
       return (await response.json()) as PositionState;
@@ -319,7 +363,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       if (!response.ok) {
-        throw new Error('Failed to delete position state.');
+        await throwHttpRequestError(response, 'Failed to delete position state.');
       }
     },
 
@@ -331,7 +375,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       if (!response.ok) {
-        throw new Error('Failed to load match analytics.');
+        await throwHttpRequestError(response, 'Failed to load match analytics.');
       }
 
       return (await response.json()) as MatchAnalyticsSummary;
@@ -351,7 +395,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       if (!response.ok) {
-        throw new Error('Failed to attach match video.');
+        await throwHttpRequestError(response, 'Failed to attach match video.');
       }
 
       return (await response.json()) as MatchVideo;
@@ -366,7 +410,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       if (!response.ok) {
-        throw new Error('Failed to export match dataset.');
+        await throwHttpRequestError(response, 'Failed to export match dataset.');
       }
 
       return (await response.json()) as MatchDatasetExport;
@@ -381,7 +425,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       if (!response.ok) {
-        throw new Error('Failed to validate match dataset.');
+        await throwHttpRequestError(response, 'Failed to validate match dataset.');
       }
 
       return (await response.json()) as DatasetValidationReport;
@@ -395,7 +439,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       if (!response.ok) {
-        throw new Error('Failed to load match video.');
+        await throwHttpRequestError(response, 'Failed to load match video.');
       }
 
       return (await response.json()) as MatchVideo;
@@ -415,7 +459,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       if (!response.ok) {
-        throw new Error('Failed to update match video.');
+        await throwHttpRequestError(response, 'Failed to update match video.');
       }
 
       return (await response.json()) as MatchVideo;
@@ -431,7 +475,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       if (!response.ok) {
-        throw new Error('Failed to delete match video.');
+        await throwHttpRequestError(response, 'Failed to delete match video.');
       }
     },
   };

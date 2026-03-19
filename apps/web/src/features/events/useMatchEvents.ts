@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useState } from 'react';
 
 import type { TimelineEvent } from '@scrambleiq/shared';
 
-import { MatchNotFoundError, MatchesApi } from '../../matches-api';
+import { HttpRequestError, MatchNotFoundError, MatchesApi, TimelineEventNotFoundError } from '../../matches-api';
 import {
   hasTimelineEventValidationErrors,
   initialTimelineEventValues,
@@ -16,6 +16,14 @@ interface UseMatchEventsArgs {
   api: MatchesApi;
   matchId: string;
   onEventsMutated: () => void;
+}
+
+function getRequestErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof HttpRequestError) {
+    return error.message;
+  }
+
+  return fallback;
 }
 
 export function useMatchEvents({ api, matchId, onEventsMutated }: UseMatchEventsArgs) {
@@ -117,8 +125,23 @@ export function useMatchEvents({ api, matchId, onEventsMutated }: UseMatchEvents
       setEditingEventId(null);
       setIsEventFormVisible(isAddingAnother);
       onEventsMutated();
-    } catch {
-      setEventSubmissionError('Unable to save timeline event. Please try again.');
+    } catch (error) {
+      if (error instanceof MatchNotFoundError) {
+        setEventSubmissionError('This match is no longer available. Return to the match list and refresh.');
+        return;
+      }
+
+      if (error instanceof TimelineEventNotFoundError && editingEventId) {
+        setEvents((previousEvents) => previousEvents.filter((currentEvent) => currentEvent.id !== editingEventId));
+        setEditingEventId(null);
+        setIsEventFormVisible(false);
+        setEventFormValues(initialTimelineEventValues);
+        setEventFormErrors({});
+        setEventSubmissionError('This timeline event no longer exists. The list has been refreshed.');
+        return;
+      }
+
+      setEventSubmissionError(getRequestErrorMessage(error, 'Unable to save timeline event. Please try again.'));
     } finally {
       setIsSubmittingEvent(false);
     }
@@ -138,8 +161,14 @@ export function useMatchEvents({ api, matchId, onEventsMutated }: UseMatchEvents
         setEventFormValues(initialTimelineEventValues);
         setEventFormErrors({});
       }
-    } catch {
-      setEventSubmissionError('Unable to delete timeline event. Please try again.');
+    } catch (error) {
+      if (error instanceof TimelineEventNotFoundError) {
+        setEvents((previousEvents) => previousEvents.filter((timelineEvent) => timelineEvent.id !== eventId));
+        setEventSubmissionError('This timeline event no longer exists. The list has been refreshed.');
+        return;
+      }
+
+      setEventSubmissionError(getRequestErrorMessage(error, 'Unable to delete timeline event. Please try again.'));
     }
   };
 
