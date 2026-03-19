@@ -151,9 +151,13 @@ describe('DatasetToolsPanel', () => {
 
     const api = createMatchesApiMock({ exportMatchDataset });
 
-    render(<DatasetToolsPanel api={api} matchId="match-7" />);
+    render(<DatasetToolsPanel api={api} matchId="match-7" refreshTrigger={0} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Export Dataset' }));
+    expect(screen.getByText(/deterministic JSON artifacts for downstream review and auditing/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Export artifact contents' })).toBeInTheDocument();
+    expect(screen.getByText('Validation not run yet. Export is available for manual review, but readiness is unknown.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Export Dataset JSON' }));
 
     await waitFor(() => expect(exportMatchDataset).toHaveBeenCalledWith('match-7'));
     await waitFor(() => expect(clickSpy).toHaveBeenCalled());
@@ -178,11 +182,14 @@ describe('DatasetToolsPanel', () => {
 
     const api = createMatchesApiMock({ validateMatchDataset });
 
-    render(<DatasetToolsPanel api={api} matchId="match-1" />);
+    render(<DatasetToolsPanel api={api} matchId="match-1" refreshTrigger={0} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Validate Dataset' }));
 
     expect(screen.getByText('Validating dataset...')).toBeInTheDocument();
+    expect(
+      screen.getByText('Validation in progress. Wait for results before deciding whether this export is production-ready.'),
+    ).toBeInTheDocument();
 
     expect(await screen.findByText('Validation status:')).toBeInTheDocument();
     expect(screen.getByText('Total issues:')).toBeInTheDocument();
@@ -190,7 +197,9 @@ describe('DatasetToolsPanel', () => {
     expect(screen.getByRole('heading', { name: /Warnings \(WARNING\)/ })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Informational notes \(INFO\)/ })).toBeInTheDocument();
     expect(screen.getByText(/Video metadata missing/)).toBeInTheDocument();
-    expect(screen.getByText('Blocked for export: resolve blocking issues before relying on this dataset.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Risky export: blocking validation issues were found. Export only for debugging or manual inspection.'),
+    ).toBeInTheDocument();
   });
 
   it('shows export and validation error states when API calls fail', async () => {
@@ -203,12 +212,15 @@ describe('DatasetToolsPanel', () => {
       }),
     });
 
-    render(<DatasetToolsPanel api={api} matchId="match-1" />);
+    render(<DatasetToolsPanel api={api} matchId="match-1" refreshTrigger={0} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Export Dataset' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Export Dataset JSON' }));
     expect(await screen.findByText('Unable to export dataset right now. Please try again.')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Validate Dataset' }));
     expect(await screen.findByText('Unable to validate dataset right now. Please try again.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Validation unavailable. Export is still possible, but treat the artifact as risky until validation succeeds.'),
+    ).toBeInTheDocument();
   });
 });

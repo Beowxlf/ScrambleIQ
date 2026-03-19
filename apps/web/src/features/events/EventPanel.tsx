@@ -9,7 +9,7 @@ interface EventPanelProps {
   api: MatchesApi;
   matchId: string;
   selectedEventId: string | null;
-  onSeekToTimestamp: (timestamp: number, eventId: string) => void;
+  onSeekToTimestamp: (timestamp: number, eventId: string, eventLabel: string) => void;
   onEventsMutated: () => void;
 }
 
@@ -33,7 +33,8 @@ export function EventPanel({ api, matchId, selectedEventId, onSeekToTimestamp, o
   } = useMatchEvents({ api, matchId, onEventsMutated });
 
   const handleSeekToEvent = (eventToSeek: TimelineEvent) => {
-    onSeekToTimestamp(eventToSeek.timestamp, eventToSeek.id);
+    const eventLabel = `${eventToSeek.eventType} ${eventToSeek.competitor}`;
+    onSeekToTimestamp(eventToSeek.timestamp, eventToSeek.id, eventLabel);
   };
 
   return (

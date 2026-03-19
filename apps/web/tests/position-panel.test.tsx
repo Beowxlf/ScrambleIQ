@@ -99,7 +99,7 @@ describe('PositionPanel', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: '00:12 - 00:20 closed_guard top: A' }));
 
-    expect(onSeekToTimestamp).toHaveBeenCalledWith(12, 'position-1');
+    expect(onSeekToTimestamp).toHaveBeenCalledWith(12, 'position-1', 'closed_guard top: A');
     expect(screen.getByRole('button', { name: '00:42 - 00:55 mount top: B' })).toBeInTheDocument();
     expect(screen.getByText('Notes: entry')).toBeInTheDocument();
   });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { DatasetValidationReport, MatchDatasetExport } from '@scrambleiq/shared';
 
@@ -17,14 +17,21 @@ function downloadDatasetAsJson(dataset: MatchDatasetExport, matchId: string): vo
 interface UseMatchDatasetToolsArgs {
   api: MatchesApi;
   matchId: string;
+  refreshTrigger: number;
 }
 
-export function useMatchDatasetTools({ api, matchId }: UseMatchDatasetToolsArgs) {
+export function useMatchDatasetTools({ api, matchId, refreshTrigger }: UseMatchDatasetToolsArgs) {
   const [isExportingDataset, setIsExportingDataset] = useState(false);
   const [datasetExportError, setDatasetExportError] = useState<string | null>(null);
   const [validationReport, setValidationReport] = useState<DatasetValidationReport | null>(null);
   const [isValidatingDataset, setIsValidatingDataset] = useState(false);
   const [datasetValidationError, setDatasetValidationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setValidationReport(null);
+    setDatasetValidationError(null);
+    setDatasetExportError(null);
+  }, [matchId, refreshTrigger]);
 
   const exportDataset = async () => {
     setIsExportingDataset(true);

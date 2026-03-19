@@ -125,6 +125,18 @@ p + form {
   gap: 1rem;
 }
 
+.review-workspace-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+}
+
+.review-selection-status {
+  color: var(--color-text-secondary);
+  margin-bottom: 0.75rem;
+}
+
 .two-column-layout {
   display: grid;
   gap: 1rem;
@@ -229,6 +241,17 @@ button:hover:enabled {
 button:disabled {
   opacity: 0.65;
   cursor: not-allowed;
+}
+
+.timeline-seek-button {
+  border-color: #9db2c9;
+}
+
+.timeline-seek-button[aria-pressed='true'],
+.timeline-seek-button--active {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+  box-shadow: 0 0 0 2px rgb(15 76 129 / 0.25);
 }
 
 .button-row {

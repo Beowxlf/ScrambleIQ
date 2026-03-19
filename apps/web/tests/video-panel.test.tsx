@@ -65,7 +65,7 @@ describe('VideoPanel', () => {
   it('renders empty state when no metadata exists', async () => {
     const api = createMatchesApiMock();
 
-    render(<VideoPanel api={api} matchId="match-1" seekRequest={null} />);
+    render(<VideoPanel api={api} matchId="match-1" seekRequest={null} onVideoMetadataMutated={() => undefined} />);
 
     expect(await screen.findByText('No video attached yet.')).toBeInTheDocument();
   });
@@ -95,7 +95,7 @@ describe('VideoPanel', () => {
     }));
     const api = createMatchesApiMock({ createMatchVideo });
 
-    render(<VideoPanel api={api} matchId="match-1" seekRequest={null} />);
+    render(<VideoPanel api={api} matchId="match-1" seekRequest={null} onVideoMetadataMutated={() => undefined} />);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Attach Video' }));
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Main camera' } });
@@ -133,7 +133,7 @@ describe('VideoPanel', () => {
       deleteMatchVideo,
     });
 
-    render(<VideoPanel api={api} matchId="match-1" seekRequest={null} />);
+    render(<VideoPanel api={api} matchId="match-1" seekRequest={null} onVideoMetadataMutated={() => undefined} />);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Edit Video' }));
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Main camera edited' } });
@@ -161,7 +161,7 @@ describe('VideoPanel', () => {
       }),
     });
 
-    const { rerender } = render(<VideoPanel api={api} matchId="match-1" seekRequest={null} />);
+    const { rerender } = render(<VideoPanel api={api} matchId="match-1" seekRequest={null} onVideoMetadataMutated={() => undefined} />);
 
     const player = (await screen.findByTestId('match-video-player')) as HTMLVideoElement;
     Object.defineProperty(player, 'currentTime', { value: 0, writable: true });
@@ -169,7 +169,14 @@ describe('VideoPanel', () => {
 
     fireEvent.loadedMetadata(player);
 
-    rerender(<VideoPanel api={api} matchId="match-1" seekRequest={{ timestamp: 22, requestId: 1 }} />);
+    rerender(
+      <VideoPanel
+        api={api}
+        matchId="match-1"
+        seekRequest={{ timestamp: 22, requestId: 1 }}
+        onVideoMetadataMutated={() => undefined}
+      />,
+    );
 
     await waitFor(() => {
       expect(player.currentTime).toBe(22);

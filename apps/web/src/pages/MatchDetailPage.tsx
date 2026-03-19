@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, RefObject, useEffect, useRef, useState } from 'react';
 
 import type { Match } from '@scrambleiq/shared';
 
@@ -12,6 +12,7 @@ import { DatasetToolsPanel } from '../features/dataset/DatasetToolsPanel';
 import { PositionPanel } from '../features/positions/PositionPanel';
 import { VideoPanel } from '../features/video/VideoPanel';
 import type { VideoSeekRequest } from '../features/video/useMatchVideo';
+import { formatTimestamp } from '../timeline-event';
 
 const initialValues: MatchFormValues = {
   title: '',
@@ -43,16 +44,30 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
   const [isDeleteConfirming, setIsDeleteConfirming] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [analyticsRefreshTrigger, setAnalyticsRefreshTrigger] = useState(0);
+  const [workspaceRefreshTrigger, setWorkspaceRefreshTrigger] = useState(0);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [selectedPositionId, setSelectedPositionId] = useState<string | null>(null);
   const [videoSeekRequest, setVideoSeekRequest] = useState<VideoSeekRequest | null>(null);
+  const [activeSeekSummary, setActiveSeekSummary] = useState<string | null>(null);
+  const reviewContextRef = useRef<HTMLElement | null>(null);
+  const timelineReviewRef = useRef<HTMLElement | null>(null);
+  const dataQualityToolsRef = useRef<HTMLElement | null>(null);
 
-  const seekToTimestamp = (timestamp: number, selection: { eventId?: string; positionId?: string }) => {
+  const seekToTimestamp = (
+    timestamp: number,
+    selection: { eventId?: string; positionId?: string },
+    selectionLabel: string,
+    selectionType: 'event' | 'position',
+  ) => {
     setVideoSeekRequest({ timestamp, requestId: Date.now() });
+    setActiveSeekSummary(`Seeking video to ${formatTimestamp(timestamp)} from ${selectionType}: ${selectionLabel}.`);
 
     setSelectedEventId(selection.eventId ?? null);
     setSelectedPositionId(selection.positionId ?? null);
+  };
+
+  const jumpToReviewSection = (sectionRef: RefObject<HTMLElement | null>) => {
+    sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   useEffect(() => {
@@ -69,6 +84,10 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
       setIsDeleteConfirming(false);
       setIsDeleting(false);
       setDeleteError(null);
+      setSelectedEventId(null);
+      setSelectedPositionId(null);
+      setVideoSeekRequest(null);
+      setActiveSeekSummary(null);
 
       try {
         const fetchedMatch = await api.getMatch(matchId);
@@ -149,8 +168,15 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
     }
   };
 
-  const refreshAnalytics = () => {
-    setAnalyticsRefreshTrigger((currentValue) => currentValue + 1);
+  const refreshWorkspaceData = () => {
+    setWorkspaceRefreshTrigger((currentValue) => currentValue + 1);
+  };
+
+  const handleVideoMetadataMutated = () => {
+    refreshWorkspaceData();
+    setVideoSeekRequest(null);
+    setSelectedEventId(null);
+    setSelectedPositionId(null);
   };
 
   const deleteMatch = async () => {
@@ -330,35 +356,55 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
       {!isLoadingMatch && !isMatchNotFound && !matchError ? (
         <section aria-labelledby="review-workspace-heading">
           <h2 id="review-workspace-heading">Review Workspace</h2>
+          <nav aria-label="Review workspace quick navigation" className="review-workspace-nav">
+            <button type="button" onClick={() => jumpToReviewSection(reviewContextRef)}>
+              Jump to Review Context
+            </button>
+            <button type="button" onClick={() => jumpToReviewSection(timelineReviewRef)}>
+              Jump to Timeline Review
+            </button>
+            <button type="button" onClick={() => jumpToReviewSection(dataQualityToolsRef)}>
+              Jump to Data Quality Tools
+            </button>
+          </nav>
+          {activeSeekSummary ? (
+            <p className="review-selection-status" role="status" aria-live="polite">
+              {activeSeekSummary}
+            </p>
+          ) : null}
 
           <div className="section-stack">
-            <section aria-labelledby="review-context-heading">
+            <section aria-labelledby="review-context-heading" ref={reviewContextRef}>
               <h3 id="review-context-heading">Review Context</h3>
-              <AnalyticsPanel api={api} matchId={matchId} refreshTrigger={analyticsRefreshTrigger} />
-              <VideoPanel api={api} matchId={matchId} seekRequest={videoSeekRequest} />
+              <AnalyticsPanel api={api} matchId={matchId} refreshTrigger={workspaceRefreshTrigger} />
+              <VideoPanel api={api} matchId={matchId} seekRequest={videoSeekRequest} onVideoMetadataMutated={handleVideoMetadataMutated} />
             </section>
 
-            <section aria-labelledby="timeline-review-heading">
+            <section aria-labelledby="timeline-review-heading" ref={timelineReviewRef}>
               <h3 id="timeline-review-heading">Timeline Review</h3>
               <EventPanel
                 api={api}
                 matchId={matchId}
                 selectedEventId={selectedEventId}
-                onSeekToTimestamp={(timestamp, eventId) => seekToTimestamp(timestamp, { eventId })}
+                onSeekToTimestamp={(timestamp, eventId, eventLabel) =>
+                  seekToTimestamp(timestamp, { eventId }, eventLabel, 'event')
+                }
                 onEventsMutated={refreshAnalytics}
               />
               <PositionPanel
                 api={api}
                 matchId={matchId}
                 selectedPositionId={selectedPositionId}
-                onSeekToTimestamp={(timestamp, positionId) => seekToTimestamp(timestamp, { positionId })}
+                onSeekToTimestamp={(timestamp, positionId, positionLabel) =>
+                  seekToTimestamp(timestamp, { positionId }, positionLabel, 'position')
+                }
                 onPositionsMutated={refreshAnalytics}
               />
             </section>
 
-            <section aria-labelledby="data-quality-tools-heading">
+            <section aria-labelledby="data-quality-tools-heading" ref={dataQualityToolsRef}>
               <h3 id="data-quality-tools-heading">Data Quality Tools</h3>
-              <DatasetToolsPanel api={api} matchId={matchId} />
+              <DatasetToolsPanel api={api} matchId={matchId} refreshTrigger={workspaceRefreshTrigger} />
             </section>
           </div>
         </section>

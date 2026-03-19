@@ -84,7 +84,7 @@ describe('EventPanel', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: '00:12 entry A' }));
 
-    expect(onSeekToTimestamp).toHaveBeenCalledWith(12, 'event-1');
+    expect(onSeekToTimestamp).toHaveBeenCalledWith(12, 'event-1', 'entry A');
     expect(screen.getByText('Notes: from scramble')).toBeInTheDocument();
   });
 
