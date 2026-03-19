@@ -15,8 +15,11 @@ interface PositionFormProps {
 
 export function PositionForm({ values, errors, isSubmitting, isEditing, submissionError, onChange, onSubmit, onCancel }: PositionFormProps) {
   return (
-    <form onSubmit={(event) => void onSubmit(event)} noValidate>
-      <h3>{isEditing ? 'Edit Position' : 'Add Position'}</h3>
+    <form onSubmit={(event) => void onSubmit(event)} noValidate className="siq-form" aria-busy={isSubmitting}>
+      <div className="siq-form__header">
+        <h3>{isEditing ? 'Edit Position' : 'Add Position'}</h3>
+        <p className="siq-form__mode">{isEditing ? 'Editing existing position interval.' : 'Create a new position interval.'}</p>
+      </div>
 
       <label htmlFor="position-type">Position</label>
       <select
@@ -73,8 +76,10 @@ export function PositionForm({ values, errors, isSubmitting, isEditing, submissi
       />
       {errors.timestampEnd ? <p className="form-error">{errors.timestampEnd}</p> : null}
 
-      <label htmlFor="position-notes">Notes</label>
-      <textarea id="position-notes" name="notes" value={values.notes} onChange={(event) => onChange({ ...values, notes: event.target.value })} />
+      <div className="siq-form__group">
+        <label htmlFor="position-notes">Notes</label>
+        <textarea id="position-notes" name="notes" value={values.notes} onChange={(event) => onChange({ ...values, notes: event.target.value })} />
+      </div>
 
       <div className="button-row">
         <button type="submit" disabled={isSubmitting}>

@@ -29,8 +29,11 @@ export function EventForm({ values, errors, isSubmitting, isEditing, submissionE
   };
 
   return (
-    <form onSubmit={(event) => void onSubmit(event)} onKeyDown={handleKeyDown} noValidate>
-      <h3>{isEditing ? 'Edit Event' : 'Add Event'}</h3>
+    <form onSubmit={(event) => void onSubmit(event)} onKeyDown={handleKeyDown} noValidate className="siq-form" aria-busy={isSubmitting}>
+      <div className="siq-form__header">
+        <h3>{isEditing ? 'Edit Event' : 'Add Event'}</h3>
+        <p className="siq-form__mode">{isEditing ? 'Editing existing timeline annotation.' : 'Create a new timeline annotation.'}</p>
+      </div>
 
       <label htmlFor="event-timestamp">Timestamp (seconds)</label>
       <input
@@ -66,8 +69,10 @@ export function EventForm({ values, errors, isSubmitting, isEditing, submissionE
       </select>
       {errors.competitor ? <p className="form-error">{errors.competitor}</p> : null}
 
-      <label htmlFor="event-notes">Notes</label>
-      <textarea id="event-notes" name="notes" value={values.notes} onChange={(event) => onChange({ ...values, notes: event.target.value })} />
+      <div className="siq-form__group">
+        <label htmlFor="event-notes">Notes</label>
+        <textarea id="event-notes" name="notes" value={values.notes} onChange={(event) => onChange({ ...values, notes: event.target.value })} />
+      </div>
 
       <div className="button-row">
         <button type="submit" disabled={isSubmitting}>

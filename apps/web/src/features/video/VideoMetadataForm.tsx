@@ -25,8 +25,11 @@ export function VideoMetadataForm({
   onCancel,
 }: VideoMetadataFormProps) {
   return (
-    <form onSubmit={(event) => void onSubmit(event)} noValidate>
-      <h3>{isEditing ? 'Edit Video' : 'Attach Video'}</h3>
+    <form onSubmit={(event) => void onSubmit(event)} noValidate className="siq-form" aria-busy={isSubmitting}>
+      <div className="siq-form__header">
+        <h3>{isEditing ? 'Edit Video' : 'Attach Video'}</h3>
+        <p className="siq-form__mode">{isEditing ? 'Editing attached video metadata.' : 'Attach a video and add metadata.'}</p>
+      </div>
 
       <label htmlFor="video-title">Title</label>
       <input id="video-title" name="title" value={values.title} onChange={(event) => onChange({ ...values, title: event.target.value })} />
@@ -61,8 +64,10 @@ export function VideoMetadataForm({
       />
       {errors.durationSeconds ? <p className="form-error">{errors.durationSeconds}</p> : null}
 
-      <label htmlFor="video-notes">Notes</label>
-      <textarea id="video-notes" name="notes" value={values.notes} onChange={(event) => onChange({ ...values, notes: event.target.value })} />
+      <div className="siq-form__group">
+        <label htmlFor="video-notes">Notes</label>
+        <textarea id="video-notes" name="notes" value={values.notes} onChange={(event) => onChange({ ...values, notes: event.target.value })} />
+      </div>
 
       <div className="button-row">
         <button type="submit" disabled={isSubmitting}>
