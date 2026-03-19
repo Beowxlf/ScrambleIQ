@@ -17,7 +17,7 @@ export function MatchCreateForm({ formValues, errors, isSubmitting, onChange, on
 
       <label htmlFor="title">Title</label>
       <input id="title" name="title" value={formValues.title} onChange={(event) => onChange({ ...formValues, title: event.target.value })} />
-      {errors.title ? <p>{errors.title}</p> : null}
+      {errors.title ? <p className="form-error">{errors.title}</p> : null}
 
       <label htmlFor="date">Date</label>
       <input
@@ -27,7 +27,7 @@ export function MatchCreateForm({ formValues, errors, isSubmitting, onChange, on
         value={formValues.date}
         onChange={(event) => onChange({ ...formValues, date: event.target.value })}
       />
-      {errors.date ? <p>{errors.date}</p> : null}
+      {errors.date ? <p className="form-error">{errors.date}</p> : null}
 
       <label htmlFor="ruleset">Ruleset</label>
       <input
@@ -36,7 +36,7 @@ export function MatchCreateForm({ formValues, errors, isSubmitting, onChange, on
         value={formValues.ruleset}
         onChange={(event) => onChange({ ...formValues, ruleset: event.target.value })}
       />
-      {errors.ruleset ? <p>{errors.ruleset}</p> : null}
+      {errors.ruleset ? <p className="form-error">{errors.ruleset}</p> : null}
 
       <label htmlFor="competitorA">Competitor A</label>
       <input
@@ -45,7 +45,7 @@ export function MatchCreateForm({ formValues, errors, isSubmitting, onChange, on
         value={formValues.competitorA}
         onChange={(event) => onChange({ ...formValues, competitorA: event.target.value })}
       />
-      {errors.competitorA ? <p>{errors.competitorA}</p> : null}
+      {errors.competitorA ? <p className="form-error">{errors.competitorA}</p> : null}
 
       <label htmlFor="competitorB">Competitor B</label>
       <input
@@ -54,14 +54,16 @@ export function MatchCreateForm({ formValues, errors, isSubmitting, onChange, on
         value={formValues.competitorB}
         onChange={(event) => onChange({ ...formValues, competitorB: event.target.value })}
       />
-      {errors.competitorB ? <p>{errors.competitorB}</p> : null}
+      {errors.competitorB ? <p className="form-error">{errors.competitorB}</p> : null}
 
       <label htmlFor="notes">Notes</label>
       <textarea id="notes" name="notes" value={formValues.notes} onChange={(event) => onChange({ ...formValues, notes: event.target.value })} />
 
-      <button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? 'Creating...' : 'Create Match'}
-      </button>
+      <div className="button-row">
+        <button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Creating...' : 'Create Match'}
+        </button>
+      </div>
     </form>
   );
 }

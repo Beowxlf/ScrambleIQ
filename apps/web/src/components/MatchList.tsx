@@ -76,14 +76,16 @@ export function MatchList({
         onChange={(event) => onDateToFilterChange(event.target.value)}
       />
 
-      <label htmlFor="has-video-filter">Has video only</label>
-      <input
-        id="has-video-filter"
-        name="has-video-filter"
-        type="checkbox"
-        checked={hasVideoOnly}
-        onChange={(event) => onHasVideoOnlyChange(event.target.checked)}
-      />
+      <label htmlFor="has-video-filter" className="muted">
+        <input
+          id="has-video-filter"
+          name="has-video-filter"
+          type="checkbox"
+          checked={hasVideoOnly}
+          onChange={(event) => onHasVideoOnlyChange(event.target.checked)}
+        />
+        Has video only
+      </label>
 
       <label htmlFor="page-size">Matches per page</label>
       <select
@@ -101,12 +103,14 @@ export function MatchList({
         Page {currentPage} of {totalPages} ({totalMatches} total)
       </p>
 
-      <button type="button" onClick={onPreviousPage} disabled={!canGoPrevious}>
-        Previous Page
-      </button>
-      <button type="button" onClick={onNextPage} disabled={!canGoNext}>
-        Next Page
-      </button>
+      <div className="button-row">
+        <button type="button" onClick={onPreviousPage} disabled={!canGoPrevious}>
+          Previous Page
+        </button>
+        <button type="button" onClick={onNextPage} disabled={!canGoNext}>
+          Next Page
+        </button>
+      </div>
 
       {isLoadingMatches ? <p>Loading matches...</p> : null}
       {matchesError ? <p>{matchesError}</p> : null}

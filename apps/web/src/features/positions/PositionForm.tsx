@@ -32,7 +32,7 @@ export function PositionForm({ values, errors, isSubmitting, isEditing, submissi
           </option>
         ))}
       </select>
-      {errors.position ? <p>{errors.position}</p> : null}
+      {errors.position ? <p className="form-error">{errors.position}</p> : null}
 
       <label htmlFor="position-competitor-top">Top Competitor</label>
       <select
@@ -45,7 +45,7 @@ export function PositionForm({ values, errors, isSubmitting, isEditing, submissi
         <option value="A">A</option>
         <option value="B">B</option>
       </select>
-      {errors.competitorTop ? <p>{errors.competitorTop}</p> : null}
+      {errors.competitorTop ? <p className="form-error">{errors.competitorTop}</p> : null}
 
       <label htmlFor="position-timestamp-start">Start Timestamp (seconds)</label>
       <input
@@ -58,7 +58,7 @@ export function PositionForm({ values, errors, isSubmitting, isEditing, submissi
         value={values.timestampStart}
         onChange={(event) => onChange({ ...values, timestampStart: event.target.value })}
       />
-      {errors.timestampStart ? <p>{errors.timestampStart}</p> : null}
+      {errors.timestampStart ? <p className="form-error">{errors.timestampStart}</p> : null}
 
       <label htmlFor="position-timestamp-end">End Timestamp (seconds)</label>
       <input
@@ -71,20 +71,20 @@ export function PositionForm({ values, errors, isSubmitting, isEditing, submissi
         value={values.timestampEnd}
         onChange={(event) => onChange({ ...values, timestampEnd: event.target.value })}
       />
-      {errors.timestampEnd ? <p>{errors.timestampEnd}</p> : null}
+      {errors.timestampEnd ? <p className="form-error">{errors.timestampEnd}</p> : null}
 
       <label htmlFor="position-notes">Notes</label>
       <textarea id="position-notes" name="notes" value={values.notes} onChange={(event) => onChange({ ...values, notes: event.target.value })} />
 
-      <p>
+      <div className="button-row">
         <button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Saving...' : isEditing ? 'Save Position' : 'Create Position'}
-        </button>{' '}
+        </button>
         <button type="button" onClick={onCancel}>
           Cancel
         </button>
-      </p>
-      {submissionError ? <p>{submissionError}</p> : null}
+      </div>
+      {submissionError ? <p className="status-error">{submissionError}</p> : null}
     </form>
   );
 }
