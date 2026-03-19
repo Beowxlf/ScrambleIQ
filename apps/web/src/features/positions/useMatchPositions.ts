@@ -33,24 +33,6 @@ function createAdjacentDefaults(previousEnd: number): Pick<PositionStateFormValu
   };
 }
 
-function applyTimestampErgonomics(nextValues: PositionStateFormValues): PositionStateFormValues {
-  const start = Number(nextValues.timestampStart);
-  const end = Number(nextValues.timestampEnd);
-
-  if (!nextValues.timestampStart.trim() || !Number.isInteger(start) || start < 0) {
-    return nextValues;
-  }
-
-  if (!nextValues.timestampEnd.trim() || !Number.isInteger(end) || end <= start) {
-    return {
-      ...nextValues,
-      timestampEnd: String(start + 1),
-    };
-  }
-
-  return nextValues;
-}
-
 export function useMatchPositions({ api, matchId, onPositionsMutated }: UseMatchPositionsArgs) {
   const [positions, setPositions] = useState<PositionState[]>([]);
   const [positionsError, setPositionsError] = useState<string | null>(null);
@@ -134,10 +116,6 @@ export function useMatchPositions({ api, matchId, onPositionsMutated }: UseMatch
       isMounted = false;
     };
   }, [api, matchId]);
-
-  const updatePositionFormValues = (nextValues: PositionStateFormValues) => {
-    setPositionFormValues(applyTimestampErgonomics(nextValues));
-  };
 
   const submitPosition = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
