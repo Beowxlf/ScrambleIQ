@@ -19,20 +19,20 @@ export function DatasetToolsPanel({ api, matchId }: DatasetToolsPanelProps) {
   } = useMatchDatasetTools({ api, matchId });
 
   return (
-    <section aria-labelledby="dataset-validation-heading">
+      <section aria-labelledby="dataset-validation-heading">
       <h2 id="dataset-validation-heading">Dataset Validation</h2>
-      <p>
+      <div className="button-row">
         <button type="button" onClick={() => void exportDataset()} disabled={isExportingDataset}>
           {isExportingDataset ? 'Exporting...' : 'Export Dataset'}
-        </button>{' '}
+        </button>
         <button type="button" onClick={() => void validateDataset()} disabled={isValidatingDataset}>
           {isValidatingDataset ? 'Validating...' : 'Validate Dataset'}
         </button>
-      </p>
+      </div>
 
-      {datasetExportError ? <p>{datasetExportError}</p> : null}
+      {datasetExportError ? <p className="status-error">{datasetExportError}</p> : null}
       {isValidatingDataset ? <p>Validating dataset...</p> : null}
-      {datasetValidationError ? <p>{datasetValidationError}</p> : null}
+      {datasetValidationError ? <p className="status-error">{datasetValidationError}</p> : null}
 
       {!isValidatingDataset && !datasetValidationError && !validationReport ? (
         <p>Run validation to inspect dataset integrity before exporting.</p>

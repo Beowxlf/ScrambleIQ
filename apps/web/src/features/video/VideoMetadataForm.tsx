@@ -31,87 +31,45 @@ export function VideoMetadataForm({
         <p className="siq-form__mode">{isEditing ? 'Editing attached video metadata.' : 'Attach a video and add metadata.'}</p>
       </div>
 
-      <div className="siq-form__group">
-        <label htmlFor="video-title">Title</label>
-        <input
-          id="video-title"
-          name="title"
-          value={values.title}
-          aria-invalid={Boolean(errors.title)}
-          aria-describedby={errors.title ? 'video-title-error' : undefined}
-          onChange={(event) => onChange({ ...values, title: event.target.value })}
-        />
-        {errors.title ? (
-          <p id="video-title-error" className="siq-form__error" role="alert">
-            {errors.title}
-          </p>
-        ) : null}
-      </div>
+      <label htmlFor="video-title">Title</label>
+      <input id="video-title" name="title" value={values.title} onChange={(event) => onChange({ ...values, title: event.target.value })} />
+      {errors.title ? <p className="form-error">{errors.title}</p> : null}
 
-      <div className="siq-form__group">
-        <label htmlFor="video-source-type">Source Type</label>
-        <select
-          id="video-source-type"
-          name="sourceType"
-          value={values.sourceType}
-          aria-invalid={Boolean(errors.sourceType)}
-          aria-describedby={errors.sourceType ? 'video-source-type-error' : undefined}
-          onChange={(event) => onChange({ ...values, sourceType: event.target.value as MatchVideoFormValues['sourceType'] })}
-        >
-          <option value="">Select source type</option>
-          {MATCH_VIDEO_SOURCE_TYPES.map((sourceType) => (
-            <option key={sourceType} value={sourceType}>
-              {sourceType}
-            </option>
-          ))}
-        </select>
-        {errors.sourceType ? (
-          <p id="video-source-type-error" className="siq-form__error" role="alert">
-            {errors.sourceType}
-          </p>
-        ) : null}
-      </div>
+      <label htmlFor="video-source-type">Source Type</label>
+      <select
+        id="video-source-type"
+        name="sourceType"
+        value={values.sourceType}
+        onChange={(event) => onChange({ ...values, sourceType: event.target.value as MatchVideoFormValues['sourceType'] })}
+      >
+        <option value="">Select source type</option>
+        {MATCH_VIDEO_SOURCE_TYPES.map((sourceType) => (
+          <option key={sourceType} value={sourceType}>
+            {sourceType}
+          </option>
+        ))}
+      </select>
+      {errors.sourceType ? <p className="form-error">{errors.sourceType}</p> : null}
 
-      <div className="siq-form__group">
-        <label htmlFor="video-source-url">Source URL</label>
-        <input
-          id="video-source-url"
-          name="sourceUrl"
-          value={values.sourceUrl}
-          aria-invalid={Boolean(errors.sourceUrl)}
-          aria-describedby={errors.sourceUrl ? 'video-source-url-error' : undefined}
-          onChange={(event) => onChange({ ...values, sourceUrl: event.target.value })}
-        />
-        {errors.sourceUrl ? (
-          <p id="video-source-url-error" className="siq-form__error" role="alert">
-            {errors.sourceUrl}
-          </p>
-        ) : null}
-      </div>
+      <label htmlFor="video-source-url">Source URL</label>
+      <input id="video-source-url" name="sourceUrl" value={values.sourceUrl} onChange={(event) => onChange({ ...values, sourceUrl: event.target.value })} />
+      {errors.sourceUrl ? <p className="form-error">{errors.sourceUrl}</p> : null}
 
-      <div className="siq-form__group">
-        <label htmlFor="video-duration">Duration (seconds)</label>
-        <input
-          id="video-duration"
-          name="durationSeconds"
-          value={values.durationSeconds}
-          aria-invalid={Boolean(errors.durationSeconds)}
-          aria-describedby={errors.durationSeconds ? 'video-duration-error' : undefined}
-          onChange={(event) => onChange({ ...values, durationSeconds: event.target.value })}
-        />
-        {errors.durationSeconds ? (
-          <p id="video-duration-error" className="siq-form__error" role="alert">
-            {errors.durationSeconds}
-          </p>
-        ) : null}
-      </div>
+      <label htmlFor="video-duration">Duration (seconds)</label>
+      <input
+        id="video-duration"
+        name="durationSeconds"
+        value={values.durationSeconds}
+        onChange={(event) => onChange({ ...values, durationSeconds: event.target.value })}
+      />
+      {errors.durationSeconds ? <p className="form-error">{errors.durationSeconds}</p> : null}
 
       <div className="siq-form__group">
         <label htmlFor="video-notes">Notes</label>
         <textarea id="video-notes" name="notes" value={values.notes} onChange={(event) => onChange({ ...values, notes: event.target.value })} />
       </div>
 
-      <div className="siq-form__actions">
+      <div className="button-row">
         <button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Saving...' : isEditing ? 'Save Video' : 'Attach Video'}
         </button>
@@ -120,11 +78,7 @@ export function VideoMetadataForm({
         </button>
       </div>
 
-      {submissionError ? (
-        <p className="siq-form__submission-error" role="alert">
-          {submissionError}
-        </p>
-      ) : null}
+      {submissionError ? <p className="status-error">{submissionError}</p> : null}
     </form>
   );
 }
