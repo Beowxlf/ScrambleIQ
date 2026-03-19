@@ -21,9 +21,10 @@ interface UseMatchVideoProps {
   api: MatchesApi;
   matchId: string;
   seekRequest: VideoSeekRequest | null;
+  onVideoMetadataMutated: () => void;
 }
 
-export function useMatchVideo({ api, matchId, seekRequest }: UseMatchVideoProps) {
+export function useMatchVideo({ api, matchId, seekRequest, onVideoMetadataMutated }: UseMatchVideoProps) {
   const [video, setVideo] = useState<MatchVideo | null>(null);
   const [isLoadingVideo, setIsLoadingVideo] = useState(true);
   const [videoError, setVideoError] = useState<string | null>(null);
@@ -47,6 +48,7 @@ export function useMatchVideo({ api, matchId, seekRequest }: UseMatchVideoProps)
       setVideoFormValues(initialMatchVideoValues);
       setIsVideoFormVisible(false);
       setIsEditingVideo(false);
+      setVideoElement(null);
 
       try {
         const fetchedVideo = await api.getMatchVideo(matchId);
@@ -102,6 +104,7 @@ export function useMatchVideo({ api, matchId, seekRequest }: UseMatchVideoProps)
       setIsEditingVideo(false);
       setVideoFormErrors({});
       setVideoFormValues(initialMatchVideoValues);
+      onVideoMetadataMutated();
     } catch {
       setVideoSubmissionError('Unable to save match video metadata. Please try again.');
     } finally {
@@ -140,6 +143,8 @@ export function useMatchVideo({ api, matchId, seekRequest }: UseMatchVideoProps)
       setIsEditingVideo(false);
       setVideoFormValues(initialMatchVideoValues);
       setIsVideoFormVisible(false);
+      setVideoElement(null);
+      onVideoMetadataMutated();
     } catch {
       setVideoSubmissionError('Unable to remove match video metadata. Please try again.');
     }

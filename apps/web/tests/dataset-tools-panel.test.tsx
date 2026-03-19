@@ -151,7 +151,7 @@ describe('DatasetToolsPanel', () => {
 
     const api = createMatchesApiMock({ exportMatchDataset });
 
-    render(<DatasetToolsPanel api={api} matchId="match-7" />);
+    render(<DatasetToolsPanel api={api} matchId="match-7" refreshTrigger={0} />);
 
     expect(screen.getByText(/deterministic JSON artifacts for downstream review and auditing/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Export artifact contents' })).toBeInTheDocument();
@@ -182,7 +182,7 @@ describe('DatasetToolsPanel', () => {
 
     const api = createMatchesApiMock({ validateMatchDataset });
 
-    render(<DatasetToolsPanel api={api} matchId="match-1" />);
+    render(<DatasetToolsPanel api={api} matchId="match-1" refreshTrigger={0} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Validate Dataset' }));
 
@@ -212,7 +212,7 @@ describe('DatasetToolsPanel', () => {
       }),
     });
 
-    render(<DatasetToolsPanel api={api} matchId="match-1" />);
+    render(<DatasetToolsPanel api={api} matchId="match-1" refreshTrigger={0} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Export Dataset JSON' }));
     expect(await screen.findByText('Unable to export dataset right now. Please try again.')).toBeInTheDocument();
