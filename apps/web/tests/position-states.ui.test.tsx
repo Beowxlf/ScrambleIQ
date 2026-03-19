@@ -196,6 +196,24 @@ describe('Position states UI', () => {
     expect(await screen.findByText('No position states yet.')).toBeInTheDocument();
   });
 
+
+
+  it('seeds adjacent timestamps from existing positions in the app flow', async () => {
+    const matchesApi = createMatchesApiMock({
+      listPositionStates: async () => [
+        basePosition({ id: 'position-2', timestampStart: 30, timestampEnd: 44, position: 'mount', competitorTop: 'B' }),
+      ],
+    });
+
+    render(<App matchesApi={matchesApi} />);
+
+    await screen.findByText('00:30 - 00:44 mount top: B');
+    fireEvent.click(screen.getByRole('button', { name: 'Add Position' }));
+
+    expect(screen.getByLabelText('Start Timestamp (seconds)')).toHaveValue(44);
+    expect(screen.getByLabelText('End Timestamp (seconds)')).toHaveValue(45);
+  });
+
   it('shows validation errors for position form', async () => {
     const matchesApi = createMatchesApiMock();
 

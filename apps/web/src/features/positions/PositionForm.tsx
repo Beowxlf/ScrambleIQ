@@ -53,6 +53,8 @@ export function PositionForm({ values, errors, isSubmitting, isEditing, submissi
         name="timestampStart"
         type="number"
         min={0}
+        step={1}
+        inputMode="numeric"
         value={values.timestampStart}
         onChange={(event) => onChange({ ...values, timestampStart: event.target.value })}
       />
@@ -64,6 +66,8 @@ export function PositionForm({ values, errors, isSubmitting, isEditing, submissi
         name="timestampEnd"
         type="number"
         min={1}
+        step={1}
+        inputMode="numeric"
         value={values.timestampEnd}
         onChange={(event) => onChange({ ...values, timestampEnd: event.target.value })}
       />
