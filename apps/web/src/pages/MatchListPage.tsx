@@ -58,9 +58,11 @@ export function MatchListPage({ api, onOpenMatch }: MatchListPageProps) {
   };
 
   return (
-    <main>
-      <h1>ScrambleIQ</h1>
-      <p>Create a match to begin manual-first tracking and review.</p>
+    <main className="app-page">
+      <header className="app-header">
+        <h1>ScrambleIQ</h1>
+        <p className="muted">Create a match to begin manual-first tracking and review.</p>
+      </header>
 
       <MatchCreateForm
         formValues={formValues}
@@ -71,7 +73,7 @@ export function MatchListPage({ api, onOpenMatch }: MatchListPageProps) {
       />
 
       {submissionMessage ? <p>{submissionMessage}</p> : null}
-      {submissionError ? <p>{submissionError}</p> : null}
+      {submissionError ? <p className="status-error">{submissionError}</p> : null}
 
       <MatchList
         matches={matches}
