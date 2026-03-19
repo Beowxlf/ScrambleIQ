@@ -29,8 +29,11 @@ export function EventForm({ values, errors, isSubmitting, isEditing, submissionE
   };
 
   return (
-    <form onSubmit={(event) => void onSubmit(event)} onKeyDown={handleKeyDown} noValidate>
-      <h3>{isEditing ? 'Edit Event' : 'Add Event'}</h3>
+    <form onSubmit={(event) => void onSubmit(event)} onKeyDown={handleKeyDown} noValidate className="siq-form" aria-busy={isSubmitting}>
+      <div className="siq-form__header">
+        <h3>{isEditing ? 'Edit Event' : 'Add Event'}</h3>
+        <p className="siq-form__mode">{isEditing ? 'Editing existing timeline annotation.' : 'Create a new timeline annotation.'}</p>
+      </div>
 
       <label htmlFor="event-timestamp">Timestamp (seconds)</label>
       <input
@@ -42,7 +45,7 @@ export function EventForm({ values, errors, isSubmitting, isEditing, submissionE
         value={values.timestamp}
         onChange={(event) => onChange({ ...values, timestamp: event.target.value })}
       />
-      {errors.timestamp ? <p>{errors.timestamp}</p> : null}
+      {errors.timestamp ? <p className="form-error">{errors.timestamp}</p> : null}
 
       <label htmlFor="event-type">Event Type</label>
       <input
@@ -51,7 +54,7 @@ export function EventForm({ values, errors, isSubmitting, isEditing, submissionE
         value={values.eventType}
         onChange={(event) => onChange({ ...values, eventType: event.target.value })}
       />
-      {errors.eventType ? <p>{errors.eventType}</p> : null}
+      {errors.eventType ? <p className="form-error">{errors.eventType}</p> : null}
 
       <label htmlFor="event-competitor">Competitor</label>
       <select
@@ -64,25 +67,27 @@ export function EventForm({ values, errors, isSubmitting, isEditing, submissionE
         <option value="A">A</option>
         <option value="B">B</option>
       </select>
-      {errors.competitor ? <p>{errors.competitor}</p> : null}
+      {errors.competitor ? <p className="form-error">{errors.competitor}</p> : null}
 
-      <label htmlFor="event-notes">Notes</label>
-      <textarea id="event-notes" name="notes" value={values.notes} onChange={(event) => onChange({ ...values, notes: event.target.value })} />
+      <div className="siq-form__group">
+        <label htmlFor="event-notes">Notes</label>
+        <textarea id="event-notes" name="notes" value={values.notes} onChange={(event) => onChange({ ...values, notes: event.target.value })} />
+      </div>
 
-      <p>
+      <div className="button-row">
         <button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Saving...' : isEditing ? 'Save Event' : 'Create Event'}
-        </button>{' '}
+        </button>
         {!isEditing ? (
           <button type="submit" name="submitMode" value="addAnother" disabled={isSubmitting}>
             {isSubmitting ? 'Saving...' : 'Create & Add Another'}
           </button>
-        ) : null}{' '}
+        ) : null}
         <button type="button" onClick={onCancel}>
           Cancel
         </button>
-      </p>
-      {submissionError ? <p>{submissionError}</p> : null}
+      </div>
+      {submissionError ? <p className="status-error">{submissionError}</p> : null}
     </form>
   );
 }

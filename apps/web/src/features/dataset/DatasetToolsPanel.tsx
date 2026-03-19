@@ -21,23 +21,23 @@ export function DatasetToolsPanel({ api, matchId }: DatasetToolsPanelProps) {
   const hasBlockingValidationIssues = validationReport ? validationReport.issues.some((issue) => issue.severity === 'ERROR') : false;
 
   return (
-    <section aria-labelledby="dataset-validation-heading">
+      <section aria-labelledby="dataset-validation-heading">
       <h2 id="dataset-validation-heading">Dataset Validation</h2>
-      <p>Validate first, then export a JSON snapshot for manual review and downstream processing.</p>
-
-      <h3>Actions</h3>
-      <p>
+      <div className="button-row">
+        <button type="button" onClick={() => void exportDataset()} disabled={isExportingDataset}>
+          {isExportingDataset ? 'Exporting...' : 'Export Dataset'}
+        </button>
         <button type="button" onClick={() => void validateDataset()} disabled={isValidatingDataset}>
           {isValidatingDataset ? 'Validating...' : 'Validate Dataset'}
         </button>{' '}
         <button type="button" onClick={() => void exportDataset()} disabled={isExportingDataset}>
           {isExportingDataset ? 'Exporting...' : 'Export Dataset'}
         </button>
-      </p>
+      </div>
 
-      {datasetExportError ? <p>{datasetExportError}</p> : null}
+      {datasetExportError ? <p className="status-error">{datasetExportError}</p> : null}
       {isValidatingDataset ? <p>Validating dataset...</p> : null}
-      {datasetValidationError ? <p>{datasetValidationError}</p> : null}
+      {datasetValidationError ? <p className="status-error">{datasetValidationError}</p> : null}
 
       {!isValidatingDataset && !datasetValidationError && !validationReport ? (
         <p>Run validation to inspect dataset integrity before exporting.</p>

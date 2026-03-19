@@ -1,0 +1,68 @@
+.siq-form {
+  display: grid;
+  gap: 0.875rem;
+  max-width: 40rem;
+  padding: 0.875rem;
+  border: 1px solid #d4d4d8;
+  border-radius: 0.5rem;
+  background-color: #fafafa;
+  margin: 0.75rem 0;
+}
+
+.siq-form__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.siq-form__mode {
+  margin: 0;
+  color: #3f3f46;
+  font-size: 0.9rem;
+}
+
+.siq-form__group {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.siq-form__group label {
+  font-weight: 600;
+}
+
+.siq-form__group input,
+.siq-form__group select,
+.siq-form__group textarea {
+  padding: 0.45rem 0.55rem;
+  border: 1px solid #a1a1aa;
+  border-radius: 0.4rem;
+  font: inherit;
+}
+
+.siq-form__group textarea {
+  min-height: 4rem;
+  resize: vertical;
+}
+
+.siq-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.siq-form__error {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.siq-form__submission-error {
+  margin: 0;
+  color: #991b1b;
+  font-size: 0.92rem;
+  font-weight: 600;
+  border-left: 3px solid #dc2626;
+  padding-left: 0.5rem;
+}

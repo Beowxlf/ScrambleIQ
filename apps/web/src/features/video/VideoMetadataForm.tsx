@@ -25,12 +25,15 @@ export function VideoMetadataForm({
   onCancel,
 }: VideoMetadataFormProps) {
   return (
-    <form onSubmit={(event) => void onSubmit(event)} noValidate>
-      <h3>{isEditing ? 'Edit Video' : 'Attach Video'}</h3>
+    <form onSubmit={(event) => void onSubmit(event)} noValidate className="siq-form" aria-busy={isSubmitting}>
+      <div className="siq-form__header">
+        <h3>{isEditing ? 'Edit Video' : 'Attach Video'}</h3>
+        <p className="siq-form__mode">{isEditing ? 'Editing attached video metadata.' : 'Attach a video and add metadata.'}</p>
+      </div>
 
       <label htmlFor="video-title">Title</label>
       <input id="video-title" name="title" value={values.title} onChange={(event) => onChange({ ...values, title: event.target.value })} />
-      {errors.title ? <p>{errors.title}</p> : null}
+      {errors.title ? <p className="form-error">{errors.title}</p> : null}
 
       <label htmlFor="video-source-type">Source Type</label>
       <select
@@ -46,11 +49,11 @@ export function VideoMetadataForm({
           </option>
         ))}
       </select>
-      {errors.sourceType ? <p>{errors.sourceType}</p> : null}
+      {errors.sourceType ? <p className="form-error">{errors.sourceType}</p> : null}
 
       <label htmlFor="video-source-url">Source URL</label>
       <input id="video-source-url" name="sourceUrl" value={values.sourceUrl} onChange={(event) => onChange({ ...values, sourceUrl: event.target.value })} />
-      {errors.sourceUrl ? <p>{errors.sourceUrl}</p> : null}
+      {errors.sourceUrl ? <p className="form-error">{errors.sourceUrl}</p> : null}
 
       <label htmlFor="video-duration">Duration (seconds)</label>
       <input
@@ -59,21 +62,23 @@ export function VideoMetadataForm({
         value={values.durationSeconds}
         onChange={(event) => onChange({ ...values, durationSeconds: event.target.value })}
       />
-      {errors.durationSeconds ? <p>{errors.durationSeconds}</p> : null}
+      {errors.durationSeconds ? <p className="form-error">{errors.durationSeconds}</p> : null}
 
-      <label htmlFor="video-notes">Notes</label>
-      <textarea id="video-notes" name="notes" value={values.notes} onChange={(event) => onChange({ ...values, notes: event.target.value })} />
+      <div className="siq-form__group">
+        <label htmlFor="video-notes">Notes</label>
+        <textarea id="video-notes" name="notes" value={values.notes} onChange={(event) => onChange({ ...values, notes: event.target.value })} />
+      </div>
 
-      <p>
+      <div className="button-row">
         <button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Saving...' : isEditing ? 'Save Video' : 'Attach Video'}
-        </button>{' '}
+        </button>
         <button type="button" onClick={onCancel}>
           Cancel
         </button>
-      </p>
+      </div>
 
-      {submissionError ? <p>{submissionError}</p> : null}
+      {submissionError ? <p className="status-error">{submissionError}</p> : null}
     </form>
   );
 }

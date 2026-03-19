@@ -133,6 +133,17 @@ describe('MatchDetailPage', () => {
     pushStateSpy.mockRestore();
   });
 
+  it('renders review workspace groupings to separate context, timelines, and dataset tools', async () => {
+    const matchesApi = createMatchesApiMock();
+
+    render(<MatchDetailPage api={matchesApi} matchId="match-1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Review Workspace' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Review Context' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Timeline Review' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Data Quality Tools' })).toBeInTheDocument();
+  });
+
   it('refreshes analytics after event and position create, edit, and delete mutations', async () => {
     const getMatchAnalytics = vi.fn(async (matchId: string) => ({
       matchId,
