@@ -152,8 +152,10 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
     }
   };
 
+  const isWorkspaceReady = !isLoadingMatch && !isMatchNotFound && !matchError;
+
   return (
-    <main>
+    <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '1rem', display: 'grid', gap: '1rem' }}>
       <h1>ScrambleIQ</h1>
       <p>
         <button type="button" onClick={() => navigateTo('/')}>
@@ -161,7 +163,10 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
         </button>
       </p>
 
-      <section aria-labelledby="match-detail-heading">
+      <section
+        aria-labelledby="match-detail-heading"
+        style={{ border: '1px solid #d4d4d8', borderRadius: '0.5rem', padding: '1rem', background: '#fafafa' }}
+      >
         <h2 id="match-detail-heading">Match Detail</h2>
 
         {isLoadingMatch ? <p>Loading match details...</p> : null}
@@ -254,82 +259,123 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
               {editSubmissionError ? <p>{editSubmissionError}</p> : null}
             </form>
           ) : (
-            <article>
+            <article style={{ display: 'grid', gap: '0.5rem' }}>
               <h3>{match.title}</h3>
-              <p>ID: {match.id}</p>
-              <p>Date: {match.date}</p>
-              <p>Ruleset: {match.ruleset}</p>
-              <p>Competitor A: {match.competitorA}</p>
-              <p>Competitor B: {match.competitorB}</p>
-              <p>Notes: {match.notes || 'No notes provided.'}</p>
-              <p>
-                <button type="button" onClick={() => setIsEditMode(true)}>
-                  Edit Match
-                </button>
-              </p>
               <div>
-                {!isDeleteConfirming ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsDeleteConfirming(true);
-                      setDeleteError(null);
-                    }}
-                    disabled={isDeleting}
-                  >
-                    Delete Match
+                <h4 style={{ marginBottom: '0.25rem' }}>Metadata</h4>
+                <p>ID: {match.id}</p>
+                <p>Date: {match.date}</p>
+                <p>Ruleset: {match.ruleset}</p>
+                <p>Competitor A: {match.competitorA}</p>
+                <p>Competitor B: {match.competitorB}</p>
+                <p>Notes: {match.notes || 'No notes provided.'}</p>
+              </div>
+
+              <div>
+                <h4 style={{ marginBottom: '0.25rem' }}>Actions</h4>
+                <p style={{ marginTop: 0 }}>Use these controls to maintain match details before or during review.</p>
+                <p>
+                  <button type="button" onClick={() => setIsEditMode(true)}>
+                    Edit Match
                   </button>
-                ) : (
-                  <>
-                    <p>Are you sure you want to delete this match?</p>
-                    <button type="button" onClick={() => void deleteMatch()} disabled={isDeleting}>
-                      {isDeleting ? 'Deleting...' : 'Confirm Delete'}
-                    </button>{' '}
+                </p>
+                <div>
+                  {!isDeleteConfirming ? (
                     <button
                       type="button"
                       onClick={() => {
-                        setIsDeleteConfirming(false);
+                        setIsDeleteConfirming(true);
                         setDeleteError(null);
                       }}
                       disabled={isDeleting}
                     >
-                      Cancel
+                      Delete Match
                     </button>
-                  </>
-                )}
+                  ) : (
+                    <>
+                      <p>Are you sure you want to delete this match?</p>
+                      <button type="button" onClick={() => void deleteMatch()} disabled={isDeleting}>
+                        {isDeleting ? 'Deleting...' : 'Confirm Delete'}
+                      </button>{' '}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsDeleteConfirming(false);
+                          setDeleteError(null);
+                        }}
+                        disabled={isDeleting}
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  )}
+                </div>
+                {deleteError ? <p>{deleteError}</p> : null}
               </div>
-              {deleteError ? <p>{deleteError}</p> : null}
             </article>
           )
         ) : null}
       </section>
 
-      {!isLoadingMatch && !isMatchNotFound && !matchError ? (
-        <DatasetToolsPanel api={api} matchId={matchId} />
-      ) : null}
+      {isWorkspaceReady ? (
+        <section aria-labelledby="review-workspace-heading" style={{ display: 'grid', gap: '1rem' }}>
+          <h2 id="review-workspace-heading">Review Workspace</h2>
+          <p style={{ margin: 0 }}>Start with video context, then move through timelines and summary checks while reviewing the match.</p>
 
-      {!isLoadingMatch && !isMatchNotFound && !matchError ? <AnalyticsPanel api={api} matchId={matchId} refreshTrigger={analyticsRefreshTrigger} /> : null}
+          <div
+            style={{
+              display: 'grid',
+              gap: '1rem',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              alignItems: 'start',
+            }}
+          >
+            <section
+              aria-labelledby="video-and-analytics-heading"
+              style={{ border: '1px solid #d4d4d8', borderRadius: '0.5rem', padding: '1rem', display: 'grid', gap: '1rem' }}
+            >
+              <h3 id="video-and-analytics-heading" style={{ margin: 0 }}>
+                Review Context
+              </h3>
+              <VideoPanel api={api} matchId={matchId} seekRequest={videoSeekRequest} />
+              <AnalyticsPanel api={api} matchId={matchId} refreshTrigger={analyticsRefreshTrigger} />
+            </section>
 
-      {!isLoadingMatch && !isMatchNotFound && !matchError ? <VideoPanel api={api} matchId={matchId} seekRequest={videoSeekRequest} /> : null}
+            <section
+              aria-labelledby="timelines-heading"
+              style={{ border: '1px solid #d4d4d8', borderRadius: '0.5rem', padding: '1rem', display: 'grid', gap: '1rem' }}
+            >
+              <h3 id="timelines-heading" style={{ margin: 0 }}>
+                Timeline Review
+              </h3>
+              <p style={{ margin: 0 }}>Select an event or position to sync the video and focus on sequence details.</p>
+              <EventPanel
+                api={api}
+                matchId={matchId}
+                selectedEventId={selectedEventId}
+                onSeekToTimestamp={(timestamp, eventId) => seekToTimestamp(timestamp, { eventId })}
+                onEventsMutated={refreshAnalytics}
+              />
+              <PositionPanel
+                api={api}
+                matchId={matchId}
+                selectedPositionId={selectedPositionId}
+                onSeekToTimestamp={(timestamp, positionId) => seekToTimestamp(timestamp, { positionId })}
+                onPositionsMutated={refreshAnalytics}
+              />
+            </section>
+          </div>
 
-      {!isLoadingMatch && !isMatchNotFound && !matchError ? (
-        <EventPanel
-          api={api}
-          matchId={matchId}
-          selectedEventId={selectedEventId}
-          onSeekToTimestamp={(timestamp, eventId) => seekToTimestamp(timestamp, { eventId })}
-          onEventsMutated={refreshAnalytics}
-        />
-      ) : null}
-
-      {!isLoadingMatch && !isMatchNotFound && !matchError ? (
-        <PositionPanel
-          api={api}
-          matchId={matchId}
-          selectedPositionId={selectedPositionId}
-          onSeekToTimestamp={(timestamp, positionId) => seekToTimestamp(timestamp, { positionId })}
-          onPositionsMutated={refreshAnalytics}
-        />
+          <section
+            aria-labelledby="dataset-tools-heading"
+            style={{ border: '1px solid #d4d4d8', borderRadius: '0.5rem', padding: '1rem' }}
+          >
+            <h3 id="dataset-tools-heading" style={{ marginTop: 0 }}>
+              Data Quality Tools
+            </h3>
+            <DatasetToolsPanel api={api} matchId={matchId} />
+          </section>
+        </section>
       ) : null}
     </main>
   );
