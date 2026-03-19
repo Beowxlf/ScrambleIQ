@@ -23,6 +23,7 @@ export function PositionList({ positions, selectedPositionId, onSeekToPosition, 
               onClick={() => onSeekToPosition(position)}
               aria-pressed={selectedPositionId === position.id}
               aria-label={positionLabel}
+              className={selectedPositionId === position.id ? 'timeline-seek-button timeline-seek-button--active' : 'timeline-seek-button'}
             >
               {positionLabel}
             </button>{' '}

@@ -9,7 +9,7 @@ interface PositionPanelProps {
   api: MatchesApi;
   matchId: string;
   selectedPositionId: string | null;
-  onSeekToTimestamp: (timestamp: number, positionId: string) => void;
+  onSeekToTimestamp: (timestamp: number, positionId: string, positionLabel: string) => void;
   onPositionsMutated: () => void;
 }
 
@@ -33,7 +33,8 @@ export function PositionPanel({ api, matchId, selectedPositionId, onSeekToTimest
   } = useMatchPositions({ api, matchId, onPositionsMutated });
 
   const handleSeekToPosition = (positionState: PositionState) => {
-    onSeekToTimestamp(positionState.timestampStart, positionState.id);
+    const positionLabel = `${positionState.position} top: ${positionState.competitorTop}`;
+    onSeekToTimestamp(positionState.timestampStart, positionState.id, positionLabel);
   };
 
   return (
