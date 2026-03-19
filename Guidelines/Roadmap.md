@@ -93,9 +93,9 @@ Version 2.0 expands coaching workflow tools built on top of the validated manual
 
 # Phase 4
 ## Version 2.5
-### Cross-Match Analysis and Operations
+### Reporting and Cross-Match Analysis
 
-Version 2.5 introduces incremental cross-match capabilities using validated stored annotations.
+Version 2.5 introduces reporting and cross-match review capabilities built from validated manual datasets.
 
 ### Objectives
 
@@ -108,11 +108,32 @@ Version 2.5 introduces incremental cross-match capabilities using validated stor
 1. cross-match aggregate summaries from existing event/position datasets
 2. athlete/team trend views based on manual records
 3. collection-level validation and export workflows
-4. operational quality controls for larger annotation backlogs
+4. structured reporting views for recurring coaching review questions
 
 ---
 
 # Phase 5
+## Version 2.8
+### Media Preparation Workflows (Still Manual-First)
+
+Version 2.8 introduces media preparation support that improves review readiness without adding automated analysis.
+
+### Objectives
+
+1. improve match media readiness for manual review sessions
+2. reduce setup friction before annotation sessions
+3. preserve deterministic, operator-controlled workflows
+
+### Planned Features
+
+1. metadata-first media preparation checklists
+2. pre-review quality checks (duration/source consistency)
+3. manual clip/bookmark preparation workflows tied to annotations
+4. safer media metadata normalization tools
+
+---
+
+# Phase 6
 ## Version 3.0
 ### Video Ingestion and Automation Research (Post-Foundation)
 
@@ -135,6 +156,6 @@ Version 3.0 is reserved for research and staged prototyping of richer ingestion/
 
 # Summary
 
-ScrambleIQ now progresses from an implemented manual-first annotation platform toward higher-throughput workflows, cross-match operational analysis, and only later carefully gated automation research.
+ScrambleIQ now progresses from an implemented manual-first annotation platform toward higher-throughput workflows, reporting and cross-match analysis, media preparation support, and only later carefully gated automation research.
 
 This sequence preserves product reliability and aligns roadmap claims with current implementation reality.
