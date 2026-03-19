@@ -15,6 +15,7 @@
     "typecheck": "npm run typecheck --workspaces",
     "test": "npm run test --workspaces",
     "test:integration": "bash apps/api/scripts/run-integration-tests.sh",
+    "test:integration:ci": "npm run test:integration --workspace @scrambleiq/api",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
