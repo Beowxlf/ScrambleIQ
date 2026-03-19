@@ -18,6 +18,39 @@ interface UseMatchPositionsArgs {
   onPositionsMutated: () => void;
 }
 
+function getLastPositionEnd(positions: PositionState[]): number | null {
+  if (positions.length === 0) {
+    return null;
+  }
+
+  return positions.reduce((latestEnd, position) => Math.max(latestEnd, position.timestampEnd), positions[0].timestampEnd);
+}
+
+function createAdjacentDefaults(previousEnd: number): Pick<PositionStateFormValues, 'timestampStart' | 'timestampEnd'> {
+  return {
+    timestampStart: String(previousEnd),
+    timestampEnd: String(previousEnd + 1),
+  };
+}
+
+function applyTimestampErgonomics(nextValues: PositionStateFormValues): PositionStateFormValues {
+  const start = Number(nextValues.timestampStart);
+  const end = Number(nextValues.timestampEnd);
+
+  if (!nextValues.timestampStart.trim() || !Number.isInteger(start) || start < 0) {
+    return nextValues;
+  }
+
+  if (!nextValues.timestampEnd.trim() || !Number.isInteger(end) || end <= start) {
+    return {
+      ...nextValues,
+      timestampEnd: String(start + 1),
+    };
+  }
+
+  return nextValues;
+}
+
 export function useMatchPositions({ api, matchId, onPositionsMutated }: UseMatchPositionsArgs) {
   const [positions, setPositions] = useState<PositionState[]>([]);
   const [positionsError, setPositionsError] = useState<string | null>(null);
@@ -72,6 +105,10 @@ export function useMatchPositions({ api, matchId, onPositionsMutated }: UseMatch
     };
   }, [api, matchId]);
 
+  const updatePositionFormValues = (nextValues: PositionStateFormValues) => {
+    setPositionFormValues(applyTimestampErgonomics(nextValues));
+  };
+
   const submitPosition = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -93,15 +130,25 @@ export function useMatchPositions({ api, matchId, onPositionsMutated }: UseMatch
             .map((position) => (position.id === editingPositionId ? updatedPosition : position))
             .sort((a, b) => a.timestampStart - b.timestampStart),
         );
+
+        setPositionFormValues(initialPositionStateValues);
+        setPositionFormErrors({});
+        setEditingPositionId(null);
+        setIsPositionFormVisible(false);
       } else {
         const createdPosition = await api.createPositionState(matchId, toCreatePositionStateDto(positionFormValues));
         setPositions((previous) => [...previous, createdPosition].sort((a, b) => a.timestampStart - b.timestampStart));
+        setPositionFormValues({
+          position: positionFormValues.position,
+          competitorTop: positionFormValues.competitorTop,
+          notes: '',
+          ...createAdjacentDefaults(createdPosition.timestampEnd),
+        });
+        setPositionFormErrors({});
+        setEditingPositionId(null);
+        setIsPositionFormVisible(true);
       }
 
-      setPositionFormValues(initialPositionStateValues);
-      setPositionFormErrors({});
-      setEditingPositionId(null);
-      setIsPositionFormVisible(false);
       onPositionsMutated();
     } catch {
       setPositionSubmissionError('Unable to save position state. Please try again.');
@@ -130,9 +177,11 @@ export function useMatchPositions({ api, matchId, onPositionsMutated }: UseMatch
   };
 
   const startCreatePosition = () => {
+    const lastPositionEnd = getLastPositionEnd(positions);
+
     setIsPositionFormVisible(true);
     setEditingPositionId(null);
-    setPositionFormValues(initialPositionStateValues);
+    setPositionFormValues(lastPositionEnd === null ? initialPositionStateValues : { ...initialPositionStateValues, ...createAdjacentDefaults(lastPositionEnd) });
     setPositionFormErrors({});
     setPositionSubmissionError(null);
   };
@@ -169,7 +218,7 @@ export function useMatchPositions({ api, matchId, onPositionsMutated }: UseMatch
     isSubmittingPosition,
     positionSubmissionError,
     editingPositionId,
-    setPositionFormValues,
+    setPositionFormValues: updatePositionFormValues,
     startCreatePosition,
     startEditPosition,
     submitPosition,

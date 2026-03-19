@@ -171,6 +171,92 @@ describe('PositionPanel', () => {
     expect(onPositionsMutated).toHaveBeenCalled();
   });
 
+
+
+  it('prefills adjacent timestamps when opening and reuses values after create', async () => {
+    const createPositionState = vi.fn(async () => ({
+      id: 'position-3',
+      matchId: 'match-1',
+      position: 'mount' as const,
+      competitorTop: 'B' as const,
+      timestampStart: 30,
+      timestampEnd: 36,
+    }));
+
+    const api = createMatchesApiMock({
+      listPositionStates: async () => [
+        {
+          id: 'position-1',
+          matchId: 'match-1',
+          position: 'closed_guard',
+          competitorTop: 'A',
+          timestampStart: 12,
+          timestampEnd: 20,
+        },
+        {
+          id: 'position-2',
+          matchId: 'match-1',
+          position: 'half_guard',
+          competitorTop: 'B',
+          timestampStart: 24,
+          timestampEnd: 30,
+        },
+      ],
+      createPositionState,
+    });
+
+    render(
+      <PositionPanel
+        api={api}
+        matchId="match-1"
+        selectedPositionId={null}
+        onSeekToTimestamp={vi.fn()}
+        onPositionsMutated={vi.fn(async () => undefined)}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Add Position' }));
+
+    expect(screen.getByLabelText('Start Timestamp (seconds)')).toHaveValue(30);
+    expect(screen.getByLabelText('End Timestamp (seconds)')).toHaveValue(31);
+
+    fireEvent.change(screen.getByLabelText('Position'), { target: { value: 'mount' } });
+    fireEvent.change(screen.getByLabelText('Top Competitor'), { target: { value: 'B' } });
+    fireEvent.change(screen.getByLabelText('End Timestamp (seconds)'), { target: { value: '36' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create Position' }));
+
+    await waitFor(() => expect(createPositionState).toHaveBeenCalledTimes(1));
+
+    expect(screen.getByLabelText('Position')).toHaveValue('mount');
+    expect(screen.getByLabelText('Top Competitor')).toHaveValue('B');
+    expect(screen.getByLabelText('Start Timestamp (seconds)')).toHaveValue(36);
+    expect(screen.getByLabelText('End Timestamp (seconds)')).toHaveValue(37);
+  });
+
+  it('auto-adjusts end timestamp when start moves past end', async () => {
+    const api = createMatchesApiMock();
+
+    render(
+      <PositionPanel
+        api={api}
+        matchId="match-1"
+        selectedPositionId={null}
+        onSeekToTimestamp={vi.fn()}
+        onPositionsMutated={vi.fn(async () => undefined)}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Add Position' }));
+    fireEvent.change(screen.getByLabelText('Start Timestamp (seconds)'), { target: { value: '15' } });
+
+    expect(screen.getByLabelText('End Timestamp (seconds)')).toHaveValue(16);
+
+    fireEvent.change(screen.getByLabelText('End Timestamp (seconds)'), { target: { value: '18' } });
+    fireEvent.change(screen.getByLabelText('Start Timestamp (seconds)'), { target: { value: '19' } });
+
+    expect(screen.getByLabelText('End Timestamp (seconds)')).toHaveValue(20);
+  });
+
   it('shows overlap rejection message when save fails', async () => {
     const api = createMatchesApiMock({
       createPositionState: vi.fn(async () => {
