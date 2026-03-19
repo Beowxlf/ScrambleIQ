@@ -126,47 +126,40 @@ describe('MatchesController', () => {
   it('rejects empty PATCH payloads across mutable resources', async () => {
     const matchId = await createMatch();
 
-    await request(app.getHttpServer())
-      .patch(`/matches/${matchId}`)
+    await requestWithAuth('patch', `/matches/${matchId}`)
       .send({})
       .expect(400)
       .expect(({ body }: { body: { message: string[] } }) => {
         expect(body.message).toContain('At least one field must be provided for update');
       });
 
-    const eventResponse = await request(app.getHttpServer())
-      .post(`/matches/${matchId}/events`)
+    const eventResponse = await requestWithAuth('post', `/matches/${matchId}/events`)
       .send({ timestamp: 10, eventType: 'takedown_attempt', competitor: 'A' })
       .expect(201);
 
-    await request(app.getHttpServer())
-      .patch(`/events/${eventResponse.body.id}`)
+    await requestWithAuth('patch', `/events/${eventResponse.body.id}`)
       .send({})
       .expect(400)
       .expect(({ body }: { body: { message: string[] } }) => {
         expect(body.message).toContain('At least one field must be provided for update');
       });
 
-    const positionResponse = await request(app.getHttpServer())
-      .post(`/matches/${matchId}/positions`)
+    const positionResponse = await requestWithAuth('post', `/matches/${matchId}/positions`)
       .send({ position: 'standing', competitorTop: 'A', timestampStart: 0, timestampEnd: 10 })
       .expect(201);
 
-    await request(app.getHttpServer())
-      .patch(`/positions/${positionResponse.body.id}`)
+    await requestWithAuth('patch', `/positions/${positionResponse.body.id}`)
       .send({})
       .expect(400)
       .expect(({ body }: { body: { message: string[] } }) => {
         expect(body.message).toContain('At least one field must be provided for update');
       });
 
-    const videoResponse = await request(app.getHttpServer())
-      .post(`/matches/${matchId}/video`)
+    const videoResponse = await requestWithAuth('post', `/matches/${matchId}/video`)
       .send({ title: 'Angle A', sourceType: 'remote_url', sourceUrl: 'https://cdn.example.com/a.mp4' })
       .expect(201);
 
-    await request(app.getHttpServer())
-      .patch(`/video/${videoResponse.body.id}`)
+    await requestWithAuth('patch', `/video/${videoResponse.body.id}`)
       .send({})
       .expect(400)
       .expect(({ body }: { body: { message: string[] } }) => {
@@ -259,16 +252,14 @@ describe('MatchesController', () => {
   it('enforces list query boundaries and normalization rules', async () => {
     await createMatch();
 
-    const validBoundaryResponse = await request(app.getHttpServer())
-      .get('/matches?competitor=%20%20Taylor%20%20&limit=100&offset=9007199254740991')
+    const validBoundaryResponse = await requestWithAuth('get', '/matches?competitor=%20%20Taylor%20%20&limit=100&offset=9007199254740991')
       .expect(200);
 
     expect(validBoundaryResponse.body.limit).toBe(100);
     expect(validBoundaryResponse.body.offset).toBe(9007199254740991);
     expect(validBoundaryResponse.body.total).toBe(0);
 
-    const invalidBoundaryResponse = await request(app.getHttpServer())
-      .get('/matches?competitor=%20%20&limit=101&offset=9007199254740992&dateFrom=2026-02-01&dateTo=2026-01-31')
+    const invalidBoundaryResponse = await requestWithAuth('get', '/matches?competitor=%20%20&limit=101&offset=9007199254740992&dateFrom=2026-02-01&dateTo=2026-01-31')
       .expect(400);
 
     expect(invalidBoundaryResponse.body.message).toContain('competitor should not be empty');
