@@ -3,217 +3,113 @@
 
 ### Overview
 
-This document defines the functional boundaries of the first release of ScrambleIQ.
+This document defines the implemented functional boundaries of ScrambleIQ Version 1.
 
-Version 1 focuses on delivering a stable system capable of accepting grappling match footage, processing that footage into tracked movement data, generating a simplified 3D reconstruction of the match, and producing AI-generated coaching observations.
+Version 1 is a manual-first match annotation and review system. It provides structured match data capture, synchronized review workflows, derived analytics, and deterministic dataset export.
 
-The goal of Version 1 is to establish a reliable analysis pipeline rather than a fully comprehensive grappling intelligence platform.
-
----
-
-## Supported Grappling Format
-
-Version 1 supports the following match format:
-
-- No-Gi grappling
-
-Additional grappling rule sets may be introduced in later versions of the platform.
+Version 1 does **not** include automated analysis pipelines.
 
 ---
 
-## Intended Users
+## Supported Users and Workflow
 
-Primary users for Version 1 are:
+Primary users:
 
 - grappling coaches
+- athletes performing structured self-review
 
-Secondary users may include:
+Primary workflow:
 
-- athletes reviewing their own matches
-
-The interface is designed primarily to support coaching workflows.
-
----
-
-## Supported Video Input
-
-Version 1 accepts the following video input conditions:
-
-**File Format**
-
-- MP4 only
-
-**Maximum Match Duration**
-
-- 10 minutes per upload
-
-**Camera Requirements**
-
-- single camera input
-- stable footage required
-
-Videos that contain excessive camera movement or poor visibility may produce degraded analysis results.
+1. create/manage a match record
+2. annotate event and position timelines manually
+3. attach/edit video metadata for synchronized playback review
+4. review derived analytics
+5. run dataset validation
+6. export deterministic JSON artifacts
 
 ---
 
-## Athlete Detection Constraints
+## In-Scope Capabilities (Implemented)
 
-Version 1 assumes the following conditions:
+### 1. Match CRUD
 
-- two athletes on screen
-- both athletes remain visible for most of the match
+- create, list/filter, read, update, and delete matches
+- deterministic list response and pagination behavior
 
-Heavy occlusion or full body overlap may reduce tracking accuracy.
+### 2. Manual Event Timeline Annotation
 
----
+- create, list, edit, and delete timestamped match events
+- deterministic event ordering by ascending timestamp
 
-## Core System Capabilities
+### 3. Manual Position Timeline Annotation
 
-Version 1 provides the following capabilities.
+- create, list, edit, and delete timestamped position segments
+- overlap validation to preserve timeline integrity
+- deterministic ordering by ascending `timestampStart`
 
-### 1. Video Upload
+### 4. Video Metadata + Synchronized Playback Behavior
 
-Users can upload a grappling match video to the system for analysis.
+- attach, edit, and remove one video metadata record per match
+- video source metadata supports manual reference workflows
+- synchronized seek from timeline selections:
+  - selecting an event seeks playback to event `timestamp`
+  - selecting a position segment seeks playback to `timestampStart`
 
-The system validates file format and match duration before processing.
+### 5. Derived Analytics from Manual Annotations
 
----
+- analytics are computed from currently stored manual events/positions
+- no predictive or inferred ML metrics
+- analytics are deterministic for a given stored dataset state
 
-### 2. Joint Detection and Tracking
+### 6. Dataset Validation + JSON Export
 
-The system detects and tracks athlete joint positions across video frames.
+- validation endpoint reports dataset quality/integrity issues
+- deterministic JSON export includes match, video metadata, annotations, and derived analytics
+- export is API JSON output (no file storage pipeline)
 
-Tracked joints may include major body points such as:
+### 7. Persistence Mode: PostgreSQL
 
-- shoulders
-- elbows
-- wrists
-- hips
-- knees
-- ankles
+- when `DATABASE_URL` is set, backend uses PostgreSQL repositories
+- SQL migrations initialize/update schema
+- integration tests validate PostgreSQL-backed behavior
 
-Joint tracking produces motion data that is used for replay and analysis.
+### 8. Runtime Convenience Fallback: In-Memory
 
----
-
-### 3. Athlete Identity Tracking
-
-The system attempts to maintain identity separation between both athletes during the match.
-
-Identity tracking may degrade during moments of heavy overlap.
-
----
-
-### 4. Simplified 3D Reconstruction
-
-ScrambleIQ Version 1 generates a simplified 3D stick-figure representation of the match.
-
-This reconstruction allows users to:
-
-- view the exchange from multiple angles
-- rotate the viewing perspective
-- observe movement trajectories
-
-The reconstruction is an estimated representation and should not be interpreted as precise biomechanical reconstruction.
+- when `DATABASE_URL` is not set, backend uses in-memory repositories
+- fallback is intended for local/runtime convenience
+- data resets on process restart in this mode
 
 ---
 
-### 5. Match Timeline Navigation
+## Explicitly Out of Scope for Version 1
 
-Users can navigate the match timeline and review specific moments of the exchange.
+The following capabilities are excluded from Version 1:
 
-The system highlights segments that contain detected events or notable movement patterns.
-
----
-
-### 6. AI-Generated Coaching Commentary
-
-The system generates coaching-style observations tied to specific timestamps within the match.
-
-These observations are based on detected movement patterns and positional changes.
-
-AI commentary is intended to support coaching analysis and should not be interpreted as authoritative technical judgment.
-
----
-
-## Match Events Targeted for Detection
-
-Version 1 aims to detect the following types of grappling events.
-
-- takedown attempts
-- guard pulls
-- sweeps
-- scrambles
-- guard passes
-- reversals
-- top control phases
-- submission attempts
-
-Detection reliability may vary depending on video quality and athlete visibility.
-
----
-
-## Interface Capabilities
-
-The Version 1 interface supports:
-
-- video playback
-- simplified 3D replay
-- timeline navigation
-- timestamped analysis notes
-
-The interface is designed for match review rather than live analysis.
-
----
-
-## Known Technical Constraints
-
-Version 1 operates under several technical limitations.
-
-These include:
-
-- single camera depth estimation limitations
-- reduced tracking accuracy during athlete overlap
-- limited reconstruction accuracy for complex body entanglement
-- reliance on stable video footage
-
-These constraints are expected in early versions of the system.
-
----
-
-## Excluded Features
-
-The following capabilities are intentionally excluded from Version 1.
-
-- multi-camera reconstruction
-- photorealistic athlete models
-- real-time match analysis
-- mobile recording support
-- automated scoring
-- referee decision assistance
-- athlete performance tracking across matches
-- rule-set specific judging systems
-
-These features may be explored in later development phases.
+1. file upload pipeline
+2. cloud object storage integration for uploaded media
+3. video transcoding pipeline
+4. pose estimation
+5. 3D replay/reconstruction
+6. automated event detection
+7. AI-generated coaching commentary
+8. real-time/live analysis
 
 ---
 
 ## Version 1 Success Criteria
 
-Version 1 is considered successful if the system can:
+Version 1 is considered successful when teams can reliably:
 
-1. accept and process match footage reliably
-2. detect and track athlete joint movement
-3. generate a simplified 3D replay of the match
-4. highlight meaningful segments of the exchange
-5. produce useful coaching observations tied to timestamps
+1. complete manual match annotation workflows end-to-end
+2. use synchronized timeline + video review interactions
+3. generate derived analytics from manual data
+4. validate and export deterministic datasets
+5. run against PostgreSQL in integration-tested environments
 
 ---
 
 ## Summary
 
-ScrambleIQ Version 1 focuses on building a reliable match analysis pipeline.
+ScrambleIQ Version 1 is a stable manual-first annotation foundation, not an automated video intelligence system.
 
-The system ingests grappling footage, extracts motion data, reconstructs a simplified 3D representation of the exchange, and generates AI-assisted coaching commentary.
-
-Future development may expand analysis depth, visualization fidelity, and supported grappling formats.
+Future versions may explore richer workflow tooling, cross-match analysis, and later automation research, but those are outside this version boundary.

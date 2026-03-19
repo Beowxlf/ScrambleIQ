@@ -3,247 +3,138 @@
 
 ### Document Purpose
 
-This document defines the planned development progression for ScrambleIQ.
+This document defines the planned development progression for ScrambleIQ from the implemented manual-first Version 1 baseline to later workflow and analysis expansions.
 
-The roadmap outlines the staged evolution of the platform from the initial Version 1 release through later improvements in analysis capability, visualization quality, and coaching tools.
-
-The roadmap is organized into development phases to allow controlled feature expansion while maintaining system stability.
+The roadmap is organized into phases so each stage ships usable value while preserving reliability and manageable scope.
 
 ---
 
 # Product Development Philosophy
 
-ScrambleIQ development follows several principles:
+ScrambleIQ roadmap planning follows these principles:
 
-1. deliver a working analysis pipeline before adding advanced features
-2. validate pose tracking and event detection before expanding analysis depth
-3. improve reliability before increasing complexity
-4. expand supported grappling formats after stabilizing the No-Gi pipeline
-
-This staged approach reduces risk and prevents uncontrolled scope expansion.
+1. keep annotation workflows manual-first until usability and data quality are proven
+2. prioritize deterministic behavior and operational reliability before automation
+3. expand capabilities incrementally with clear user value per phase
+4. defer ML/video ingestion research until core coaching workflows are stable and well-instrumented
 
 ---
 
 # Phase 1
 ## Version 1.0
-### Core Analysis Platform
+### Manual Annotation Platform Foundation
 
-Version 1 establishes the foundational ScrambleIQ analysis pipeline.
+Version 1.0 establishes a reliable manual-first platform for match review and structured annotation.
 
-### Objectives
+### Delivered Outcomes
 
-1. enable reliable match upload and processing
-2. extract pose tracking data
-3. produce simplified 3D replay
-4. generate structured event timelines
-5. generate AI-assisted coaching commentary
-6. deliver a usable match review interface for coaches
+1. match CRUD (create, list/filter, read, update, delete)
+2. manual event timeline annotation
+3. manual position timeline annotation
+4. video metadata attach/edit/delete with synchronized playback seek behavior
+5. derived analytics generated from stored manual annotations
+6. dataset validation and deterministic JSON export
+7. PostgreSQL-backed persistence when `DATABASE_URL` is set
+8. in-memory fallback when `DATABASE_URL` is not set
 
-### Key Features
+### Constraints (Intentional)
 
-1. MP4 video upload
-2. maximum match duration of 10 minutes
-3. single camera video input
-4. stable footage requirement
-5. two-athlete pose tracking
-6. joint detection and motion tracking
-7. simplified 3D stick figure replay
-8. rotatable replay view
-9. grappling event detection
-10. AI-generated coaching observations
-11. timeline navigation for detected events
-12. synchronized video and replay interface
-
-### Supported Format
-
-1. No-Gi grappling
-
-### Primary Users
-
-1. grappling coaches
-2. athletes reviewing matches
-
-### Constraints
-
-1. single camera reconstruction
-2. simplified skeleton visualization
-3. probabilistic event detection
-4. offline match analysis only
+1. no file upload pipeline
+2. no cloud storage/transcoding
+3. no pose estimation or 3D replay
+4. no automated event detection
+5. no AI-generated coaching commentary
 
 ---
 
 # Phase 2
 ## Version 1.1
-### System Refinement
+### Annotation Throughput and Usability Refinement
 
-Version 1.1 focuses on improving reliability and usability based on early testing and feedback.
+Version 1.1 focuses on faster, clearer manual workflows without changing the manual-first model.
 
 ### Objectives
 
-1. improve pose tracking accuracy
-2. refine event detection logic
-3. improve system stability
-4. improve analysis clarity for coaches
+1. reduce annotation friction and click depth
+2. improve timeline readability and edit confidence
+3. strengthen dataset validation ergonomics
+4. improve robustness for longer annotation sessions
 
 ### Planned Improvements
 
-1. improved joint smoothing and tracking stability
-2. improved athlete identity tracking
-3. refined event detection models
-4. improved event confidence scoring
-5. improved commentary clarity
-6. enhanced timeline visualization
-7. improved replay synchronization
-8. improved error handling and processing feedback
-
-### Usability Enhancements
-
-1. faster match navigation
-2. clearer event markers
-3. improved commentary presentation
-4. simplified interface controls
+1. bulk/manual-entry quality-of-life improvements (for example keyboard-assisted annotation)
+2. stronger filtering/sorting and timeline navigation aids
+3. clearer validation issue surfacing and remediation guidance
+4. improved form defaults and safer edit/delete interactions
+5. performance optimizations for dense event/position timelines
 
 ---
 
 # Phase 3
 ## Version 2.0
-### Expanded Analysis Capability
+### Workflow Tooling Expansion
 
-Version 2 expands the analytical depth of the system.
+Version 2.0 expands coaching workflow tools built on top of the validated manual annotation core.
 
 ### Objectives
 
-1. expand event detection coverage
-2. improve positional analysis
-3. enhance 3D replay accuracy
-4. expand coaching insight generation
+1. improve review collaboration and handoff workflows
+2. support richer reporting from manually curated datasets
+3. increase confidence in repeatable match breakdown routines
 
 ### Planned Features
 
-1. expanded event detection taxonomy
-2. improved scramble detection
-3. improved guard classification
-4. positional phase identification
-5. improved 3D reconstruction methods
-6. trajectory visualization for key joints
-7. positional control duration analysis
-8. advanced commentary generation
-
-### Visualization Improvements
-
-1. improved 3D skeletal animation
-2. clearer positional visualization
-3. improved camera controls
+1. reusable workflow templates/checklists for match review sessions
+2. richer export/report formats derived from existing manual annotations
+3. saved views/presets for common coaching review patterns
+4. improved cross-session consistency tooling (taxonomy/label hygiene)
 
 ---
 
 # Phase 4
 ## Version 2.5
-### Coaching Tools
+### Cross-Match Analysis and Operations
 
-Version 2.5 introduces tools designed specifically for coaching workflows.
+Version 2.5 introduces incremental cross-match capabilities using validated stored annotations.
+
+### Objectives
+
+1. compare patterns across multiple manually annotated matches
+2. support team/gym-level review operations
+3. maintain deterministic outputs and auditability
 
 ### Planned Features
 
-1. clip extraction from timeline events
-2. shareable coaching clips
-3. commentary export
-4. match summary reports
-5. structured coaching feedback tools
-6. annotated replay capability
-
-### Coach Workflow Enhancements
-
-1. faster match breakdown
-2. clip-based coaching review
-3. structured match summaries
+1. cross-match aggregate summaries from existing event/position datasets
+2. athlete/team trend views based on manual records
+3. collection-level validation and export workflows
+4. operational quality controls for larger annotation backlogs
 
 ---
 
 # Phase 5
 ## Version 3.0
-### Athlete Analytics Platform
+### Video Ingestion and Automation Research (Post-Foundation)
 
-Version 3 expands ScrambleIQ beyond single-match analysis into athlete performance analytics.
+Version 3.0 is reserved for research and staged prototyping of richer ingestion/automation capabilities, gated by proven value and reliability.
 
-### Planned Features
+### Research Tracks (Exploratory)
 
-1. athlete profile tracking
-2. match history analysis
-3. recurring event patterns
-4. performance trend tracking
-5. positional success rates
-6. training insights
+1. managed video ingestion pipeline options (upload/storage/transcoding)
+2. assisted annotation suggestions (human-in-the-loop)
+3. broader analytics enrichment approaches
+4. ML feasibility studies for detection/classification tasks
 
-### Data Analysis Goals
+### Guardrails
 
-1. identify repeated technical weaknesses
-2. track improvement across matches
-3. compare match outcomes
-
----
-
-# Phase 6
-## Version 4.0
-### Advanced Visualization and Reconstruction
-
-Version 4 focuses on major improvements to visual representation and spatial accuracy.
-
-### Planned Features
-
-1. improved multi-view reconstruction techniques
-2. higher fidelity 3D models
-3. improved occlusion handling
-4. improved depth estimation
-5. enhanced replay realism
-
-### Technical Improvements
-
-1. improved pose estimation models
-2. improved movement reconstruction algorithms
-3. improved body interaction modeling
-
----
-
-# Phase 7
-## Version 5.0
-### Comprehensive Grappling Analysis Platform
-
-Version 5 represents the long-term vision of ScrambleIQ.
-
-### Expanded Coverage
-
-1. additional grappling formats
-2. rule-aware analysis systems
-3. improved positional classification
-
-### Platform Expansion
-
-1. team and gym dashboards
-2. large dataset analysis
-3. competition scouting tools
-4. automated match breakdown generation
-
----
-
-# Long-Term Research Areas
-
-Future research areas may include:
-
-1. multi-camera reconstruction
-2. automated positional classification
-3. improved event detection models
-4. biomechanical movement analysis
-5. deeper AI-assisted coaching insights
-
-These capabilities require further research and expanded training datasets.
+1. research tracks must not regress manual-first production workflows
+2. automated outputs must remain reviewable and overrideable by users
+3. promotion of research features to production requires separate scope documents and acceptance gates
 
 ---
 
 # Summary
 
-The ScrambleIQ roadmap progresses from a focused Version 1 analysis pipeline toward a comprehensive grappling analysis platform.
+ScrambleIQ now progresses from an implemented manual-first annotation platform toward higher-throughput workflows, cross-match operational analysis, and only later carefully gated automation research.
 
-Early development emphasizes reliability, pose tracking, event detection, and usable coaching insights.
-
-Later phases expand the platform into advanced visualization, deeper analysis, and broader coaching tools while maintaining structured and controlled development growth.
+This sequence preserves product reliability and aligns roadmap claims with current implementation reality.
