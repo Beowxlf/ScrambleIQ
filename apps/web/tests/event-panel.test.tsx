@@ -151,4 +151,41 @@ describe('EventPanel', () => {
     expect(screen.getByText('Event type is required.')).toBeInTheDocument();
     expect(screen.getByText('Competitor is required.')).toBeInTheDocument();
   });
+
+  it('supports create-and-continue repeated entry defaults', async () => {
+    const createTimelineEvent = vi
+      .fn()
+      .mockResolvedValueOnce({ id: 'event-1', matchId: 'match-1', timestamp: 12, eventType: 'sweep', competitor: 'B' as const })
+      .mockResolvedValueOnce({ id: 'event-2', matchId: 'match-1', timestamp: 18, eventType: 'sweep', competitor: 'B' as const });
+
+    const api = createMatchesApiMock({ createTimelineEvent });
+
+    render(
+      <EventPanel
+        api={api}
+        matchId="match-1"
+        selectedEventId={null}
+        onSeekToTimestamp={vi.fn()}
+        onEventsMutated={vi.fn(async () => undefined)}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Add Event' }));
+    fireEvent.change(screen.getByLabelText('Timestamp (seconds)'), { target: { value: '12' } });
+    fireEvent.change(screen.getByLabelText('Event Type'), { target: { value: 'sweep' } });
+    fireEvent.change(screen.getByLabelText('Competitor'), { target: { value: 'B' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create & Add Another' }));
+
+    await waitFor(() => expect(createTimelineEvent).toHaveBeenCalledTimes(1));
+    expect(screen.getByRole('heading', { name: 'Add Event' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Timestamp (seconds)')).toHaveValue(null);
+    expect(screen.getByLabelText('Event Type')).toHaveValue('sweep');
+    expect(screen.getByLabelText('Competitor')).toHaveValue('B');
+
+    fireEvent.change(screen.getByLabelText('Timestamp (seconds)'), { target: { value: '18' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create Event' }));
+
+    await waitFor(() => expect(createTimelineEvent).toHaveBeenCalledTimes(2));
+    expect(await screen.findByRole('button', { name: '00:18 sweep B' })).toBeInTheDocument();
+  });
 });

@@ -1,3 +1,4 @@
+import { KeyboardEvent } from 'react';
 import type { FormEvent } from 'react';
 
 import { TimelineEventFormValues, TimelineEventValidationErrors } from '../../timeline-event';
@@ -14,8 +15,21 @@ interface EventFormProps {
 }
 
 export function EventForm({ values, errors, isSubmitting, isEditing, submissionError, onChange, onSubmit, onCancel }: EventFormProps) {
+  const handleKeyDown = (event: KeyboardEvent<HTMLFormElement>) => {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+      event.preventDefault();
+      event.currentTarget.requestSubmit();
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      onCancel();
+    }
+  };
+
   return (
-    <form onSubmit={(event) => void onSubmit(event)} noValidate>
+    <form onSubmit={(event) => void onSubmit(event)} onKeyDown={handleKeyDown} noValidate>
       <h3>{isEditing ? 'Edit Event' : 'Add Event'}</h3>
 
       <label htmlFor="event-timestamp">Timestamp (seconds)</label>
@@ -24,6 +38,7 @@ export function EventForm({ values, errors, isSubmitting, isEditing, submissionE
         name="timestamp"
         type="number"
         min={0}
+        autoFocus
         value={values.timestamp}
         onChange={(event) => onChange({ ...values, timestamp: event.target.value })}
       />
@@ -58,6 +73,11 @@ export function EventForm({ values, errors, isSubmitting, isEditing, submissionE
         <button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Saving...' : isEditing ? 'Save Event' : 'Create Event'}
         </button>{' '}
+        {!isEditing ? (
+          <button type="submit" name="submitMode" value="addAnother" disabled={isSubmitting}>
+            {isSubmitting ? 'Saving...' : 'Create & Add Another'}
+          </button>
+        ) : null}{' '}
         <button type="button" onClick={onCancel}>
           Cancel
         </button>
