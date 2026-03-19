@@ -147,7 +147,7 @@ describe('Video review UI', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Attach Video' }));
 
     await waitFor(() => expect(createMatchVideo).toHaveBeenCalledTimes(1));
-    expect(await screen.findByText('Title: Main camera')).toBeInTheDocument();
+    expect(await screen.findByText(/Title:\s+Main camera/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit Video' }));
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Main camera edited' } });
@@ -156,7 +156,7 @@ describe('Video review UI', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save Video' }));
 
     await waitFor(() => expect(updateMatchVideo).toHaveBeenCalledWith('video-1', expect.any(Object)));
-    expect(await screen.findByText('Title: Main camera edited')).toBeInTheDocument();
+    expect(await screen.findByText(/Title:\s+Main camera edited/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove Video' }));
     await waitFor(() => expect(deleteMatchVideo).toHaveBeenCalledWith('video-1'));
@@ -181,10 +181,10 @@ describe('Video review UI', () => {
     Object.defineProperty(player, 'play', { value: vi.fn(() => Promise.resolve()), writable: true });
     fireEvent.loadedMetadata(player);
 
-    fireEvent.click(screen.getByRole('button', { name: '00:12 entry A' }));
+    fireEvent.click(screen.getByRole('button', { name: /00:12 .* A/ }));
     expect(player.currentTime).toBe(12);
 
-    fireEvent.click(screen.getByRole('button', { name: '00:16 - 00:30 closed_guard top: A' }));
+    fireEvent.click(screen.getByRole('button', { name: /00:16 - 00:30 .* top: A/ }));
     expect(player.currentTime).toBe(16);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit Video' }));

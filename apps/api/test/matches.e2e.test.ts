@@ -255,6 +255,28 @@ describe('MatchesController', () => {
     expect(response.body.message).toContain('property foo should not exist');
     expect(response.body.message).toContain('dateFrom must be a valid date in YYYY-MM-DD format');
   });
+
+  it('enforces list query boundaries and normalization rules', async () => {
+    await createMatch();
+
+    const validBoundaryResponse = await request(app.getHttpServer())
+      .get('/matches?competitor=%20%20Taylor%20%20&limit=100&offset=9007199254740991')
+      .expect(200);
+
+    expect(validBoundaryResponse.body.limit).toBe(100);
+    expect(validBoundaryResponse.body.offset).toBe(9007199254740991);
+    expect(validBoundaryResponse.body.total).toBe(0);
+
+    const invalidBoundaryResponse = await request(app.getHttpServer())
+      .get('/matches?competitor=%20%20&limit=101&offset=9007199254740992&dateFrom=2026-02-01&dateTo=2026-01-31')
+      .expect(400);
+
+    expect(invalidBoundaryResponse.body.message).toContain('competitor should not be empty');
+    expect(invalidBoundaryResponse.body.message).toContain('limit must not be greater than 100');
+    expect(invalidBoundaryResponse.body.message).toContain('offset must not be greater than 9007199254740991');
+    expect(invalidBoundaryResponse.body.message).toContain('dateFrom must be less than or equal to dateTo');
+  });
+
   it('creates an event with POST /matches/:id/events', async () => {
     const matchId = await createMatch();
 

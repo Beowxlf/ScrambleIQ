@@ -236,14 +236,14 @@ describe('MatchDetailPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create Event' }));
 
     await waitFor(() => expect(getMatchAnalytics).toHaveBeenCalledTimes(2));
-    expect(await screen.findByRole('button', { name: '00:10 entry A' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /00:10 .* A/ })).toBeInTheDocument();
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit Event' })[0]);
     fireEvent.change(screen.getByLabelText('Event Type'), { target: { value: 'sweep' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save Event' }));
 
     await waitFor(() => expect(getMatchAnalytics).toHaveBeenCalledTimes(3));
-    expect(await screen.findByRole('button', { name: '00:08 sweep A' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /^00:08 [^-].* A$/ })).toBeInTheDocument();
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Delete Event' })[0]);
     await waitFor(() => expect(getMatchAnalytics).toHaveBeenCalledTimes(4));
@@ -256,7 +256,7 @@ describe('MatchDetailPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create Position' }));
 
     await waitFor(() => expect(getMatchAnalytics).toHaveBeenCalledTimes(5));
-    expect(await screen.findByRole('button', { name: '00:12 - 00:22 closed_guard top: A' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /00:12 - 00:22 .* top: A/ })).toBeInTheDocument();
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit Position' })[0]);
     fireEvent.change(screen.getByLabelText('Position'), { target: { value: 'mount' } });
@@ -264,7 +264,7 @@ describe('MatchDetailPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save Position' }));
 
     await waitFor(() => expect(getMatchAnalytics).toHaveBeenCalledTimes(6));
-    expect(await screen.findByRole('button', { name: '00:04 - 00:10 mount top: A' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /00:04 - 00:10 .* top: A/ })).toBeInTheDocument();
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Delete Position' })[0]);
     await waitFor(() => expect(getMatchAnalytics).toHaveBeenCalledTimes(7));

@@ -153,4 +153,81 @@ describe('DatasetValidationService', () => {
       `Match with id ${matchId} was not found.`,
     );
   });
+
+  it('detects sorting issues for unsorted events and positions', async () => {
+    const service = createServiceFixture({
+      match,
+      events: [
+        { id: 'e2', matchId, timestamp: 12, eventType: 'entry', competitor: 'A' },
+        { id: 'e1', matchId, timestamp: 5, eventType: 'entry', competitor: 'A' },
+      ],
+      positions: [
+        { id: 'p2', matchId, position: 'mount', competitorTop: 'A', timestampStart: 15, timestampEnd: 18 },
+        { id: 'p1', matchId, position: 'standing', competitorTop: 'A', timestampStart: 0, timestampEnd: 10 },
+      ],
+    });
+
+    const report = await service.validateMatchDataset(matchId, emptyAnalytics(matchId));
+
+    const orderingIssues = report.issues.filter((issue) => issue.type === 'INVALID_TIMESTAMP_ORDER');
+    expect(orderingIssues).toHaveLength(2);
+    expect(orderingIssues.map((issue) => issue.message)).toEqual(
+      expect.arrayContaining([
+        'Events are not sorted by timestamp in ascending order.',
+        'Positions are not sorted by timestampStart in ascending order.',
+      ]),
+    );
+  });
+
+  it('flags events that fall outside all position ranges', async () => {
+    const service = createServiceFixture({
+      match,
+      events: [
+        { id: 'e1', matchId, timestamp: 2, eventType: 'entry', competitor: 'A' },
+        { id: 'e2', matchId, timestamp: 25, eventType: 'entry', competitor: 'A' },
+      ],
+      positions: [{ id: 'p1', matchId, position: 'standing', competitorTop: 'A', timestampStart: 5, timestampEnd: 20 }],
+    });
+
+    const summary = emptyAnalytics(matchId);
+    summary.totalEventCount = 2;
+    summary.totalPositionCount = 1;
+    summary.eventCountsByType = { entry: 2 };
+    summary.timeInPositionByTypeSeconds.standing = 15;
+    summary.competitorTopTimeByPositionSeconds.A.standing = 15;
+    summary.totalTrackedPositionTimeSeconds = 15;
+
+    const report = await service.validateMatchDataset(matchId, summary);
+
+    const outOfRangeIssues = report.issues.filter((issue) => issue.type === 'EVENT_OUT_OF_RANGE');
+    expect(outOfRangeIssues).toHaveLength(2);
+    expect(outOfRangeIssues.map((issue) => issue.context?.eventId)).toEqual(['e1', 'e2']);
+  });
+
+  it('detects analytics mismatches for stale summaries', async () => {
+    const service = createServiceFixture({
+      match,
+      events: [{ id: 'e1', matchId, timestamp: 5, eventType: 'guard_pass', competitor: 'A' }],
+      positions: [{ id: 'p1', matchId, position: 'mount', competitorTop: 'A', timestampStart: 10, timestampEnd: 20 }],
+      video: {
+        id: 'v1',
+        matchId,
+        title: 'Main',
+        sourceType: 'remote_url',
+        sourceUrl: 'https://example.com/video.mp4',
+      },
+    });
+
+    const staleSummary = emptyAnalytics(matchId);
+    const report = await service.validateMatchDataset(matchId, staleSummary);
+
+    const mismatch = report.issues.find((issue) => issue.type === 'ANALYTICS_MISMATCH');
+    expect(mismatch).toBeDefined();
+    expect(mismatch?.context).toMatchObject({
+      expectedTotalEventCount: 1,
+      actualTotalEventCount: 0,
+      expectedTotalPositionCount: 1,
+      actualTotalPositionCount: 0,
+    });
+  });
 });
