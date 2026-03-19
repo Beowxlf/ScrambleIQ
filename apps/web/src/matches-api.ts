@@ -125,13 +125,30 @@ function resolveApiBaseUrl(override?: string): string {
   return import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
 }
 
+
+function resolveApiAuthToken(): string {
+  return import.meta.env.VITE_API_AUTH_TOKEN ?? 'scrambleiq-local-dev-token';
+}
+
+function mergeHeaders(init: RequestInit | undefined, authToken: string): HeadersInit {
+  return {
+    ...(init?.headers ?? {}),
+    'x-api-key': authToken,
+  };
+}
 export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): MatchesApi {
   const baseUrl = resolveApiBaseUrl(options.baseUrl);
   const fetchImpl = options.fetchImpl ?? fetch;
+  const authToken = resolveApiAuthToken();
+
+  const authedFetch = (url: string, init?: RequestInit): Promise<Response> => fetchImpl(url, {
+    ...init,
+    headers: mergeHeaders(init, authToken),
+  });
 
   return {
     async createMatch(payload: CreateMatchDto) {
-      const response = await fetchImpl(`${baseUrl}/matches`, {
+      const response = await authedFetch(`${baseUrl}/matches`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -174,7 +191,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       const queryString = searchParams.toString();
-      const response = await fetchImpl(`${baseUrl}/matches${queryString ? `?${queryString}` : ''}`);
+      const response = await authedFetch(`${baseUrl}/matches${queryString ? `?${queryString}` : ''}`);
 
       if (!response.ok) {
         await throwHttpRequestError(response, 'Failed to load matches.');
@@ -184,7 +201,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async getMatch(id) {
-      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(id)}`);
+      const response = await authedFetch(`${baseUrl}/matches/${encodeURIComponent(id)}`);
 
       if (response.status === 404) {
         throw new MatchNotFoundError(id);
@@ -198,7 +215,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async updateMatch(id, payload) {
-      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(id)}`, {
+      const response = await authedFetch(`${baseUrl}/matches/${encodeURIComponent(id)}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -218,7 +235,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async deleteMatch(id) {
-      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(id)}`, {
+      const response = await authedFetch(`${baseUrl}/matches/${encodeURIComponent(id)}`, {
         method: 'DELETE',
       });
 
@@ -232,7 +249,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async createTimelineEvent(matchId, payload) {
-      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(matchId)}/events`, {
+      const response = await authedFetch(`${baseUrl}/matches/${encodeURIComponent(matchId)}/events`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -252,7 +269,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async listTimelineEvents(matchId) {
-      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(matchId)}/events`);
+      const response = await authedFetch(`${baseUrl}/matches/${encodeURIComponent(matchId)}/events`);
 
       if (response.status === 404) {
         throw new MatchNotFoundError(matchId);
@@ -266,7 +283,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async updateTimelineEvent(id, payload) {
-      const response = await fetchImpl(`${baseUrl}/events/${encodeURIComponent(id)}`, {
+      const response = await authedFetch(`${baseUrl}/events/${encodeURIComponent(id)}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -286,7 +303,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async deleteTimelineEvent(id) {
-      const response = await fetchImpl(`${baseUrl}/events/${encodeURIComponent(id)}`, {
+      const response = await authedFetch(`${baseUrl}/events/${encodeURIComponent(id)}`, {
         method: 'DELETE',
       });
 
@@ -300,7 +317,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async createPositionState(matchId, payload) {
-      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(matchId)}/positions`, {
+      const response = await authedFetch(`${baseUrl}/matches/${encodeURIComponent(matchId)}/positions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -320,7 +337,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async listPositionStates(matchId) {
-      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(matchId)}/positions`);
+      const response = await authedFetch(`${baseUrl}/matches/${encodeURIComponent(matchId)}/positions`);
 
       if (response.status === 404) {
         throw new MatchNotFoundError(matchId);
@@ -334,7 +351,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async updatePositionState(id, payload) {
-      const response = await fetchImpl(`${baseUrl}/positions/${encodeURIComponent(id)}`, {
+      const response = await authedFetch(`${baseUrl}/positions/${encodeURIComponent(id)}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -354,7 +371,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async deletePositionState(id) {
-      const response = await fetchImpl(`${baseUrl}/positions/${encodeURIComponent(id)}`, {
+      const response = await authedFetch(`${baseUrl}/positions/${encodeURIComponent(id)}`, {
         method: 'DELETE',
       });
 
@@ -368,7 +385,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async getMatchAnalytics(matchId) {
-      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(matchId)}/analytics`);
+      const response = await authedFetch(`${baseUrl}/matches/${encodeURIComponent(matchId)}/analytics`);
 
       if (response.status === 404) {
         throw new MatchNotFoundError(matchId);
@@ -382,7 +399,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async createMatchVideo(matchId, payload) {
-      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(matchId)}/video`, {
+      const response = await authedFetch(`${baseUrl}/matches/${encodeURIComponent(matchId)}/video`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -403,7 +420,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
 
 
     async exportMatchDataset(matchId) {
-      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(matchId)}/export`);
+      const response = await authedFetch(`${baseUrl}/matches/${encodeURIComponent(matchId)}/export`);
 
       if (response.status === 404) {
         throw new MatchNotFoundError(matchId);
@@ -418,7 +435,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
 
 
     async validateMatchDataset(matchId) {
-      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(matchId)}/validate`);
+      const response = await authedFetch(`${baseUrl}/matches/${encodeURIComponent(matchId)}/validate`);
 
       if (response.status === 404) {
         throw new MatchNotFoundError(matchId);
@@ -432,7 +449,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async getMatchVideo(matchId) {
-      const response = await fetchImpl(`${baseUrl}/matches/${encodeURIComponent(matchId)}/video`);
+      const response = await authedFetch(`${baseUrl}/matches/${encodeURIComponent(matchId)}/video`);
 
       if (response.status === 404) {
         throw new MatchVideoNotFoundError(matchId);
@@ -446,7 +463,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async updateMatchVideo(id, payload) {
-      const response = await fetchImpl(`${baseUrl}/video/${encodeURIComponent(id)}`, {
+      const response = await authedFetch(`${baseUrl}/video/${encodeURIComponent(id)}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -466,7 +483,7 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
     },
 
     async deleteMatchVideo(id) {
-      const response = await fetchImpl(`${baseUrl}/video/${encodeURIComponent(id)}`, {
+      const response = await authedFetch(`${baseUrl}/video/${encodeURIComponent(id)}`, {
         method: 'DELETE',
       });
 

@@ -1,5 +1,11 @@
 # Security Review — Backend and Data Handling (2026-03-19)
 
+## Status update (implemented after this review)
+
+- Baseline API authentication is now implemented with a shared-token guard that protects all non-public routes.
+- `GET /health` remains public for liveness checks; match/event/position/video/analytics/export/validate endpoints now require a token and return `401` when missing/invalid.
+- This is a phase-appropriate authentication gate only; resource ownership and multi-tenant authorization are still future work.
+
 ## Scope reviewed
 
 - Backend API request handling, validation, service logic, persistence abstractions, SQL execution helpers, migrations, and dataset export/validation paths.
