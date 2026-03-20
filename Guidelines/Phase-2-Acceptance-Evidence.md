@@ -1,244 +1,134 @@
-# ScrambleIQ
-## Phase 2 Acceptance Evidence Matrix
+# Phase 2 Acceptance Evidence Matrix
 
-### Purpose
+## Purpose
 
-This document provides an auditable, repo-grounded evidence matrix for Phase 2 (Version 1.1) acceptance status.
+This document provides a single auditable artifact that maps **Phase 2 goals and acceptance scenarios** (from `Guidelines/Phase-2-Kickoff.md`) to:
 
-It maps each Phase 2 goal and acceptance scenario from `Guidelines/Phase-2-Kickoff.md` to:
+1. implemented behavior in the current repository
+2. automated coverage that exercises that behavior
+3. command-based validation evidence
+4. current assessment (`PASS` or `PARTIAL`)
 
-1. implemented behavior in the current codebase
-2. automated test coverage currently in the repository
-3. command/validation evidence
-4. current status (`PASS` or `PARTIAL`)
-
----
-
-## Evidence Scope and Method
-
-### Scope used
-
-- Phase 2 acceptance contract and scenarios in `Guidelines/Phase-2-Kickoff.md`
-- Current web and API implementation under `apps/web/src` and `apps/api/src`
-- Current automated tests under `apps/web/tests` and `apps/api/test`
-- Local quality gate command results from this closeout pass
-
-### Method
-
-- Verified implementation behavior by tracing source files directly.
-- Mapped acceptance scenarios to specific UI/API behavior and tests.
-- Captured current quality gate command outcomes as validation evidence.
-- Marked any known uncertainty as explicit evidence gaps.
+This is a documentation-only evidence snapshot for the current repo state.
 
 ---
 
-## Phase 2 Goal-to-Evidence Mapping
+## Scope and audit method
 
-| Phase 2 Goal | Evidence Summary | Status |
-| --- | --- | --- |
-| Increase annotation throughput for operators during active review sessions | Event repeated-entry flow keeps form open and carries forward high-reuse fields; position entry pre-seeds adjacent timestamps and auto-suggests end timestamp behavior during creation flows. | PASS |
-| Reduce friction for create/edit/delete annotation operations | Event/position panels support inline add/edit/delete with validation feedback and stale-resource handling; errors are surfaced as actionable status messages. | PASS |
-| Improve review and navigation clarity across matches and timelines | Review workspace is segmented (context/timeline/data quality), quick-jump controls are present, active seek status is announced, and active selected timeline items are visually/semantically marked. | PASS |
-| Make validation and export outcomes easier to understand and act on | Dataset tools provide readiness messaging, grouped severity reporting, and context-bearing issues; export and validation are clearly separated and deterministic export path remains exposed. | PASS |
-| Strengthen reliability through broader test coverage of critical user flows | Broad web + API test suites cover major manual-first flows; however PostgreSQL integration tests are excluded from default API test config and require environment-specific execution. | PARTIAL |
+- **Source acceptance contract:** `Guidelines/Phase-2-Kickoff.md`
+- **Evidence sources reviewed:**
+  - frontend implementation (`apps/web/src/**`)
+  - backend implementation (`apps/api/src/**`)
+  - frontend tests (`apps/web/tests/**`)
+  - backend tests (`apps/api/test/**`)
+  - repo quality-gate scripts (`package.json`)
+- **Validation commands executed for this evidence update:**
+  - `npm run lint`
+  - `npm run typecheck`
+  - `npm run test`
+  - `npm run build`
 
----
+Status legend:
 
-## Acceptance Evidence Matrix (Phase 2 Areas)
-
-## 1) Event repeated entry and annotation throughput
-
-- **Requirement**
-  - Fast sequential event entry with reduced repeated input and stable review workflow.
-
-- **Evidence source (implemented behavior)**
-  - `Create & Add Another` submission mode is available in event form and keeps the form open for repeated entry.
-  - Repeated-entry defaults intentionally retain `eventType` and `competitor` while resetting `timestamp` and `notes`.
-  - Keyboard-assisted submission is supported via `Ctrl+Enter`/`Cmd+Enter`; `Escape` cancels.
-
-- **Evidence source (automated tests)**
-  - `apps/web/tests/event-panel.test.tsx` verifies repeated-entry defaults (`Create & Add Another`) and create/edit/delete flow behavior.
-  - `apps/web/tests/timeline-events.ui.test.tsx` verifies repeated-entry behavior and keyboard-assisted submission (`Ctrl+Enter`).
-
-- **Command or validation evidence**
-  - Included in passing root test suite execution (`npm run test`).
-
-- **Current status**
-  - **PASS**
-
-- **Notes**
-  - Throughput improvement is implemented as UI workflow reduction evidence, not as measured performance telemetry.
+- **PASS** = behavior + automated evidence exists and aligns to current Phase 2 scope.
+- **PARTIAL** = behavior exists, but evidence has notable gaps, ambiguity, or environment dependency.
 
 ---
 
-## 2) Position throughput and adjacent segment ergonomics
+## Phase 2 goals matrix
 
-- **Requirement**
-  - Streamlined back-to-back position entry with reduced friction for adjacent segments.
-
-- **Evidence source (implemented behavior)**
-  - Position creation seeds adjacent defaults from the latest position end (`timestampStart = previousEnd`, `timestampEnd = previousEnd + 1`).
-  - During create mode, changing start timestamp can auto-correct/suggest end timestamp to preserve valid interval ordering.
-  - After creating a position, form remains in creation mode with carry-forward fields (`position`, `competitorTop`) and adjacent timestamp defaults.
-
-- **Evidence source (automated tests)**
-  - `apps/web/tests/position-panel.test.tsx` covers CRUD + panel interactions.
-  - `apps/web/tests/position-states.ui.test.tsx` includes adjacent timestamp seeding in app flow and validation/error behavior.
-
-- **Command or validation evidence**
-  - Included in passing root test suite execution (`npm run test`).
-
-- **Current status**
-  - **PASS**
-
-- **Notes**
-  - Evidence demonstrates ergonomic defaults for sequential logging; no explicit timing benchmark exists.
+| Phase 2 goal (`Phase-2-Kickoff`) | Implemented behavior evidence | Automated coverage evidence | Command/validation evidence | Status | Notes |
+|---|---|---|---|---|---|
+| 1) Increase annotation throughput | Event repeated-entry flow keeps common defaults while clearing timestamp/notes; event form supports keyboard submit (`Ctrl/Cmd+Enter`). Position entry pre-seeds adjacent start/end timestamps and carries common fields for rapid back-to-back entry. | `apps/web/tests/event-panel.test.tsx`, `apps/web/tests/timeline-events.ui.test.tsx`, `apps/web/tests/position-states.ui.test.tsx` | Quality gates executed in this update (`lint`, `typecheck`, `test`, `build`) | PASS | Throughput behaviors are implemented in UI hooks/forms and covered in panel + app-level tests. |
+| 2) Reduce friction for create/edit/delete operations | Event and position hooks include sorted list updates after create/edit/delete, inline validation, stale-resource handling, and user-facing error messaging. | `apps/web/tests/event-panel.test.tsx`, `apps/web/tests/position-panel.test.tsx`, `apps/api/test/matches.e2e.test.ts` | Quality gates executed in this update | PASS | Evidence includes both frontend interaction tests and backend contract tests for CRUD/error paths. |
+| 3) Improve review/navigation clarity | Match detail workspace adds quick section navigation, active seek status text, and active seek highlighting in event/position timeline controls. | `apps/web/tests/match-detail-page.test.tsx`, `apps/web/tests/event-panel.test.tsx`, `apps/web/tests/position-panel.test.tsx` | Quality gates executed in this update | PASS | Evidence demonstrates seek actions, active state (`aria-pressed`), and navigation controls. |
+| 4) Make validation/export outcomes easier to understand | Dataset tools panel provides readiness guidance messaging, grouped validation issue rendering by severity, and deterministic export action flow. Backend export deterministically sorts events/positions before returning JSON. | `apps/web/tests/dataset-tools-panel.test.tsx`, `apps/api/test/matches.e2e.test.ts`, `apps/api/test/dataset-validation.service.test.ts` | Quality gates executed in this update | PASS | UI and API evidence both support validation clarity and deterministic export behavior. |
+| 5) Strengthen reliability via broader critical-flow coverage | Broad tests cover match discovery, annotation CRUD, review seek, validation/export endpoints, and analytics refresh behavior. | `apps/web/tests/app.test.tsx`, `apps/web/tests/match-list-page.test.tsx`, `apps/api/test/matches.e2e.test.ts` | Quality gates executed in this update | PARTIAL | Default `npm run test` does not include `apps/api/test/integration/**`, so persistence-critical integration checks are separate/environment-dependent. |
 
 ---
 
-## 3) Review navigation and active seek clarity
+## Acceptance scenario evidence matrix
 
-- **Requirement**
-  - Clear review navigation in dense timelines and unambiguous active seek context.
+### 1) Event repeated entry and annotation throughput (Scenario 1: Fast Event Entry)
 
-- **Evidence source (implemented behavior)**
-  - Match detail page provides quick-jump navigation for Review Context, Timeline Review, and Data Quality Tools.
-  - Selecting event/position timeline entries triggers synchronized video seek requests and updates active seek status text.
-  - Active selection is indicated via `aria-pressed` and active seek button styling.
+| Requirement | Evidence source | Current status | Notes |
+|---|---|---|---|
+| Minimal repeated input for sequential event entry | `apps/web/src/features/events/useMatchEvents.ts` (`toRepeatedEntryValues`, `submitMode=addAnother`, form reset behavior), `apps/web/src/features/events/EventForm.tsx` (`Create & Add Another`) | PASS | Timestamp/notes are reset, while event type + competitor are retained for repeated entry. |
+| Rapid entry shortcuts without losing form control | `apps/web/src/features/events/EventForm.tsx` (`Ctrl/Cmd+Enter` submit handling) | PASS | Keyboard submit supports fast annotation from notes field. |
+| Stable timeline update and save feedback after repeated adds | `apps/web/tests/event-panel.test.tsx`, `apps/web/tests/timeline-events.ui.test.tsx` | PASS | Tests verify repeated creation calls and resulting rendered timeline entries. |
 
-- **Evidence source (automated tests)**
-  - `apps/web/tests/match-detail-page.test.tsx` verifies active seek feedback messaging, `aria-pressed` behavior, and quick navigation scrolling trigger.
-  - `apps/web/tests/video-review.ui.test.tsx` verifies timeline-driven seek behavior in integrated review flow.
+### 2) Position throughput and adjacent segment ergonomics (Scenario 2: Fast Position Entry)
 
-- **Command or validation evidence**
-  - Included in passing root test suite execution (`npm run test`).
+| Requirement | Evidence source | Current status | Notes |
+|---|---|---|---|
+| Streamlined consecutive position entry | `apps/web/src/features/positions/useMatchPositions.ts` (post-create carry-forward + adjacent defaults) | PASS | On create, UI keeps position + top competitor and seeds next segment timestamps from created end. |
+| Adjacent timestamp ergonomics for new entries | `apps/web/src/features/positions/useMatchPositions.ts` (`createAdjacentDefaults`, `startCreatePosition`) | PASS | New form starts at previous segment end and auto-fills end+1 for manual-first continuity. |
+| Validation and overlap protection for quality | `apps/web/tests/position-panel.test.tsx`, `apps/web/tests/position-states.ui.test.tsx`, `apps/api/test/matches.e2e.test.ts` (`rejects overlapping position segments`) | PASS | Coverage includes UI validation states and backend overlap rejection behavior. |
 
-- **Current status**
-  - **PASS**
+### 3) Review navigation and active seek clarity (Workstream B + Scenario 5 usability signals)
 
-- **Notes**
-  - Evidence is functional/accessibility state evidence; no quantitative usability score exists in-repo.
+| Requirement | Evidence source | Current status | Notes |
+|---|---|---|---|
+| Clear active seek feedback during review | `apps/web/src/pages/MatchDetailPage.tsx` (`activeSeekSummary`, `role=status`) | PASS | Status text explicitly communicates source (event/position) and target timestamp. |
+| Quick navigation among review sections | `apps/web/src/pages/MatchDetailPage.tsx` (jump buttons + `scrollIntoView`) | PASS | Quick nav actions are visible and test-covered. |
+| Active selection clarity in dense timelines | `apps/web/src/features/events/EventList.tsx`, `apps/web/src/features/positions/PositionList.tsx` (`aria-pressed` on selected item) and `apps/web/tests/match-detail-page.test.tsx` | PASS | Selected event/position buttons show active state after seek requests. |
 
----
+### 4) Dataset validation and export clarity (Scenario 3: Clear Dataset Validation Feedback)
 
-## 4) Dataset validation and export clarity
+| Requirement | Evidence source | Current status | Notes |
+|---|---|---|---|
+| Validation output is specific/actionable | `apps/web/src/features/dataset/DatasetValidationReport.tsx` (severity grouping, per-issue context rendering), `apps/api/src/matches/dataset-validation.service.ts` | PASS | UI presents grouped severities and issue context payloads when available. |
+| Readiness and remediation clarity before export | `apps/web/src/features/dataset/DatasetToolsPanel.tsx` (readiness messaging across valid/invalid/error/not-run states) | PASS | Export guidance changes based on validation state and blocking issue presence. |
+| Deterministic export behavior remains intact | `apps/api/src/matches/matches.service.ts` (`exportDataset` sorted events/positions), `apps/api/test/matches.e2e.test.ts` (`returns structured match dataset export`) | PASS | API export output ordering is deterministic by timestamp and timestampStart. |
 
-- **Requirement**
-  - Validation feedback should clearly identify failures and remediation direction; export outcomes should remain clear and deterministic.
+### 5) Match discovery and filtering (Scenario 4: Easy Match Discovery and Filtering)
 
-- **Evidence source (implemented behavior)**
-  - Dataset tools panel surfaces explicit export-readiness states: not-run, in-progress, validation unavailable, valid, risky (errors), and caution (warnings).
-  - Validation report groups issues by severity (`ERROR`, `WARNING`, `INFO`) with counts and contextual payloads.
-  - API validation service produces typed issues for ordering, timestamp integrity, overlaps, out-of-range events, missing video, empty dataset, and analytics mismatch.
+| Requirement | Evidence source | Current status | Notes |
+|---|---|---|---|
+| Search/filter controls are understandable and responsive | `apps/web/src/components/MatchList.tsx`, `apps/web/src/hooks/useMatches.ts` | PASS | UI exposes competitor/date/video filters, paging, and visible totals/page state. |
+| Backend filter semantics are enforced | `apps/api/src/matches/matches.service.ts` (`findAll` query filtering), `apps/api/test/matches.e2e.test.ts` (`filters matches by competitor, date range, and hasVideo`) | PASS | Filter behavior validated through e2e API coverage. |
+| Discovery-to-detail transition remains straightforward | `apps/web/src/components/MatchList.tsx` (`View Match` action), `apps/web/tests/app.test.tsx` (view match flow), `apps/web/tests/match-list-page.test.tsx` | PASS | Tests cover opening match detail from list workflows. |
 
-- **Evidence source (automated tests)**
-  - `apps/web/tests/dataset-tools-panel.test.tsx` covers export and validation UI states.
-  - `apps/web/tests/app.test.tsx` covers validation render states and grouped issue display behaviors.
-  - `apps/api/test/dataset-validation.service.test.ts` covers core validation branches, including sorting, out-of-range, and analytics mismatch.
-  - `apps/api/test/matches.e2e.test.ts` covers dataset validation/export endpoint contracts.
+### 6) Critical path test coverage (Scenario 5: Stable Critical User Flows)
 
-- **Command or validation evidence**
-  - Included in passing root test suite execution (`npm run test`).
-
-- **Current status**
-  - **PASS**
-
-- **Notes**
-  - Evidence supports clarity and determinism signals at UI and API levels.
-
----
-
-## 5) Match discovery and filtering
-
-- **Requirement**
-  - Users should quickly discover/open target matches with understandable filter/sort/pagination behavior and clear result states.
-
-- **Evidence source (implemented behavior)**
-  - Match list UI supports competitor, date range, has-video, and page-size filters plus pagination controls and explicit result counts.
-  - Query validation enforces date format, date range ordering, numeric boundaries, and allowed query fields.
-  - Backend list behavior applies normalized filters and deterministic paging.
-
-- **Evidence source (automated tests)**
-  - `apps/web/tests/match-list-page.test.tsx` and `apps/web/tests/app.test.tsx` verify filter passing and list interactions.
-  - `apps/api/test/matches.e2e.test.ts` verifies filtering combinations, pagination, and invalid query rejection/boundary rules.
-
-- **Command or validation evidence**
-  - Included in passing root test suite execution (`npm run test`).
-
-- **Current status**
-  - **PASS**
-
-- **Notes**
-  - Discovery/filtering evidence is strong for API contract correctness and primary UI interactions.
+| Requirement | Evidence source | Current status | Notes |
+|---|---|---|---|
+| Core journey has automated coverage (match selection -> annotation -> validation -> export) | `apps/web/tests/app.test.tsx`, `apps/web/tests/match-detail-page.test.tsx`, `apps/api/test/matches.e2e.test.ts` | PASS | Coverage spans list/detail, CRUD, seek behaviors, validation trigger, export trigger/contracts. |
+| Repository quality gates pass | root `package.json` scripts + executed commands for this evidence update | PASS | `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build` completed during this update. |
+| Persistence-critical integration confidence in default test path | `apps/api/vitest.config.ts` (`exclude: test/integration/**/*.test.ts`), root `package.json` (`test:integration`) | PARTIAL | Integration tests exist but are not part of default `npm run test`; full persistence evidence is environment-dependent and requires separate integration execution path. |
 
 ---
 
-## 6) Critical path test coverage
+## Command evidence snapshot (this documentation update)
 
-- **Requirement**
-  - Critical manual-first journey (`match selection -> annotation -> validation -> export`) should have stronger automated coverage and reliable gates.
-
-- **Evidence source (implemented behavior + tests)**
-  - Web tests cover end-user workflow segments across match list/detail orchestration, event/position annotation, video review, and dataset tools.
-  - API e2e tests cover match CRUD, event/position/video flows, list filtering, analytics, validation, and export contracts.
-  - PostgreSQL integration tests exist in `apps/api/test/integration/*`.
-
-- **Command or validation evidence**
-  - `npm run test` passes across workspaces.
-  - Root quality gates run and pass in this evidence pass (`lint`, `typecheck`, `test`, `build`).
-
-- **Current status**
-  - **PARTIAL**
-
-- **Notes**
-  - `apps/api/vitest.config.ts` excludes `test/integration/**/*.test.ts` from default API test execution.
-  - Integration tests require Docker + PostgreSQL client through `apps/api/scripts/run-integration-tests.sh`.
-  - Result: critical path automated coverage is broad but not fully enforced by default `npm run test` in all environments.
+| Command | Purpose | Result |
+|---|---|---|
+| `npm run lint` | Repo lint quality gate | PASS |
+| `npm run typecheck` | Repo type-safety quality gate | PASS |
+| `npm run test` | Workspace automated test gate | PASS |
+| `npm run build` | Workspace build gate | PASS |
 
 ---
 
-## Command Validation Evidence (this closeout pass)
+## Remaining ambiguity and evidence gaps
 
-Execution timestamp: **2026-03-20 (UTC)**
+1. **Default test gate vs integration coverage remains split.**
+   - `npm run test` does not execute API integration tests under `apps/api/test/integration/**`.
+   - This means full persistence-path evidence is not guaranteed by the default Phase 2 quality gate command set.
 
-| Command | Result | Evidence summary |
-| --- | --- | --- |
-| `npm run lint` | PASS | Completed across `@scrambleiq/web`, `@scrambleiq/api`, and `@scrambleiq/shared`. |
-| `npm run typecheck` | PASS | Completed across all workspaces with `tsc --noEmit`. |
-| `npm run test` | PASS | Web: 15 test files / 94 tests passed; API: 4 test files / 50 tests passed; shared workspace reports no tests. |
-| `npm run build` | PASS | Web build + API/shared TypeScript builds completed successfully. |
+2. **“Measurably easier” acceptance language is only indirectly evidenced.**
+   - Current evidence shows implemented ergonomics and behavioral tests, but does not include benchmark-style timing/interaction telemetry.
+   - This matrix therefore treats functional behavior + automated coverage as acceptance evidence for throughput claims.
 
-Environment note:
-
-- npm emitted warning: `Unknown env config "http-proxy"`. This did not fail any required gate in this run.
-
----
-
-## Remaining Ambiguity and Evidence Gaps
-
-1. **Default test gate does not include PostgreSQL integration suite**
-   - Integration tests are present but excluded from default API Vitest config and require Docker-based execution.
-   - This creates a closeout audit gap if only root `npm run test` is treated as full critical-path coverage evidence.
-
-2. **Throughput improvements are behavior-evidenced, not benchmark-evidenced**
-   - The repository currently demonstrates ergonomic reductions (repeated-entry defaults, adjacent timestamp seeding), but does not include quantitative throughput benchmarks or timing deltas.
-
-3. **Usability clarity is validated via automated interaction assertions, not formal usability studies**
-   - Review/navigation and dataset clarity evidence is implementation + test based, without separate human usability study artifacts in-repo.
+3. **No single canonical “Phase 2 complete” checklist existed before this artifact.**
+   - Evidence was distributed across implementation files, tests, and prior review docs.
+   - This document consolidates those sources into one auditable map.
 
 ---
 
-## Assumptions (Minimal and Explicit)
+## Assumptions used in this matrix
 
-1. Phase 2 acceptance source of truth is `Guidelines/Phase-2-Kickoff.md`.
-2. `PASS` means code + automated test + command evidence is present in this repository for the specified area.
-3. `PARTIAL` means significant evidence exists but a meaningful audit gap remains (notably default integration coverage enforcement).
-4. This artifact intentionally does not introduce new criteria beyond Phase 2 goals/scenarios and current repository quality gates.
-
----
-
-## Closeout Summary
-
-Phase 2 evidence is **substantially complete** for workflow improvements, review clarity, validation/export clarity, and discovery/filtering.
-
-Current overall acceptance posture: **PASS with one notable PARTIAL area** (critical-path coverage enforcement gap for default integration execution).
+1. `Guidelines/Phase-2-Kickoff.md` is the acceptance source of truth for Phase 2 goals/scenarios.
+2. Evidence should prioritize implemented code and committed automated tests over historical planning intent.
+3. “Critical path coverage” refers to core manual-first workflows called out in Phase 2 and existing testing docs.
+4. This matrix reports repo-current evidence only; it does not claim future or unimplemented acceptance items.
