@@ -1,8 +1,24 @@
 # ScrambleIQ
 
-ScrambleIQ Phase 1 (manual-first foundation) is implemented and in closeout validation.
+ScrambleIQ Phase 2 (manual-first workflow refinement) is implemented and in formal closeout signoff.
 
 This repository includes a minimal full-stack TypeScript scaffold aligned to the project tech stack:
+
+## Phase 2 closeout status
+
+Phase 2 closeout evidence is consolidated in:
+
+- `Guidelines/Phase-2-Closeout-Checklist.md`
+- `Guidelines/Phase-2-Acceptance-Evidence.md`
+- `Guidelines/Phase-2-DB-Evidence.md`
+- `Guidelines/Phase-2-Discovery-Sorting-Decision.md`
+
+Current closeout posture:
+
+- Root quality gates pass (`npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`).
+- PostgreSQL evidence is represented through CI `integration-postgres` (`npm run test:integration:ci`) with local Docker validation available via `npm run test:integration`.
+- Discovery sorting for Phase 2 is fixed deterministic ordering (newest `eventDate` first, stable tie-break), with interactive sorting deferred out of scope.
+
 
 - Frontend: React + TypeScript + Vite (`apps/web`)
 - Backend: NestJS + Node.js + TypeScript (`apps/api`)
