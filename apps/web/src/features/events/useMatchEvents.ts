@@ -18,6 +18,15 @@ interface UseMatchEventsArgs {
   onEventsMutated: () => void;
 }
 
+function toRepeatedEntryValues(values: TimelineEventFormValues): TimelineEventFormValues {
+  return {
+    timestamp: '',
+    eventType: values.eventType,
+    competitor: values.competitor,
+    notes: '',
+  };
+}
+
 function getRequestErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof HttpRequestError) {
     return error.message;
@@ -82,12 +91,13 @@ export function useMatchEvents({ api, matchId, onEventsMutated }: UseMatchEvents
 
   const submitEvent = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const submittedValues: TimelineEventFormValues = { ...eventFormValues };
     const submitMode =
       event.nativeEvent instanceof SubmitEvent && event.nativeEvent.submitter instanceof HTMLButtonElement
         ? event.nativeEvent.submitter.value
         : 'close';
 
-    const validationErrors = validateTimelineEventForm(eventFormValues);
+    const validationErrors = validateTimelineEventForm(submittedValues);
     setEventFormErrors(validationErrors);
 
     if (hasTimelineEventValidationErrors(validationErrors)) {
@@ -99,28 +109,20 @@ export function useMatchEvents({ api, matchId, onEventsMutated }: UseMatchEvents
 
     try {
       if (editingEventId) {
-        const updatedEvent = await api.updateTimelineEvent(editingEventId, toCreateTimelineEventDto(eventFormValues));
+        const updatedEvent = await api.updateTimelineEvent(editingEventId, toCreateTimelineEventDto(submittedValues));
         setEvents((previousEvents) =>
           previousEvents
             .map((currentEvent) => (currentEvent.id === editingEventId ? updatedEvent : currentEvent))
             .sort((a, b) => a.timestamp - b.timestamp),
         );
       } else {
-        const createdEvent = await api.createTimelineEvent(matchId, toCreateTimelineEventDto(eventFormValues));
+        const createdEvent = await api.createTimelineEvent(matchId, toCreateTimelineEventDto(submittedValues));
         setEvents((previousEvents) => [...previousEvents, createdEvent].sort((a, b) => a.timestamp - b.timestamp));
       }
 
       const isAddingAnother = !editingEventId && submitMode === 'addAnother';
 
-      setEventFormValues(
-        isAddingAnother
-          ? {
-              ...initialTimelineEventValues,
-              eventType: eventFormValues.eventType,
-              competitor: eventFormValues.competitor,
-            }
-          : initialTimelineEventValues,
-      );
+      setEventFormValues(isAddingAnother ? toRepeatedEntryValues(submittedValues) : initialTimelineEventValues);
       setEventFormErrors({});
       setEditingEventId(null);
       setIsEventFormVisible(isAddingAnother);

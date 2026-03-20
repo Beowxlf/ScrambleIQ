@@ -222,4 +222,32 @@ describe('Timeline events UI', () => {
     await waitFor(() => expect(createTimelineEvent).toHaveBeenCalledTimes(1));
     expect(await screen.findByText('00:33 takedown_attempt A')).toBeInTheDocument();
   });
+
+  it('resets timestamp for repeated entry while retaining event defaults', async () => {
+    const createTimelineEvent = vi
+      .fn()
+      .mockResolvedValueOnce(baseEvent({ id: 'event-1', timestamp: 12, eventType: 'guard_pass', competitor: 'B' }))
+      .mockResolvedValueOnce(baseEvent({ id: 'event-2', timestamp: 18, eventType: 'guard_pass', competitor: 'B' }));
+    const matchesApi = createMatchesApiMock({ createTimelineEvent });
+
+    render(<App matchesApi={matchesApi} />);
+
+    await screen.findByText('No timeline events yet.');
+    fireEvent.click(screen.getByRole('button', { name: 'Add Event' }));
+    fireEvent.change(screen.getByLabelText('Timestamp (seconds)'), { target: { value: '12' } });
+    fireEvent.change(screen.getByLabelText('Event Type'), { target: { value: 'guard_pass' } });
+    fireEvent.change(screen.getByLabelText('Competitor'), { target: { value: 'B' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create & Add Another' }));
+
+    await waitFor(() => expect(createTimelineEvent).toHaveBeenCalledTimes(1));
+    expect(screen.getByLabelText('Timestamp (seconds)')).toHaveValue(null);
+    expect(screen.getByLabelText('Event Type')).toHaveValue('guard_pass');
+    expect(screen.getByLabelText('Competitor')).toHaveValue('B');
+
+    fireEvent.change(screen.getByLabelText('Timestamp (seconds)'), { target: { value: '18' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create Event' }));
+
+    await waitFor(() => expect(createTimelineEvent).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText('00:18 guard_pass B')).toBeInTheDocument();
+  });
 });
