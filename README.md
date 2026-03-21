@@ -183,6 +183,7 @@ Current extraction status:
 - Video review UI/state is extracted into `apps/web/src/features/video/` (`VideoPanel`, `VideoMetadataForm`, `useMatchVideo`), while `MatchDetailPage` remains the page-level orchestrator for cross-feature synchronization.
 - Analytics summary UI/state is extracted into `apps/web/src/features/analytics/` (`AnalyticsPanel`, `AnalyticsSummary`, `useMatchAnalytics`), while `MatchDetailPage` remains the page-level orchestrator for mutation-driven refresh triggers.
 - Dataset tooling UI/state is extracted into `apps/web/src/features/dataset/` (`DatasetToolsPanel`, `DatasetValidationReport`, `useMatchDatasetTools`), while `MatchDetailPage` remains the page-level orchestrator.
+- Review template management UI/state is extracted into `apps/web/src/features/review-templates/` (`ReviewTemplatePanel`, `ReviewTemplateForm`, `ReviewTemplateList`, `AppliedReviewTemplate`, `useReviewTemplates`) with deterministic create/list/view/edit/delete and manual apply workflow support.
 
 With dataset tooling extraction complete, the planned Phase-1 frontend modularization slices are now fully implemented.
 
@@ -244,6 +245,18 @@ The timeline section supports:
 - creating events
 - editing events
 - deleting events
+
+The detail page also includes a **Review Templates** section for manual-first workflow scaffolding.
+
+Review template support in this phase includes:
+
+- listing existing templates
+- creating/editing/deleting templates
+- viewing template checklist details
+- applying one template to the active match review session
+- manually toggling checklist completion state for the current session
+
+Applying a template does not mutate annotations; it only structures coach-driven review steps.
 
 The detail page also includes a **Video Review** section for single-video attachment and synchronized playback alongside timeline annotations.
 
