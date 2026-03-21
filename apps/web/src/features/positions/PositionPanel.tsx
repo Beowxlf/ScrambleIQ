@@ -1,4 +1,4 @@
-import type { PositionState } from '@scrambleiq/shared';
+import type { PositionState, SavedReviewPresetConfig } from '@scrambleiq/shared';
 
 import type { MatchesApi } from '../../matches-api';
 import { PositionForm } from './PositionForm';
@@ -8,12 +8,20 @@ import { useMatchPositions } from './useMatchPositions';
 interface PositionPanelProps {
   api: MatchesApi;
   matchId: string;
+  reviewSettings?: SavedReviewPresetConfig;
   selectedPositionId: string | null;
   onSeekToTimestamp: (timestamp: number, positionId: string, positionLabel: string) => void;
   onPositionsMutated: () => void;
 }
 
-export function PositionPanel({ api, matchId, selectedPositionId, onSeekToTimestamp, onPositionsMutated }: PositionPanelProps) {
+export function PositionPanel({
+  api,
+  matchId,
+  reviewSettings = {},
+  selectedPositionId,
+  onSeekToTimestamp,
+  onPositionsMutated,
+}: PositionPanelProps) {
   const {
     positions,
     positionsError,
@@ -36,6 +44,22 @@ export function PositionPanel({ api, matchId, selectedPositionId, onSeekToTimest
     const positionLabel = `${positionState.position} top: ${positionState.competitorTop}`;
     onSeekToTimestamp(positionState.timestampStart, positionState.id, positionLabel);
   };
+
+  const allowedPositions = reviewSettings.positionFilters && reviewSettings.positionFilters.length > 0
+    ? new Set(reviewSettings.positionFilters)
+    : null;
+
+  const visiblePositions = positions.filter((positionItem) => {
+    if (reviewSettings.competitorFilter && positionItem.competitorTop !== reviewSettings.competitorFilter) {
+      return false;
+    }
+
+    if (allowedPositions && !allowedPositions.has(positionItem.position)) {
+      return false;
+    }
+
+    return true;
+  });
 
   return (
     <section aria-labelledby="position-timeline-heading">
@@ -66,10 +90,13 @@ export function PositionPanel({ api, matchId, selectedPositionId, onSeekToTimest
       {positionsError ? <p>{positionsError}</p> : null}
 
       {!isLoadingPositions && !positionsError && positions.length === 0 ? <p>No position states yet.</p> : null}
+      {!isLoadingPositions && !positionsError && positions.length > 0 && visiblePositions.length === 0
+        ? <p>No position states match the active review settings.</p>
+        : null}
 
-      {!isLoadingPositions && !positionsError && positions.length > 0 ? (
+      {!isLoadingPositions && !positionsError && visiblePositions.length > 0 ? (
         <PositionList
-          positions={positions}
+          positions={visiblePositions}
           selectedPositionId={selectedPositionId}
           onSeekToPosition={handleSeekToPosition}
           onEdit={startEditPosition}

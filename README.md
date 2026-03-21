@@ -84,7 +84,7 @@ npm run start --workspace @scrambleiq/api
 
 ## API authentication baseline (phase-one)
 
-The API now enforces a minimal shared-token guard for all protected endpoints, including match-scoped routes (`/matches`, `/events`, `/positions`, `/video`, analytics/export/validate routes) and review template routes (`/review-templates`).
+The API now enforces a minimal shared-token guard for all protected endpoints, including match-scoped routes (`/matches`, `/events`, `/positions`, `/video`, analytics/export/validate routes), review template routes (`/review-templates`), and saved review preset routes (`/saved-review-presets`).
 
 - Public route: `GET /health`
 - Protected routes: all other current API routes
@@ -184,6 +184,7 @@ Current extraction status:
 - Analytics summary UI/state is extracted into `apps/web/src/features/analytics/` (`AnalyticsPanel`, `AnalyticsSummary`, `useMatchAnalytics`), while `MatchDetailPage` remains the page-level orchestrator for mutation-driven refresh triggers.
 - Dataset tooling UI/state is extracted into `apps/web/src/features/dataset/` (`DatasetToolsPanel`, `DatasetValidationReport`, `useMatchDatasetTools`), while `MatchDetailPage` remains the page-level orchestrator.
 - Review template management UI/state is extracted into `apps/web/src/features/review-templates/` (`ReviewTemplatePanel`, `ReviewTemplateForm`, `ReviewTemplateList`, `AppliedReviewTemplate`, `useReviewTemplates`) with deterministic create/list/view/edit/delete and manual apply workflow support.
+- Saved review preset management UI/state is extracted into `apps/web/src/features/review-presets/` (`SavedReviewPresetPanel`, `SavedReviewPresetForm`, `SavedReviewPresetList`, `useSavedReviewPresets`) with deterministic create/list/view/edit/delete and manual apply-to-review-settings workflow support.
 
 With dataset tooling extraction complete, the planned Phase-1 frontend modularization slices are now fully implemented.
 
@@ -257,6 +258,17 @@ Review template support in this phase includes:
 - manually toggling checklist completion state for the current session
 
 Applying a template does not mutate annotations; it only structures coach-driven review steps.
+
+The detail page also includes a **Saved Review Presets** section for restoring common review settings.
+
+Saved review preset support in this phase includes:
+
+- listing existing presets
+- creating/editing/deleting presets
+- viewing preset config details
+- applying one preset to restore active review settings (event filters, competitor filter, position filters, validation-focus toggle)
+
+Applying a preset does not mutate annotations; it only restores visible review settings used by the coach during the current review session.
 
 The detail page also includes a **Video Review** section for single-video attachment and synchronized playback alongside timeline annotations.
 

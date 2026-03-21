@@ -9,6 +9,8 @@ import type {
   MatchListResponse,
   MatchDatasetExport,
   MatchVideo,
+  SavedReviewPreset,
+  SavedReviewPresetMetadata,
   ReviewTemplate,
   ReviewTemplateMetadata,
   PositionState,
@@ -58,6 +60,13 @@ export class ReviewTemplateNotFoundError extends Error {
   constructor(templateId: string) {
     super(`Review template with id ${templateId} was not found.`);
     this.name = 'ReviewTemplateNotFoundError';
+  }
+}
+
+export class SavedReviewPresetNotFoundError extends Error {
+  constructor(presetId: string) {
+    super(`Saved review preset with id ${presetId} was not found.`);
+    this.name = 'SavedReviewPresetNotFoundError';
   }
 }
 
@@ -113,6 +122,53 @@ export interface MatchesApi {
     }>;
   }): Promise<ReviewTemplate>;
   deleteReviewTemplate?(id: string): Promise<void>;
+  createSavedReviewPreset?(payload: {
+    name: string;
+    description?: string;
+    scope: 'match_detail';
+    config: {
+      eventTypeFilters?: string[];
+      competitorFilter?: 'A' | 'B';
+      positionFilters?: Array<
+      | 'standing'
+      | 'closed_guard'
+      | 'open_guard'
+      | 'half_guard'
+      | 'side_control'
+      | 'mount'
+      | 'back_control'
+      | 'north_south'
+      | 'leg_entanglement'
+      | 'scramble'
+      >;
+      showOnlyValidationIssues?: boolean;
+    };
+  }): Promise<SavedReviewPreset>;
+  listSavedReviewPresets?(): Promise<SavedReviewPresetMetadata[]>;
+  getSavedReviewPreset?(id: string): Promise<SavedReviewPreset>;
+  updateSavedReviewPreset?(id: string, payload: {
+    name?: string;
+    description?: string;
+    scope?: 'match_detail';
+    config?: {
+      eventTypeFilters?: string[];
+      competitorFilter?: 'A' | 'B';
+      positionFilters?: Array<
+      | 'standing'
+      | 'closed_guard'
+      | 'open_guard'
+      | 'half_guard'
+      | 'side_control'
+      | 'mount'
+      | 'back_control'
+      | 'north_south'
+      | 'leg_entanglement'
+      | 'scramble'
+      >;
+      showOnlyValidationIssues?: boolean;
+    };
+  }): Promise<SavedReviewPreset>;
+  deleteSavedReviewPreset?(id: string): Promise<void>;
 }
 
 interface HttpMatchesApiOptions {
@@ -601,6 +657,80 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
 
       if (!response.ok) {
         await throwHttpRequestError(response, 'Failed to delete review template.');
+      }
+    },
+
+    async createSavedReviewPreset(payload) {
+      const response = await authedFetch(`${baseUrl}/saved-review-presets`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        await throwHttpRequestError(response, 'Failed to create saved review preset.');
+      }
+
+      return (await response.json()) as SavedReviewPreset;
+    },
+
+    async listSavedReviewPresets() {
+      const response = await authedFetch(`${baseUrl}/saved-review-presets`);
+
+      if (!response.ok) {
+        await throwHttpRequestError(response, 'Failed to load saved review presets.');
+      }
+
+      return (await response.json()) as SavedReviewPresetMetadata[];
+    },
+
+    async getSavedReviewPreset(id) {
+      const response = await authedFetch(`${baseUrl}/saved-review-presets/${encodeURIComponent(id)}`);
+
+      if (response.status === 404) {
+        throw new SavedReviewPresetNotFoundError(id);
+      }
+
+      if (!response.ok) {
+        await throwHttpRequestError(response, 'Failed to load saved review preset.');
+      }
+
+      return (await response.json()) as SavedReviewPreset;
+    },
+
+    async updateSavedReviewPreset(id, payload) {
+      const response = await authedFetch(`${baseUrl}/saved-review-presets/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.status === 404) {
+        throw new SavedReviewPresetNotFoundError(id);
+      }
+
+      if (!response.ok) {
+        await throwHttpRequestError(response, 'Failed to update saved review preset.');
+      }
+
+      return (await response.json()) as SavedReviewPreset;
+    },
+
+    async deleteSavedReviewPreset(id) {
+      const response = await authedFetch(`${baseUrl}/saved-review-presets/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+
+      if (response.status === 404) {
+        throw new SavedReviewPresetNotFoundError(id);
+      }
+
+      if (!response.ok) {
+        await throwHttpRequestError(response, 'Failed to delete saved review preset.');
       }
     },
   };

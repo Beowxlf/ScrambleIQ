@@ -5,10 +5,12 @@ import { AnalyticsPanel } from '../features/analytics/AnalyticsPanel';
 import { DatasetToolsPanel } from '../features/dataset/DatasetToolsPanel';
 import { EventPanel } from '../features/events/EventPanel';
 import { MatchMetadataSection } from '../features/match-metadata/MatchMetadataSection';
+import { SavedReviewPresetPanel } from '../features/review-presets/SavedReviewPresetPanel';
 import { ReviewTemplatePanel } from '../features/review-templates/ReviewTemplatePanel';
 import { useMatchMetadata } from '../features/match-metadata/useMatchMetadata';
 import { PositionPanel } from '../features/positions/PositionPanel';
 import { VideoPanel } from '../features/video/VideoPanel';
+import type { SavedReviewPresetConfig } from '@scrambleiq/shared';
 import type { VideoSeekRequest } from '../features/video/useMatchVideo';
 import type { MatchesApi } from '../matches-api';
 import { formatTimestamp } from '../timeline-event';
@@ -19,6 +21,9 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
   const [selectedPositionId, setSelectedPositionId] = useState<string | null>(null);
   const [videoSeekRequest, setVideoSeekRequest] = useState<VideoSeekRequest | null>(null);
   const [activeSeekSummary, setActiveSeekSummary] = useState<string | null>(null);
+  const [reviewSettings, setReviewSettings] = useState<SavedReviewPresetConfig>({
+    showOnlyValidationIssues: false,
+  });
   const reviewContextRef = useRef<HTMLElement | null>(null);
   const timelineReviewRef = useRef<HTMLElement | null>(null);
   const dataQualityToolsRef = useRef<HTMLElement | null>(null);
@@ -112,6 +117,7 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
             <section aria-labelledby="review-context-heading" ref={reviewContextRef}>
               <h3 id="review-context-heading">Review Context</h3>
               <AnalyticsPanel api={api} matchId={matchId} refreshTrigger={workspaceRefreshTrigger} />
+              <SavedReviewPresetPanel api={api} reviewSettings={reviewSettings} onApplyReviewSettings={setReviewSettings} />
               <ReviewTemplatePanel api={api} />
               <VideoPanel api={api} matchId={matchId} seekRequest={videoSeekRequest} onVideoMetadataMutated={handleVideoMetadataMutated} />
             </section>
@@ -121,6 +127,7 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
               <EventPanel
                 api={api}
                 matchId={matchId}
+                reviewSettings={reviewSettings}
                 selectedEventId={selectedEventId}
                 onSeekToTimestamp={(timestamp, eventId, eventLabel) =>
                   seekToTimestamp(timestamp, { eventId }, eventLabel, 'event')
@@ -130,6 +137,7 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
               <PositionPanel
                 api={api}
                 matchId={matchId}
+                reviewSettings={reviewSettings}
                 selectedPositionId={selectedPositionId}
                 onSeekToTimestamp={(timestamp, positionId, positionLabel) =>
                   seekToTimestamp(timestamp, { positionId }, positionLabel, 'position')
