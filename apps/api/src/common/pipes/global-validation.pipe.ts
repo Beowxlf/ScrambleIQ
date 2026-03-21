@@ -18,6 +18,9 @@ import {
   validateUpdateTimelineEventPayload,
 } from '../../matches/timeline-event-validation';
 import { validateCreateMatchVideoPayload, validateUpdateMatchVideoPayload } from '../../matches/match-video-validation';
+import { validateCreateReviewTemplatePayload, validateUpdateReviewTemplatePayload } from '../../review-templates/review-template-validation';
+import { CreateReviewTemplateDto } from '../../review-templates/create-review-template.dto';
+import { UpdateReviewTemplateDto } from '../../review-templates/update-review-template.dto';
 
 type PayloadValidator = (value: unknown) => string[];
 
@@ -30,6 +33,8 @@ const validatorsByMetatype = new Map<Type<unknown>, PayloadValidator>([
   [UpdatePositionStateDto, (value) => validateUpdatePositionStatePayload(value as UpdatePositionStateDto)],
   [CreateMatchVideoDto, (value) => validateCreateMatchVideoPayload(value as CreateMatchVideoDto)],
   [UpdateMatchVideoDto, (value) => validateUpdateMatchVideoPayload(value as UpdateMatchVideoDto)],
+  [CreateReviewTemplateDto, (value) => validateCreateReviewTemplatePayload(value as CreateReviewTemplateDto)],
+  [UpdateReviewTemplateDto, (value) => validateUpdateReviewTemplatePayload(value as UpdateReviewTemplateDto)],
 ]);
 const validatorsByMetatypeName = new Map<string, PayloadValidator>([
   ['CreateMatchDto', (value) => validateCreateMatchPayload(value as CreateMatchDto)],
@@ -40,6 +45,8 @@ const validatorsByMetatypeName = new Map<string, PayloadValidator>([
   ['UpdatePositionStateDto', (value) => validateUpdatePositionStatePayload(value as UpdatePositionStateDto)],
   ['CreateMatchVideoDto', (value) => validateCreateMatchVideoPayload(value as CreateMatchVideoDto)],
   ['UpdateMatchVideoDto', (value) => validateUpdateMatchVideoPayload(value as UpdateMatchVideoDto)],
+  ['CreateReviewTemplateDto', (value) => validateCreateReviewTemplatePayload(value as CreateReviewTemplateDto)],
+  ['UpdateReviewTemplateDto', (value) => validateUpdateReviewTemplatePayload(value as UpdateReviewTemplateDto)],
 ]);
 
 @Injectable()

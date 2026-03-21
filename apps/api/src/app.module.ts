@@ -4,9 +4,10 @@ import { APP_GUARD } from '@nestjs/core';
 import { ApiTokenGuard } from './auth/api-token.guard';
 import { AppController } from './app.controller';
 import { MatchesModule } from './matches/matches.module';
+import { ReviewTemplatesModule } from './review-templates/review-templates.module';
 
 @Module({
-  imports: [MatchesModule],
+  imports: [MatchesModule, ReviewTemplatesModule],
   controllers: [AppController],
   providers: [
     {

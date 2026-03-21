@@ -84,7 +84,7 @@ npm run start --workspace @scrambleiq/api
 
 ## API authentication baseline (phase-one)
 
-The API now enforces a minimal shared-token guard for all match-scoped endpoints (`/matches`, `/events`, `/positions`, `/video`, analytics/export/validate routes).
+The API now enforces a minimal shared-token guard for all protected endpoints, including match-scoped routes (`/matches`, `/events`, `/positions`, `/video`, analytics/export/validate routes) and review template routes (`/review-templates`).
 
 - Public route: `GET /health`
 - Protected routes: all other current API routes
