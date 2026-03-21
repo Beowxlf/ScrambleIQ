@@ -78,6 +78,8 @@ Phase 2 detailed scope and acceptance contract: `Guidelines/Phase-2-Kickoff.md`.
 
 Version 2.0 expands coaching workflow tools built on top of the validated manual annotation core.
 
+Phase 3 detailed scope and acceptance contract: `Guidelines/Phase-3-Kickoff.md`.
+
 ### Objectives
 
 1. improve review collaboration and handoff workflows
