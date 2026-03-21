@@ -9,6 +9,8 @@ import type {
   MatchListResponse,
   MatchDatasetExport,
   MatchVideo,
+  ReviewTemplate,
+  ReviewTemplateMetadata,
   PositionState,
   TimelineEvent,
   UpdateMatchDto,
@@ -52,6 +54,13 @@ export class PositionStateNotFoundError extends Error {
 }
 
 
+export class ReviewTemplateNotFoundError extends Error {
+  constructor(templateId: string) {
+    super(`Review template with id ${templateId} was not found.`);
+    this.name = 'ReviewTemplateNotFoundError';
+  }
+}
+
 export class MatchVideoNotFoundError extends Error {
   constructor(videoIdOrMatchId: string) {
     super(`Match video resource was not found for id ${videoIdOrMatchId}.`);
@@ -79,6 +88,31 @@ export interface MatchesApi {
   getMatchVideo(matchId: string): Promise<MatchVideo>;
   updateMatchVideo(id: string, payload: UpdateMatchVideoDto): Promise<MatchVideo>;
   deleteMatchVideo(id: string): Promise<void>;
+  createReviewTemplate?(payload: {
+    name: string;
+    description?: string;
+    scope: 'single_match_review';
+    checklistItems: Array<{
+      label: string;
+      description?: string;
+      isRequired: boolean;
+      sortOrder: number;
+    }>;
+  }): Promise<ReviewTemplate>;
+  listReviewTemplates?(): Promise<ReviewTemplateMetadata[]>;
+  getReviewTemplate?(id: string): Promise<ReviewTemplate>;
+  updateReviewTemplate?(id: string, payload: {
+    name?: string;
+    description?: string;
+    scope?: 'single_match_review';
+    checklistItems?: Array<{
+      label: string;
+      description?: string;
+      isRequired: boolean;
+      sortOrder: number;
+    }>;
+  }): Promise<ReviewTemplate>;
+  deleteReviewTemplate?(id: string): Promise<void>;
 }
 
 interface HttpMatchesApiOptions {
@@ -493,6 +527,80 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
 
       if (!response.ok) {
         await throwHttpRequestError(response, 'Failed to delete match video.');
+      }
+    },
+
+    async createReviewTemplate(payload) {
+      const response = await authedFetch(`${baseUrl}/review-templates`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        await throwHttpRequestError(response, 'Failed to create review template.');
+      }
+
+      return (await response.json()) as ReviewTemplate;
+    },
+
+    async listReviewTemplates() {
+      const response = await authedFetch(`${baseUrl}/review-templates`);
+
+      if (!response.ok) {
+        await throwHttpRequestError(response, 'Failed to load review templates.');
+      }
+
+      return (await response.json()) as ReviewTemplateMetadata[];
+    },
+
+    async getReviewTemplate(id) {
+      const response = await authedFetch(`${baseUrl}/review-templates/${encodeURIComponent(id)}`);
+
+      if (response.status === 404) {
+        throw new ReviewTemplateNotFoundError(id);
+      }
+
+      if (!response.ok) {
+        await throwHttpRequestError(response, 'Failed to load review template.');
+      }
+
+      return (await response.json()) as ReviewTemplate;
+    },
+
+    async updateReviewTemplate(id, payload) {
+      const response = await authedFetch(`${baseUrl}/review-templates/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.status === 404) {
+        throw new ReviewTemplateNotFoundError(id);
+      }
+
+      if (!response.ok) {
+        await throwHttpRequestError(response, 'Failed to update review template.');
+      }
+
+      return (await response.json()) as ReviewTemplate;
+    },
+
+    async deleteReviewTemplate(id) {
+      const response = await authedFetch(`${baseUrl}/review-templates/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+
+      if (response.status === 404) {
+        throw new ReviewTemplateNotFoundError(id);
+      }
+
+      if (!response.ok) {
+        await throwHttpRequestError(response, 'Failed to delete review template.');
       }
     },
   };

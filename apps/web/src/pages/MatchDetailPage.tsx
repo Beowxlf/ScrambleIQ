@@ -5,6 +5,7 @@ import { AnalyticsPanel } from '../features/analytics/AnalyticsPanel';
 import { DatasetToolsPanel } from '../features/dataset/DatasetToolsPanel';
 import { EventPanel } from '../features/events/EventPanel';
 import { MatchMetadataSection } from '../features/match-metadata/MatchMetadataSection';
+import { ReviewTemplatePanel } from '../features/review-templates/ReviewTemplatePanel';
 import { useMatchMetadata } from '../features/match-metadata/useMatchMetadata';
 import { PositionPanel } from '../features/positions/PositionPanel';
 import { VideoPanel } from '../features/video/VideoPanel';
@@ -111,6 +112,7 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
             <section aria-labelledby="review-context-heading" ref={reviewContextRef}>
               <h3 id="review-context-heading">Review Context</h3>
               <AnalyticsPanel api={api} matchId={matchId} refreshTrigger={workspaceRefreshTrigger} />
+              <ReviewTemplatePanel api={api} />
               <VideoPanel api={api} matchId={matchId} seekRequest={videoSeekRequest} onVideoMetadataMutated={handleVideoMetadataMutated} />
             </section>
 

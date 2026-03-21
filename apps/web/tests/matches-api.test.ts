@@ -61,6 +61,16 @@ describe('createHttpMatchesApi path parameter encoding', () => {
     expect(fetchImpl).toHaveBeenCalledWith('http://localhost:3000/matches/match%2Fwith%20spaces/validate', expect.objectContaining({ headers: expect.objectContaining({ 'x-api-key': 'scrambleiq-local-dev-token' }) }));
   });
 
+
+  it('encodes review-template path params', async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ id: 'ok' }), { status: 200 }));
+    const api = createHttpMatchesApi({ baseUrl: 'http://localhost:3000', fetchImpl });
+
+    await api.getReviewTemplate?.('template/with spaces');
+
+    expect(fetchImpl).toHaveBeenCalledWith('http://localhost:3000/review-templates/template%2Fwith%20spaces', expect.objectContaining({ headers: expect.objectContaining({ 'x-api-key': 'scrambleiq-local-dev-token' }) }));
+  });
+
   it('surfaces backend validation messages for failed mutations', async () => {
     const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ message: ['title should not be empty'] }), { status: 400 }));
     const api = createHttpMatchesApi({ baseUrl: 'http://localhost:3000', fetchImpl });
