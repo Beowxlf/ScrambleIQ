@@ -177,6 +177,104 @@ export interface CreateMatchVideoDto {
 
 export type UpdateMatchVideoDto = Partial<CreateMatchVideoDto>;
 
+export const REVIEW_TEMPLATE_SCOPE_TYPES = ['single_match_review'] as const;
+
+export type ReviewTemplateScopeType = (typeof REVIEW_TEMPLATE_SCOPE_TYPES)[number];
+
+export interface ReviewChecklistItem {
+  id: string;
+  label: string;
+  description?: string;
+  isRequired: boolean;
+  sortOrder: number;
+}
+
+export interface ReviewTemplateMetadata {
+  id: string;
+  name: string;
+  description?: string;
+  scope: ReviewTemplateScopeType;
+  checklistItemCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReviewTemplate extends ReviewTemplateMetadata {
+  checklistItems: ReviewChecklistItem[];
+}
+
+export const REVIEW_PRESET_SCOPE_TYPES = ['match_detail'] as const;
+
+export type ReviewPresetScopeType = (typeof REVIEW_PRESET_SCOPE_TYPES)[number];
+
+export interface SavedReviewPresetMetadata {
+  id: string;
+  name: string;
+  description?: string;
+  scope: ReviewPresetScopeType;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SavedReviewPresetConfig {
+  eventTypeFilters?: string[];
+  competitorFilter?: CompetitorSide;
+  positionFilters?: PositionType[];
+  showOnlyValidationIssues?: boolean;
+}
+
+export interface SavedReviewPreset extends SavedReviewPresetMetadata {
+  config: SavedReviewPresetConfig;
+}
+
+export interface ReviewSummaryIssueCounts {
+  info: number;
+  warning: number;
+  error: number;
+}
+
+export interface MatchReviewSummary {
+  match: Match;
+  eventCount: number;
+  positionCount: number;
+  hasVideo: boolean;
+  analytics: MatchAnalyticsSummary;
+  validation: {
+    isValid: boolean;
+    issueCount: number;
+    issueCountsBySeverity: ReviewSummaryIssueCounts;
+  };
+}
+
+export const TAXONOMY_GUARDRAIL_SEVERITIES = ['INFO', 'WARNING'] as const;
+
+export type TaxonomyGuardrailSeverity = (typeof TAXONOMY_GUARDRAIL_SEVERITIES)[number];
+
+export const TAXONOMY_NORMALIZATION_ACTIONS = ['none', 'apply_canonical'] as const;
+
+export type TaxonomyNormalizationAction = (typeof TAXONOMY_NORMALIZATION_ACTIONS)[number];
+
+export interface TaxonomyGuardrailWarning {
+  field: 'eventType';
+  observedValue: string;
+  canonicalValue: string;
+  severity: TaxonomyGuardrailSeverity;
+  message: string;
+}
+
+export interface TaxonomyGuardrailResult {
+  hasWarnings: boolean;
+  warningCount: number;
+  warnings: TaxonomyGuardrailWarning[];
+}
+
+export interface TaxonomyNormalizationRequest {
+  field: 'eventType';
+  fromValue: string;
+  toValue: string;
+  action: TaxonomyNormalizationAction;
+}
+
 export {
   MAX_COMPETITOR_NAME_LENGTH,
   MAX_EVENT_TYPE_LENGTH,
