@@ -1,4 +1,5 @@
 import type { TimelineEvent } from '@scrambleiq/shared';
+import type { SavedReviewPresetConfig } from '@scrambleiq/shared';
 
 import type { MatchesApi } from '../../matches-api';
 import { EventForm } from './EventForm';
@@ -8,12 +9,20 @@ import { useMatchEvents } from './useMatchEvents';
 interface EventPanelProps {
   api: MatchesApi;
   matchId: string;
+  reviewSettings?: SavedReviewPresetConfig;
   selectedEventId: string | null;
   onSeekToTimestamp: (timestamp: number, eventId: string, eventLabel: string) => void;
   onEventsMutated: () => void;
 }
 
-export function EventPanel({ api, matchId, selectedEventId, onSeekToTimestamp, onEventsMutated }: EventPanelProps) {
+export function EventPanel({
+  api,
+  matchId,
+  reviewSettings = {},
+  selectedEventId,
+  onSeekToTimestamp,
+  onEventsMutated,
+}: EventPanelProps) {
   const {
     events,
     eventsError,
@@ -36,6 +45,24 @@ export function EventPanel({ api, matchId, selectedEventId, onSeekToTimestamp, o
     const eventLabel = `${eventToSeek.eventType} ${eventToSeek.competitor}`;
     onSeekToTimestamp(eventToSeek.timestamp, eventToSeek.id, eventLabel);
   };
+  const allowedEventTypes = reviewSettings.eventTypeFilters && reviewSettings.eventTypeFilters.length > 0
+    ? new Set(reviewSettings.eventTypeFilters.map((eventType) => eventType.trim().toLowerCase()))
+    : null;
+
+  const visibleEvents = events.filter((eventItem) => {
+    if (reviewSettings.competitorFilter && eventItem.competitor !== reviewSettings.competitorFilter) {
+      return false;
+    }
+
+    if (allowedEventTypes) {
+      const normalizedEventType = eventItem.eventType.trim().toLowerCase();
+      if (!allowedEventTypes.has(normalizedEventType)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 
   return (
     <section aria-labelledby="event-timeline-heading">
@@ -66,10 +93,13 @@ export function EventPanel({ api, matchId, selectedEventId, onSeekToTimestamp, o
       {eventsError ? <p>{eventsError}</p> : null}
 
       {!isLoadingEvents && !eventsError && events.length === 0 ? <p>No timeline events yet.</p> : null}
+      {!isLoadingEvents && !eventsError && events.length > 0 && visibleEvents.length === 0
+        ? <p>No timeline events match the active review settings.</p>
+        : null}
 
-      {!isLoadingEvents && !eventsError && events.length > 0 ? (
+      {!isLoadingEvents && !eventsError && visibleEvents.length > 0 ? (
         <EventList
-          events={events}
+          events={visibleEvents}
           selectedEventId={selectedEventId}
           onSeekToEvent={handleSeekToEvent}
           onEdit={startEditEvent}
