@@ -5,9 +5,10 @@ import { ApiTokenGuard } from './auth/api-token.guard';
 import { AppController } from './app.controller';
 import { MatchesModule } from './matches/matches.module';
 import { ReviewTemplatesModule } from './review-templates/review-templates.module';
+import { ReviewPresetsModule } from './review-presets/review-presets.module';
 
 @Module({
-  imports: [MatchesModule, ReviewTemplatesModule],
+  imports: [MatchesModule, ReviewTemplatesModule, ReviewPresetsModule],
   controllers: [AppController],
   providers: [
     {

@@ -22,6 +22,10 @@ import { validateCreateReviewTemplatePayload, validateUpdateReviewTemplatePayloa
 import { CreateReviewTemplateDto } from '../../review-templates/create-review-template.dto';
 import { UpdateReviewTemplateDto } from '../../review-templates/update-review-template.dto';
 
+import { validateCreateReviewPresetPayload, validateUpdateReviewPresetPayload } from '../../review-presets/review-preset-validation';
+import { CreateReviewPresetDto } from '../../review-presets/create-review-preset.dto';
+import { UpdateReviewPresetDto } from '../../review-presets/update-review-preset.dto';
+
 type PayloadValidator = (value: unknown) => string[];
 
 const validatorsByMetatype = new Map<Type<unknown>, PayloadValidator>([
@@ -35,6 +39,8 @@ const validatorsByMetatype = new Map<Type<unknown>, PayloadValidator>([
   [UpdateMatchVideoDto, (value) => validateUpdateMatchVideoPayload(value as UpdateMatchVideoDto)],
   [CreateReviewTemplateDto, (value) => validateCreateReviewTemplatePayload(value as CreateReviewTemplateDto)],
   [UpdateReviewTemplateDto, (value) => validateUpdateReviewTemplatePayload(value as UpdateReviewTemplateDto)],
+  [CreateReviewPresetDto, (value) => validateCreateReviewPresetPayload(value as CreateReviewPresetDto)],
+  [UpdateReviewPresetDto, (value) => validateUpdateReviewPresetPayload(value as UpdateReviewPresetDto)],
 ]);
 const validatorsByMetatypeName = new Map<string, PayloadValidator>([
   ['CreateMatchDto', (value) => validateCreateMatchPayload(value as CreateMatchDto)],
@@ -47,6 +53,8 @@ const validatorsByMetatypeName = new Map<string, PayloadValidator>([
   ['UpdateMatchVideoDto', (value) => validateUpdateMatchVideoPayload(value as UpdateMatchVideoDto)],
   ['CreateReviewTemplateDto', (value) => validateCreateReviewTemplatePayload(value as CreateReviewTemplateDto)],
   ['UpdateReviewTemplateDto', (value) => validateUpdateReviewTemplatePayload(value as UpdateReviewTemplateDto)],
+  ['CreateReviewPresetDto', (value) => validateCreateReviewPresetPayload(value as CreateReviewPresetDto)],
+  ['UpdateReviewPresetDto', (value) => validateUpdateReviewPresetPayload(value as UpdateReviewPresetDto)],
 ]);
 
 @Injectable()
