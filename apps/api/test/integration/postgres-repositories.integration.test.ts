@@ -7,6 +7,8 @@ import {
   PostgresEventRepository,
   PostgresMatchRepository,
   PostgresPositionRepository,
+  PostgresReviewPresetRepository,
+  PostgresReviewTemplateRepository,
   PostgresVideoRepository,
 } from '../../src/repositories/postgres.repositories';
 import { prepareDatabase, requireDatabaseUrl, truncateDomainTables } from './postgres-test.utils';
@@ -18,6 +20,8 @@ describe('PostgreSQL repositories integration', () => {
   const positionRepository = new PostgresPositionRepository(client);
   const videoRepository = new PostgresVideoRepository(client);
   const validationRepository = new PostgresDatasetValidationRepository(client);
+  const reviewTemplateRepository = new PostgresReviewTemplateRepository(client);
+  const reviewPresetRepository = new PostgresReviewPresetRepository(client);
 
   beforeAll(async () => {
     await prepareDatabase(client);
@@ -41,6 +45,9 @@ describe('PostgreSQL repositories integration', () => {
         'events',
         'matches',
         'positions',
+        'review_presets',
+        'review_template_checklist_items',
+        'review_templates',
         'schema_migrations',
         'videos',
       ]),
@@ -55,8 +62,80 @@ describe('PostgreSQL repositories integration', () => {
     `);
 
     expect(foreignKeys.map((key) => key.table_name)).toEqual(
-      expect.arrayContaining(['dataset_validation_results', 'events', 'positions', 'videos']),
+      expect.arrayContaining(['dataset_validation_results', 'events', 'positions', 'review_template_checklist_items', 'videos']),
     );
+  });
+
+  it('supports ReviewTemplateRepository CRUD and deterministic checklist ordering', async () => {
+    const created = await reviewTemplateRepository.create({
+      name: 'Template A',
+      description: 'Post-match checklist',
+      scope: 'single_match_review',
+      checklistItems: [
+        { label: 'Second', isRequired: false, sortOrder: 1 },
+        { label: 'First', isRequired: true, sortOrder: 0 },
+      ],
+    });
+
+    expect(created.checklistItemCount).toBe(2);
+    expect(created.checklistItems.map((item) => item.sortOrder)).toEqual([0, 1]);
+
+    const listed = await reviewTemplateRepository.findAllMetadata();
+    expect(listed).toHaveLength(1);
+    expect(listed[0].id).toBe(created.id);
+
+    const fetched = await reviewTemplateRepository.findById(created.id);
+    expect(fetched?.checklistItems.map((item) => item.label)).toEqual(['First', 'Second']);
+
+    const updated = await reviewTemplateRepository.update(created.id, {
+      name: 'Template Updated',
+      checklistItems: [{ label: 'Only item', isRequired: true, sortOrder: 0 }],
+    });
+
+    expect(updated?.name).toBe('Template Updated');
+    expect(updated?.checklistItemCount).toBe(1);
+    expect(updated?.checklistItems).toHaveLength(1);
+
+    const deleted = await reviewTemplateRepository.delete(created.id);
+    expect(deleted).toBe(true);
+    await expect(reviewTemplateRepository.findById(created.id)).resolves.toBeUndefined();
+  });
+
+  it('supports ReviewPresetRepository CRUD and persists config shapes', async () => {
+    const created = await reviewPresetRepository.create({
+      name: 'Preset A',
+      description: 'Focus on guard passing',
+      scope: 'match_detail',
+      config: {
+        eventTypeFilters: ['guard_pass'],
+        competitorFilter: 'A',
+        positionFilters: ['standing', 'half_guard'],
+        showOnlyValidationIssues: false,
+      },
+    });
+
+    expect(created.config).toEqual({
+      eventTypeFilters: ['guard_pass'],
+      competitorFilter: 'A',
+      positionFilters: ['standing', 'half_guard'],
+      showOnlyValidationIssues: false,
+    });
+
+    const listed = await reviewPresetRepository.findAllMetadata();
+    expect(listed).toHaveLength(1);
+    expect(listed[0].id).toBe(created.id);
+
+    const updated = await reviewPresetRepository.update(created.id, {
+      config: { showOnlyValidationIssues: true, positionFilters: ['mount'] },
+    });
+    expect(updated?.config).toEqual({ showOnlyValidationIssues: true, positionFilters: ['mount'] });
+
+    const fetched = await reviewPresetRepository.findById(created.id);
+    expect(fetched?.config).toEqual({ showOnlyValidationIssues: true, positionFilters: ['mount'] });
+
+    const deleted = await reviewPresetRepository.delete(created.id);
+    expect(deleted).toBe(true);
+    await expect(reviewPresetRepository.findById(created.id)).resolves.toBeUndefined();
   });
 
   it('supports MatchRepository CRUD', async () => {

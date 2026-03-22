@@ -28,6 +28,6 @@ export async function prepareDatabase(client: PsqlClient): Promise<void> {
 
 export async function truncateDomainTables(client: PsqlClient): Promise<void> {
   await client.execute(
-    'TRUNCATE TABLE public.dataset_validation_results, public.videos, public.positions, public.events, public.matches RESTART IDENTITY CASCADE',
+    'TRUNCATE TABLE public.review_template_checklist_items, public.review_templates, public.review_presets, public.dataset_validation_results, public.videos, public.positions, public.events, public.matches RESTART IDENTITY CASCADE',
   );
 }
