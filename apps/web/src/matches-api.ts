@@ -8,6 +8,7 @@ import type {
   MatchAnalyticsSummary,
   MatchListResponse,
   MatchDatasetExport,
+  MatchReviewSummary,
   MatchVideo,
   SavedReviewPreset,
   SavedReviewPresetMetadata,
@@ -92,6 +93,7 @@ export interface MatchesApi {
   deletePositionState(id: string): Promise<void>;
   createMatchVideo(matchId: string, payload: CreateMatchVideoDto): Promise<MatchVideo>;
   getMatchAnalytics(matchId: string): Promise<MatchAnalyticsSummary>;
+  getMatchReviewSummary?(matchId: string): Promise<MatchReviewSummary>;
   exportMatchDataset(matchId: string): Promise<MatchDatasetExport>;
   validateMatchDataset(matchId: string): Promise<DatasetValidationReport>;
   getMatchVideo(matchId: string): Promise<MatchVideo>;
@@ -486,6 +488,20 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       return (await response.json()) as MatchAnalyticsSummary;
+    },
+
+    async getMatchReviewSummary(matchId) {
+      const response = await authedFetch(`${baseUrl}/matches/${encodeURIComponent(matchId)}/review-summary`);
+
+      if (response.status === 404) {
+        throw new MatchNotFoundError(matchId);
+      }
+
+      if (!response.ok) {
+        await throwHttpRequestError(response, 'Failed to load match review summary.');
+      }
+
+      return (await response.json()) as MatchReviewSummary;
     },
 
     async createMatchVideo(matchId, payload) {

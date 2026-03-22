@@ -185,6 +185,7 @@ Current extraction status:
 - Dataset tooling UI/state is extracted into `apps/web/src/features/dataset/` (`DatasetToolsPanel`, `DatasetValidationReport`, `useMatchDatasetTools`), while `MatchDetailPage` remains the page-level orchestrator.
 - Review template management UI/state is extracted into `apps/web/src/features/review-templates/` (`ReviewTemplatePanel`, `ReviewTemplateForm`, `ReviewTemplateList`, `AppliedReviewTemplate`, `useReviewTemplates`) with deterministic create/list/view/edit/delete and manual apply workflow support.
 - Saved review preset management UI/state is extracted into `apps/web/src/features/review-presets/` (`SavedReviewPresetPanel`, `SavedReviewPresetForm`, `SavedReviewPresetList`, `useSavedReviewPresets`) with deterministic create/list/view/edit/delete and manual apply-to-review-settings workflow support.
+- Single-match review summary UI/state is extracted into `apps/web/src/features/review-summary/` (`MatchReviewSummaryPanel`, `useMatchReviewSummary`) with deterministic, coach-readable summary composition from stored match metadata, manual annotations, analytics, and validation rollups.
 
 With dataset tooling extraction complete, the planned Phase-1 frontend modularization slices are now fully implemented.
 

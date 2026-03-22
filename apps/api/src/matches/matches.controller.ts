@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Inject, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
-import type { DatasetValidationReport, Match, MatchAnalyticsSummary, MatchDatasetExport, MatchListResponse } from '@scrambleiq/shared';
+import type { DatasetValidationReport, Match, MatchAnalyticsSummary, MatchDatasetExport, MatchListResponse, MatchReviewSummary } from '@scrambleiq/shared';
 
 import { CreateMatchDto } from './create-match.dto';
 import { MatchesService } from './matches.service';
@@ -51,6 +51,11 @@ export class MatchesController {
   @Get(':id/validate')
   validateDataset(@Param('id', ParseUUIDPipe) id: string): Promise<DatasetValidationReport> {
     return this.matchesService.validateDataset(id);
+  }
+
+  @Get(':id/review-summary')
+  getReviewSummary(@Param('id', ParseUUIDPipe) id: string): Promise<MatchReviewSummary> {
+    return this.matchesService.getReviewSummary(id);
   }
 
   @Delete(':id')
