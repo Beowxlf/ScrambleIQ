@@ -349,3 +349,19 @@ Phase 3 is complete when:
 2. excluded scope remains excluded,
 3. required quality and integration gates pass,
 4. and documentation/evidence artifacts are complete and auditable.
+
+## Phase 3 Closeout Tracking (2026-03-22 update)
+
+The following closeout artifacts now exist for this kickoff contract:
+
+- `Guidelines/Phase-3-Closeout-Checklist.md`
+- `Guidelines/Phase-3-Acceptance-Evidence.md`
+- `Guidelines/Phase-3-DB-Evidence.md`
+
+Current hardening posture for this closeout pass:
+
+- in-scope feature deliverables are implemented and mapped to acceptance criteria
+- root quality gates pass (`npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`)
+- local `npm run test:integration` is environment-limited when Docker is unavailable; CI `integration-postgres` remains the canonical reproducible evidence path
+
+Formal Phase 3 closeout remains gated on attaching passing integration evidence for the current closeout change set.
