@@ -76,7 +76,7 @@ Status legend:
 
 - Core workflow regression coverage: **PASS**.
 - Root quality commands: **PASS** for lint/typecheck/test/build.
-- Integration quality gate evidence: **PARTIAL** (local Docker unavailable in this environment; CI path is defined and required for final closeout evidence).
+- Integration quality gate evidence: **PARTIAL** (local Docker unavailable in this environment; attempted CI evidence retrieval is blocked by missing `gh` CLI and missing Git remote metadata in this checkout).
 
 ---
 
@@ -100,5 +100,5 @@ Current closeout status for this pass: **PARTIAL evidence locally** due to Docke
 ## Current closeout determination (2026-03-22)
 
 - **Complete:** all Phase 3 feature deliverables and cross-cutting documentation reconciliation.
-- **Partial:** final integration-gate evidence for this closeout pass (local Docker path unavailable in this environment).
+- **Partial:** final integration-gate evidence for this closeout pass (local Docker path unavailable in this environment and CI run artifact retrieval unavailable from this checkout).
 - **Formal Phase 3 closeout status:** **Not yet formally complete** until `npm run test:integration` evidence is attached via local Docker run or CI `integration-postgres` run for this closeout change set.

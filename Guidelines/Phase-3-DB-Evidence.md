@@ -60,14 +60,17 @@ Closeout requires these paths to remain validated in integration tests.
 ## Commands run for this closeout hardening pass (2026-03-22)
 
 - `npm run test:integration` → **WARNING**: local environment lacks Docker (`Error: docker is required to run integration tests.`).
-- `npm run test:integration:ci` → not run locally; this is the canonical CI path for closeout evidence.
+- `gh run list --workflow ci.yml --limit 5` → **WARNING**: `gh` CLI is not installed in this environment (`gh: command not found`).
+- `git remote -v` → **WARNING**: no Git remote is configured in this checkout, so CI run URLs cannot be derived from local metadata.
+- `npm run test:integration:ci` → not run locally; this remains the canonical CI execution command when a PostgreSQL service is already provisioned.
 
 ---
 
 ## Evidence interpretation
 
-- PostgreSQL integration validation is implemented and reproducible through CI.
+- PostgreSQL integration validation path is implemented and reproducible through CI workflow design (`integration-postgres`).
 - Local Docker unavailability in this environment is a tooling caveat, not evidence of a code regression.
+- This environment cannot currently retrieve CI proof artifacts because neither GitHub CLI nor remote repository metadata is available.
 - Phase 3 formal closeout still requires attaching a passing `integration-postgres` CI result (or equivalent local Docker run output) for this closeout change set.
 
 ---
@@ -75,5 +78,5 @@ Closeout requires these paths to remain validated in integration tests.
 ## Current status (2026-03-22)
 
 - **DBE-1 (Phase 3 persistence expansion implemented):** PASS by code + integration suite scope.
-- **DBE-2 (Reproducible integration gate evidence for this pass):** PARTIAL pending CI run attachment.
-- **Local environment command status:** WARNING (Docker unavailable).
+- **DBE-2 (Reproducible integration gate evidence for this pass):** INCOMPLETE (no attachable CI/local runtime proof artifact in this environment).
+- **Local environment command status:** WARNING (Docker unavailable; CI retrieval tooling unavailable).
