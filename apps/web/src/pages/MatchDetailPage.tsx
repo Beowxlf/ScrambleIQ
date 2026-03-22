@@ -5,6 +5,7 @@ import { AnalyticsPanel } from '../features/analytics/AnalyticsPanel';
 import { DatasetToolsPanel } from '../features/dataset/DatasetToolsPanel';
 import { EventPanel } from '../features/events/EventPanel';
 import { MatchMetadataSection } from '../features/match-metadata/MatchMetadataSection';
+import { MatchReviewSummaryPanel } from '../features/review-summary/MatchReviewSummaryPanel';
 import { SavedReviewPresetPanel } from '../features/review-presets/SavedReviewPresetPanel';
 import { ReviewTemplatePanel } from '../features/review-templates/ReviewTemplatePanel';
 import { useMatchMetadata } from '../features/match-metadata/useMatchMetadata';
@@ -116,6 +117,7 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
           <div className="section-stack">
             <section aria-labelledby="review-context-heading" ref={reviewContextRef}>
               <h3 id="review-context-heading">Review Context</h3>
+              <MatchReviewSummaryPanel api={api} matchId={matchId} refreshTrigger={workspaceRefreshTrigger} />
               <AnalyticsPanel api={api} matchId={matchId} refreshTrigger={workspaceRefreshTrigger} />
               <SavedReviewPresetPanel api={api} reviewSettings={reviewSettings} onApplyReviewSettings={setReviewSettings} />
               <ReviewTemplatePanel api={api} />

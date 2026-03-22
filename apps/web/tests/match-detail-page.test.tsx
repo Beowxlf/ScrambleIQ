@@ -140,6 +140,7 @@ describe('MatchDetailPage', () => {
 
     expect(await screen.findByRole('heading', { name: 'Review Workspace' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Review Context' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Single-Match Review Summary' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Timeline Review' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Data Quality Tools' })).toBeInTheDocument();
   });

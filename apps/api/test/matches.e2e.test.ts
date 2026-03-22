@@ -750,6 +750,60 @@ describe('MatchesController', () => {
     expect(Array.isArray(response.body.issues)).toBe(true);
   });
 
+  it('returns a deterministic single-match review summary', async () => {
+    const matchId = await createMatch();
+
+    await requestWithAuth('post', `/matches/${matchId}/events`)
+      .send({ timestamp: 18, eventType: 'takedown_attempt', competitor: 'A' })
+      .expect(201);
+
+    await requestWithAuth('post', `/matches/${matchId}/events`)
+      .send({ timestamp: 24, eventType: 'guard_pass', competitor: 'B' })
+      .expect(201);
+
+    await requestWithAuth('post', `/matches/${matchId}/positions`)
+      .send({ position: 'standing', competitorTop: 'A', timestampStart: 0, timestampEnd: 12 })
+      .expect(201);
+
+    await requestWithAuth('post', `/matches/${matchId}/video`)
+      .send({
+        title: 'Primary Camera',
+        sourceType: 'remote_url',
+        sourceUrl: 'https://example.com/video.mp4',
+      })
+      .expect(201);
+
+    const firstResponse = await requestWithAuth('get', `/matches/${matchId}/review-summary`).expect(200);
+    const secondResponse = await requestWithAuth('get', `/matches/${matchId}/review-summary`).expect(200);
+
+    expect(firstResponse.body).toEqual(secondResponse.body);
+    expect(firstResponse.body.match.id).toBe(matchId);
+    expect(firstResponse.body.eventCount).toBe(2);
+    expect(firstResponse.body.positionCount).toBe(1);
+    expect(firstResponse.body.hasVideo).toBe(true);
+    expect(firstResponse.body.analytics.matchId).toBe(matchId);
+    expect(firstResponse.body.analytics.totalEventCount).toBe(2);
+    expect(firstResponse.body.analytics.totalPositionCount).toBe(1);
+    expect(firstResponse.body.validation.isValid).toBe(true);
+    expect(firstResponse.body.validation.issueCount).toBeGreaterThanOrEqual(0);
+    expect(firstResponse.body.validation.issueCountsBySeverity.info).toBeGreaterThanOrEqual(0);
+    expect(firstResponse.body.validation.issueCountsBySeverity.warning).toBeGreaterThanOrEqual(0);
+    expect(firstResponse.body.validation.issueCountsBySeverity.error).toBeGreaterThanOrEqual(0);
+    expect(
+      firstResponse.body.validation.issueCountsBySeverity.info
+      + firstResponse.body.validation.issueCountsBySeverity.warning
+      + firstResponse.body.validation.issueCountsBySeverity.error,
+    ).toBe(firstResponse.body.validation.issueCount);
+  });
+
+  it('returns 404 for review summary of an unknown match', async () => {
+    await requestWithAuth('get', `/matches/${missingMatchId}/review-summary`)
+      .expect(404)
+      .expect(({ body }: { body: { message: string } }) => {
+        expect(body.message).toBe(`Match with id ${missingMatchId} was not found.`);
+      });
+  });
+
   it('returns 404 for validation of an unknown match', async () => {
     await requestWithAuth('get', `/matches/${missingMatchId}/validate`)
       .expect(404)

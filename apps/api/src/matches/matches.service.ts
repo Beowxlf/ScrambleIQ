@@ -9,6 +9,7 @@ import type {
   MatchDatasetPosition,
   MatchDatasetVideo,
   MatchListResponse,
+  MatchReviewSummary,
   PositionType,
 } from '@scrambleiq/shared';
 import { POSITION_TYPES } from '@scrambleiq/shared';
@@ -107,6 +108,55 @@ export class MatchesService {
     const report = await this.datasetValidationService.validateMatchDataset(id, analytics);
     await this.datasetValidationRepository.upsert(id, report);
     return report;
+  }
+
+  async getReviewSummary(id: string): Promise<MatchReviewSummary> {
+    const match = await this.matchRepository.findById(id);
+
+    if (!match) {
+      throw new NotFoundException(`Match with id ${id} was not found.`);
+    }
+
+    const analyticsPromise = this.getAnalytics(id);
+    const [events, positions, video, analytics] = await Promise.all([
+      this.eventRepository.findByMatchId(id),
+      this.positionRepository.findByMatchId(id),
+      this.videoRepository.findByMatchId(id),
+      analyticsPromise,
+    ]);
+    const validation = await this.datasetValidationService.validateMatchDataset(id, analytics);
+
+    const issueCountsBySeverity = validation.issues.reduce(
+      (counts, issue) => {
+        if (issue.severity === 'INFO') {
+          counts.info += 1;
+        } else if (issue.severity === 'WARNING') {
+          counts.warning += 1;
+        } else if (issue.severity === 'ERROR') {
+          counts.error += 1;
+        }
+
+        return counts;
+      },
+      {
+        info: 0,
+        warning: 0,
+        error: 0,
+      },
+    );
+
+    return {
+      match,
+      eventCount: events.length,
+      positionCount: positions.length,
+      hasVideo: video !== null,
+      analytics,
+      validation: {
+        isValid: validation.isValid,
+        issueCount: validation.issueCount,
+        issueCountsBySeverity,
+      },
+    };
   }
 
   async exportDataset(id: string): Promise<MatchDatasetExport> {
