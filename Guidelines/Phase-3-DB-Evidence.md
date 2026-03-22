@@ -59,10 +59,11 @@ Closeout requires these paths to remain validated in integration tests.
 
 ## Commands run for this closeout hardening pass (2026-03-22)
 
-- `npm run test:integration` → **WARNING**: local environment lacks Docker (`Error: docker is required to run integration tests.`).
-- `gh run list --workflow ci.yml --limit 5` → **WARNING**: `gh` CLI is not installed in this environment (`gh: command not found`).
-- `git remote -v` → **WARNING**: no Git remote is configured in this checkout, so CI run URLs cannot be derived from local metadata.
-- `npm run test:integration:ci` → not run locally; this remains the canonical CI execution command when a PostgreSQL service is already provisioned.
+- `npm run test:integration` → **WARNING**: local environment lacks Docker.
+  - Observed output:
+    - `Error: docker is required to run integration tests.`
+    - `Install Docker (with Compose) and retry.`
+- `npm run test:integration:ci` → not run locally because no PostgreSQL service is provisioned in this environment; this remains the canonical CI execution command when a PostgreSQL service is already available.
 
 ---
 
@@ -70,13 +71,14 @@ Closeout requires these paths to remain validated in integration tests.
 
 - PostgreSQL integration validation path is implemented and reproducible through CI workflow design (`integration-postgres`).
 - Local Docker unavailability in this environment is a tooling caveat, not evidence of a code regression.
-- This environment cannot currently retrieve CI proof artifacts because neither GitHub CLI nor remote repository metadata is available.
-- Phase 3 formal closeout still requires attaching a passing `integration-postgres` CI result (or equivalent local Docker run output) for this closeout change set.
+- A passing runtime artifact is still required for audit completion; this repository update does not include a passing local `npm run test:integration` transcript or a linked passing CI `integration-postgres` run artifact.
+- Phase 3 formal closeout remains blocked until one of those passing artifacts is attached to the closeout evidence set.
 
 ---
 
 ## Current status (2026-03-22)
 
 - **DBE-1 (Phase 3 persistence expansion implemented):** PASS by code + integration suite scope.
-- **DBE-2 (Reproducible integration gate evidence for this pass):** INCOMPLETE (no attachable CI/local runtime proof artifact in this environment).
-- **Local environment command status:** WARNING (Docker unavailable; CI retrieval tooling unavailable).
+- **DBE-2 (Reproducible integration gate evidence for this pass):** INCOMPLETE (no attached passing CI/local runtime proof artifact in this repository update).
+- **Final closeout posture for Phase 3 DB evidence:** NOT READY FOR FORMAL CLOSEOUT.
+- **Local environment command status:** WARNING (`npm run test:integration` cannot execute without Docker here).
