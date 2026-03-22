@@ -1,23 +1,24 @@
 # ScrambleIQ
 
-ScrambleIQ Phase 2 (manual-first workflow refinement) is implemented and in formal closeout signoff.
+ScrambleIQ Phase 3 (workflow tooling expansion) is implemented and in closeout hardening.
 
 This repository includes a minimal full-stack TypeScript scaffold aligned to the project tech stack:
 
-## Phase 2 closeout status
+## Phase 3 closeout status
 
-Phase 2 closeout evidence is consolidated in:
+Phase 3 closeout evidence is consolidated in:
 
-- `Guidelines/Phase-2-Closeout-Checklist.md`
-- `Guidelines/Phase-2-Acceptance-Evidence.md`
-- `Guidelines/Phase-2-DB-Evidence.md`
-- `Guidelines/Phase-2-Discovery-Sorting-Decision.md`
+- `Guidelines/Phase-3-Closeout-Checklist.md`
+- `Guidelines/Phase-3-Acceptance-Evidence.md`
+- `Guidelines/Phase-3-DB-Evidence.md`
+- `Guidelines/Phase-2-Discovery-Sorting-Decision.md` (historical carry-forward)
 
 Current closeout posture:
 
 - Root quality gates pass (`npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`).
 - PostgreSQL evidence is represented through CI `integration-postgres` (`npm run test:integration:ci`) with local Docker validation available via `npm run test:integration`.
-- Discovery sorting for Phase 2 is fixed deterministic ordering (newest `eventDate` first, stable tie-break), with interactive sorting deferred out of scope.
+- Phase 3 feature acceptance is documented by area in `Guidelines/Phase-3-Acceptance-Evidence.md` and tracked as a binary gate list in `Guidelines/Phase-3-Closeout-Checklist.md`.
+- PostgreSQL closeout caveats and reproducible CI evidence path are documented in `Guidelines/Phase-3-DB-Evidence.md`.
 
 
 - Frontend: React + TypeScript + Vite (`apps/web`)
@@ -82,7 +83,7 @@ npm run start --workspace @scrambleiq/api
 - If `DATABASE_URL` is not set, the API uses in-memory repositories as a development fallback.
 - The HTTP API surface is the same in both modes; only persistence backing changes.
 
-## API authentication baseline (phase-one)
+## API authentication baseline (manual-first runtime)
 
 The API now enforces a minimal shared-token guard for all protected endpoints, including match-scoped routes (`/matches`, `/events`, `/positions`, `/video`, analytics/export/validate routes), review template routes (`/review-templates`), and saved review preset routes (`/saved-review-presets`).
 
@@ -107,7 +108,7 @@ If you override `API_AUTH_TOKEN`, set the same value in `VITE_API_AUTH_TOKEN` fo
 
 ## PostgreSQL integration testing
 
-Phase-1 now includes PostgreSQL-backed integration tests that validate real repository/service behavior against a live database.
+Phase 3 includes PostgreSQL-backed integration tests that validate real repository/service behavior against a live database, including review templates and saved review presets.
 
 `npm run test:integration` is a required quality gate for CI alongside the root lint/typecheck/test/build scripts.
 
@@ -169,7 +170,7 @@ Integration coverage verifies:
 
 ## Frontend architecture planning
 
-A dedicated Phase-1 frontend refactor plan is documented in `Guidelines/Frontend-Architecture-Refactor-Plan.md`.
+A dedicated frontend refactor plan is documented in `Guidelines/Frontend-Architecture-Refactor-Plan.md`.
 
 The plan preserves existing behavior while incrementally decomposing `apps/web/src/App.tsx` into page, feature, and hook modules.
 
@@ -186,10 +187,11 @@ Current extraction status:
 - Review template management UI/state is extracted into `apps/web/src/features/review-templates/` (`ReviewTemplatePanel`, `ReviewTemplateForm`, `ReviewTemplateList`, `AppliedReviewTemplate`, `useReviewTemplates`) with deterministic create/list/view/edit/delete and manual apply workflow support.
 - Saved review preset management UI/state is extracted into `apps/web/src/features/review-presets/` (`SavedReviewPresetPanel`, `SavedReviewPresetForm`, `SavedReviewPresetList`, `useSavedReviewPresets`) with deterministic create/list/view/edit/delete and manual apply-to-review-settings workflow support.
 - Single-match review summary UI/state is extracted into `apps/web/src/features/review-summary/` (`MatchReviewSummaryPanel`, `useMatchReviewSummary`) with deterministic, coach-readable summary composition from stored match metadata, manual annotations, analytics, and validation rollups.
+- Taxonomy hygiene guardrails UI/state is extracted into `apps/web/src/features/taxonomy-guardrails/` (`TaxonomyGuardrailsPanel`, `useTaxonomyGuardrails`) with explicit warning visibility and explicit operator-driven normalization actions.
 
-With dataset tooling extraction complete, the planned Phase-1 frontend modularization slices are now fully implemented.
+With review templates, review presets, review summary, and taxonomy guardrails extraction complete, the planned modularization slices are implemented for the current manual-first + workflow-tooling scope.
 
-Phase-1 frontend architecture hardening pass is also complete. The frontend now follows a standardized feature module pattern across `apps/web/src/features/*`:
+Frontend architecture hardening for the current phase baseline is complete. The frontend now follows a standardized feature module pattern across `apps/web/src/features/*`:
 
 - `*Panel` component acts as the feature container and composition root
 - `*Form` component handles feature input/edit UX (where applicable)
@@ -198,7 +200,7 @@ Phase-1 frontend architecture hardening pass is also complete. The frontend now 
 
 `pages/MatchDetailPage.tsx` remains responsible only for page orchestration concerns: route-bound match loading/edit/delete, cross-feature analytics refresh triggers, and cross-feature video seek selection.
 
-## Phase-one feature: Match management, timeline events, position tracking, and synchronized video review
+## Current feature baseline: Match management, timeline events, position tracking, synchronized video review, and Phase 3 workflow tooling
 
 ### Frontend (`apps/web`)
 

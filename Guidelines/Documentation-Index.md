@@ -21,6 +21,10 @@ Terminology standard:
 | `Guidelines/Version-1-Scope.md` | Current source of truth | Implemented V1 boundaries and explicit out-of-scope list. |
 | `Guidelines/Roadmap.md` | Current source of truth | Phased future direction anchored on manual-first V1 baseline. |
 | `Guidelines/Phase-2-Kickoff.md` | Current source of truth | Phase 2 acceptance contract and exclusions. |
+| `Guidelines/Phase-3-Kickoff.md` | Current source of truth | Phase 3 acceptance contract and closeout gate definition. |
+| `Guidelines/Phase-3-Closeout-Checklist.md` | Current source of truth | Binary closeout gate tracker for Phase 3. |
+| `Guidelines/Phase-3-Acceptance-Evidence.md` | Current source of truth | Acceptance evidence mapping for implemented Phase 3 workstreams. |
+| `Guidelines/Phase-3-DB-Evidence.md` | Current source of truth | PostgreSQL integration evidence path for Phase 3 closeout. |
 | `Guidelines/Tech-Stack.md` | Current source of truth | Architecture/stack decisions with future ML clearly scoped as future. |
 | `Guidelines/System-Architecture.md` | Current source of truth | Rewritten to implemented manual-first architecture. |
 | `Guidelines/User-Flow-Doc.md` | Current source of truth | Rewritten to implemented manual-first user journey. |
