@@ -107,4 +107,86 @@ describe('PostgreSQL services integration', () => {
     expect(persisted?.matchId).toBe(matchId);
     expect(persisted?.issueCount).toBe(validateResponse.body.issueCount);
   });
+
+  it('persists review templates and saved review presets across API restarts', async () => {
+    const appA = await createTestApp();
+
+    const createTemplateResponse = await requestWithAuth(appA, 'post', '/review-templates')
+      .send({
+        name: 'Competition Review',
+        description: 'Template for competition match review',
+        scope: 'single_match_review',
+        checklistItems: [
+          { label: 'Initial exchange', isRequired: true, sortOrder: 0 },
+          { label: 'Endgame sequence', isRequired: false, sortOrder: 1 },
+        ],
+      })
+      .expect(201);
+    const templateId = createTemplateResponse.body.id as string;
+
+    const createPresetResponse = await requestWithAuth(appA, 'post', '/saved-review-presets')
+      .send({
+        name: 'Validation-first',
+        description: 'Prioritize validation issues',
+        scope: 'match_detail',
+        config: {
+          showOnlyValidationIssues: true,
+          positionFilters: ['mount'],
+        },
+      })
+      .expect(201);
+    const presetId = createPresetResponse.body.id as string;
+
+    await appA.close();
+
+    const appB = await createTestApp();
+
+    const templateList = await requestWithAuth(appB, 'get', '/review-templates').expect(200);
+    expect(templateList.body).toHaveLength(1);
+    expect(templateList.body[0].id).toBe(templateId);
+
+    const templateDetail = await requestWithAuth(appB, 'get', `/review-templates/${templateId}`).expect(200);
+    expect(templateDetail.body.checklistItems.map((item: { sortOrder: number }) => item.sortOrder)).toEqual([0, 1]);
+
+    const presetList = await requestWithAuth(appB, 'get', '/saved-review-presets').expect(200);
+    expect(presetList.body).toHaveLength(1);
+    expect(presetList.body[0].id).toBe(presetId);
+
+    const presetDetail = await requestWithAuth(appB, 'get', `/saved-review-presets/${presetId}`).expect(200);
+    expect(presetDetail.body.config).toEqual({
+      showOnlyValidationIssues: true,
+      positionFilters: ['mount'],
+    });
+
+    await appB.close();
+  });
+
+  it('keeps validation and not-found behavior parity for review templates and presets on PostgreSQL runtime', async () => {
+    const app = await createTestApp();
+    const missingId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+
+    await requestWithAuth(app, 'get', `/review-templates/${missingId}`).expect(404);
+    await requestWithAuth(app, 'delete', `/saved-review-presets/${missingId}`).expect(404);
+
+    const invalidTemplateResponse = await requestWithAuth(app, 'post', '/review-templates')
+      .send({
+        name: 12,
+        scope: 'invalid_scope',
+        checklistItems: [],
+      })
+      .expect(400);
+    expect(invalidTemplateResponse.body.message).toContain('name must be a string');
+    expect(invalidTemplateResponse.body.message).toContain('scope must be one of the following values: single_match_review');
+
+    const invalidPresetResponse = await requestWithAuth(app, 'post', '/saved-review-presets')
+      .send({
+        name: 'Invalid',
+        scope: 'match_detail',
+        config: { competitorFilter: 'C' },
+      })
+      .expect(400);
+    expect(invalidPresetResponse.body.message).toContain('config.competitorFilter must be one of the following values: A, B');
+
+    await app.close();
+  });
 });

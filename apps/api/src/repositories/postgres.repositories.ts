@@ -3,6 +3,10 @@ import type {
   CreateMatchDto,
   CreateMatchVideoDto,
   CreatePositionStateDto,
+  ReviewTemplate,
+  ReviewTemplateMetadata,
+  SavedReviewPreset,
+  SavedReviewPresetMetadata,
   CreateTimelineEventDto,
   DatasetValidationReport,
   Match,
@@ -22,6 +26,12 @@ import { DatasetValidationRepository } from './dataset-validation.repository';
 import { EventRepository } from './event.repository';
 import { MatchRepository } from './match.repository';
 import { PositionRepository } from './position.repository';
+import { ReviewPresetRepository, type CreateReviewPresetInput, type UpdateReviewPresetInput } from './review-preset.repository';
+import {
+  ReviewTemplateRepository,
+  type CreateReviewTemplateInput,
+  type UpdateReviewTemplateInput,
+} from './review-template.repository';
 import { VideoRepository } from './video.repository';
 
 @Injectable()
@@ -125,5 +135,206 @@ export class PostgresDatasetValidationRepository implements DatasetValidationRep
     );
 
     return rows[0]?.report;
+  }
+}
+
+@Injectable()
+export class PostgresReviewTemplateRepository implements ReviewTemplateRepository {
+  constructor(@Inject(DATABASE_CLIENT) private readonly client: PsqlClient) {}
+
+  async create(input: CreateReviewTemplateInput): Promise<ReviewTemplate> {
+    const template = (await this.client.rows<ReviewTemplateMetadata>(`
+      INSERT INTO public.review_templates (name, description, scope)
+      VALUES (${sqlLiteral(input.name)}, ${sqlLiteral(input.description)}, ${sqlLiteral(input.scope)})
+      RETURNING id, name, description, scope, created_at::text as "createdAt", updated_at::text as "updatedAt"
+    `))[0];
+
+    const checklistItems = await this.insertChecklistItems(template.id, input.checklistItems);
+
+    return {
+      ...template,
+      checklistItems,
+      checklistItemCount: checklistItems.length,
+    };
+  }
+
+  async findAllMetadata(): Promise<ReviewTemplateMetadata[]> {
+    return this.client.rows<ReviewTemplateMetadata>(`
+      SELECT
+        t.id,
+        t.name,
+        t.description,
+        t.scope,
+        COUNT(i.id)::integer as "checklistItemCount",
+        t.created_at::text as "createdAt",
+        t.updated_at::text as "updatedAt"
+      FROM public.review_templates t
+      LEFT JOIN public.review_template_checklist_items i ON i.template_id = t.id
+      GROUP BY t.id
+      ORDER BY t.updated_at DESC, t.id DESC
+    `);
+  }
+
+  async findById(id: string): Promise<ReviewTemplate | undefined> {
+    const templateRows = await this.client.rows<ReviewTemplateMetadata>(`
+      SELECT
+        t.id,
+        t.name,
+        t.description,
+        t.scope,
+        COUNT(i.id)::integer as "checklistItemCount",
+        t.created_at::text as "createdAt",
+        t.updated_at::text as "updatedAt"
+      FROM public.review_templates t
+      LEFT JOIN public.review_template_checklist_items i ON i.template_id = t.id
+      WHERE t.id = ${sqlLiteral(id)}
+      GROUP BY t.id
+    `);
+
+    const template = templateRows[0];
+
+    if (!template) {
+      return undefined;
+    }
+
+    const checklistItems = await this.findChecklistItems(template.id);
+
+    return { ...template, checklistItems };
+  }
+
+  async update(id: string, input: UpdateReviewTemplateInput): Promise<ReviewTemplate | undefined> {
+    const template = (await this.client.rows<ReviewTemplateMetadata>(`
+      UPDATE public.review_templates
+      SET
+        name = COALESCE(${sqlLiteral(input.name)}, name),
+        description = COALESCE(${sqlLiteral(input.description)}, description),
+        scope = COALESCE(${sqlLiteral(input.scope)}, scope),
+        updated_at = NOW()
+      WHERE id = ${sqlLiteral(id)}
+      RETURNING id, name, description, scope, created_at::text as "createdAt", updated_at::text as "updatedAt"
+    `))[0];
+
+    if (!template) {
+      return undefined;
+    }
+
+    if (input.checklistItems !== undefined) {
+      await this.client.execute(`DELETE FROM public.review_template_checklist_items WHERE template_id = ${sqlLiteral(id)}`);
+      await this.insertChecklistItems(id, input.checklistItems);
+    }
+
+    const checklistItems = await this.findChecklistItems(id);
+
+    return {
+      ...template,
+      checklistItems,
+      checklistItemCount: checklistItems.length,
+    };
+  }
+
+  async delete(id: string): Promise<boolean> {
+    const rows = await this.client.rows<{ id: string }>(`
+      DELETE FROM public.review_templates
+      WHERE id = ${sqlLiteral(id)}
+      RETURNING id
+    `);
+
+    return rows.length > 0;
+  }
+
+  private async insertChecklistItems(
+    templateId: string,
+    items: Array<{ label: string; description?: string; isRequired: boolean; sortOrder: number }>,
+  ): Promise<ReviewTemplate['checklistItems']> {
+    for (const item of items) {
+      await this.client.execute(`
+        INSERT INTO public.review_template_checklist_items (template_id, label, description, is_required, sort_order)
+        VALUES (${sqlLiteral(templateId)}, ${sqlLiteral(item.label)}, ${sqlLiteral(item.description)}, ${sqlLiteral(item.isRequired)}, ${sqlLiteral(item.sortOrder)})
+      `);
+    }
+
+    return this.findChecklistItems(templateId);
+  }
+
+  private async findChecklistItems(templateId: string): Promise<ReviewTemplate['checklistItems']> {
+    return this.client.rows<ReviewTemplate['checklistItems'][number]>(`
+      SELECT
+        id,
+        label,
+        description,
+        is_required as "isRequired",
+        sort_order as "sortOrder"
+      FROM public.review_template_checklist_items
+      WHERE template_id = ${sqlLiteral(templateId)}
+      ORDER BY sort_order ASC, id ASC
+    `);
+  }
+}
+
+@Injectable()
+export class PostgresReviewPresetRepository implements ReviewPresetRepository {
+  constructor(@Inject(DATABASE_CLIENT) private readonly client: PsqlClient) {}
+
+  async create(input: CreateReviewPresetInput): Promise<SavedReviewPreset> {
+    return (await this.client.rows<SavedReviewPreset>(`
+      INSERT INTO public.review_presets (name, description, scope, config)
+      VALUES (${sqlLiteral(input.name)}, ${sqlLiteral(input.description)}, ${sqlLiteral(input.scope)}, ${sqlLiteral(JSON.stringify(input.config))}::jsonb)
+      RETURNING id, name, description, scope, config, created_at::text as "createdAt", updated_at::text as "updatedAt"
+    `))[0];
+  }
+
+  async findAllMetadata(): Promise<SavedReviewPresetMetadata[]> {
+    return this.client.rows<SavedReviewPresetMetadata>(`
+      SELECT
+        id,
+        name,
+        description,
+        scope,
+        created_at::text as "createdAt",
+        updated_at::text as "updatedAt"
+      FROM public.review_presets
+      ORDER BY updated_at DESC, id DESC
+    `);
+  }
+
+  async findById(id: string): Promise<SavedReviewPreset | undefined> {
+    return (await this.client.rows<SavedReviewPreset>(`
+      SELECT
+        id,
+        name,
+        description,
+        scope,
+        config,
+        created_at::text as "createdAt",
+        updated_at::text as "updatedAt"
+      FROM public.review_presets
+      WHERE id = ${sqlLiteral(id)}
+    `))[0];
+  }
+
+  async update(id: string, input: UpdateReviewPresetInput): Promise<SavedReviewPreset | undefined> {
+    const configLiteral = input.config !== undefined ? `${sqlLiteral(JSON.stringify(input.config))}::jsonb` : 'NULL';
+
+    return (await this.client.rows<SavedReviewPreset>(`
+      UPDATE public.review_presets
+      SET
+        name = COALESCE(${sqlLiteral(input.name)}, name),
+        description = COALESCE(${sqlLiteral(input.description)}, description),
+        scope = COALESCE(${sqlLiteral(input.scope)}, scope),
+        config = COALESCE(${configLiteral}, config),
+        updated_at = NOW()
+      WHERE id = ${sqlLiteral(id)}
+      RETURNING id, name, description, scope, config, created_at::text as "createdAt", updated_at::text as "updatedAt"
+    `))[0];
+  }
+
+  async delete(id: string): Promise<boolean> {
+    const rows = await this.client.rows<{ id: string }>(`
+      DELETE FROM public.review_presets
+      WHERE id = ${sqlLiteral(id)}
+      RETURNING id
+    `);
+
+    return rows.length > 0;
   }
 }
