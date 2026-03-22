@@ -275,6 +275,28 @@ export interface TaxonomyNormalizationRequest {
   action: TaxonomyNormalizationAction;
 }
 
+export interface TaxonomyNormalizationResult {
+  field: 'eventType';
+  action: TaxonomyNormalizationAction;
+  matchId: string;
+  fromValue: string;
+  toValue: string;
+  updatedEventCount: number;
+}
+
+export const CANONICAL_EVENT_TYPES = [
+  'takedown_attempt',
+  'takedown_completed',
+  'guard_pass',
+  'sweep',
+  'submission_attempt',
+  'escape',
+  'reversal',
+  'entry',
+] as const;
+
+export type CanonicalEventType = (typeof CANONICAL_EVENT_TYPES)[number];
+
 export {
   MAX_COMPETITOR_NAME_LENGTH,
   MAX_EVENT_TYPE_LENGTH,

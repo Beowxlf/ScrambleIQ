@@ -70,6 +70,29 @@ describe('createHttpMatchesApi path parameter encoding', () => {
     expect(fetchImpl).toHaveBeenCalledWith('http://localhost:3000/matches/match%2Fwith%20spaces/review-summary', expect.objectContaining({ headers: expect.objectContaining({ 'x-api-key': 'scrambleiq-local-dev-token' }) }));
   });
 
+  it('encodes taxonomy guardrail path params', async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ hasWarnings: false, warningCount: 0, warnings: [] }), { status: 200 }));
+    const api = createHttpMatchesApi({ baseUrl: 'http://localhost:3000', fetchImpl });
+
+    await api.getTaxonomyGuardrails?.('match/with spaces');
+
+    expect(fetchImpl).toHaveBeenCalledWith('http://localhost:3000/matches/match%2Fwith%20spaces/taxonomy-guardrails', expect.objectContaining({ headers: expect.objectContaining({ 'x-api-key': 'scrambleiq-local-dev-token' }) }));
+  });
+
+  it('encodes taxonomy normalization path params', async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ updatedEventCount: 1 }), { status: 201 }));
+    const api = createHttpMatchesApi({ baseUrl: 'http://localhost:3000', fetchImpl });
+
+    await api.applyTaxonomyNormalization?.('match/with spaces', {
+      field: 'eventType',
+      fromValue: 'Guard Pass',
+      toValue: 'guard_pass',
+      action: 'apply_canonical',
+    });
+
+    expect(fetchImpl).toHaveBeenCalledWith('http://localhost:3000/matches/match%2Fwith%20spaces/taxonomy-normalization', expect.objectContaining({ headers: expect.objectContaining({ 'x-api-key': 'scrambleiq-local-dev-token' }) }));
+  });
+
 
   it('encodes review-template path params', async () => {
     const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ id: 'ok' }), { status: 200 }));

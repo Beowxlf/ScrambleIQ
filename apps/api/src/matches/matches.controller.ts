@@ -1,11 +1,22 @@
 import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Inject, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
-import type { DatasetValidationReport, Match, MatchAnalyticsSummary, MatchDatasetExport, MatchListResponse, MatchReviewSummary } from '@scrambleiq/shared';
+import type {
+  DatasetValidationReport,
+  Match,
+  MatchAnalyticsSummary,
+  MatchDatasetExport,
+  MatchListResponse,
+  MatchReviewSummary,
+  TaxonomyGuardrailResult,
+  TaxonomyNormalizationResult,
+} from '@scrambleiq/shared';
 
 import { CreateMatchDto } from './create-match.dto';
 import { MatchesService } from './matches.service';
 import { UpdateMatchDto } from './update-match.dto';
 import { ListMatchesQueryDto } from './list-matches-query.dto';
 import { validateAndNormalizeListMatchesQuery } from './list-matches-query-validation';
+import { TaxonomyNormalizationDto } from './taxonomy-normalization.dto';
+import { validateTaxonomyNormalizationPayload } from './taxonomy-normalization.validation';
 
 @Controller('matches')
 export class MatchesController {
@@ -56,6 +67,25 @@ export class MatchesController {
   @Get(':id/review-summary')
   getReviewSummary(@Param('id', ParseUUIDPipe) id: string): Promise<MatchReviewSummary> {
     return this.matchesService.getReviewSummary(id);
+  }
+
+  @Get(':id/taxonomy-guardrails')
+  getTaxonomyGuardrails(@Param('id', ParseUUIDPipe) id: string): Promise<TaxonomyGuardrailResult> {
+    return this.matchesService.getTaxonomyGuardrails(id);
+  }
+
+  @Post(':id/taxonomy-normalization')
+  applyTaxonomyNormalization(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() payload: TaxonomyNormalizationDto,
+  ): Promise<TaxonomyNormalizationResult> {
+    const errors = validateTaxonomyNormalizationPayload(payload);
+
+    if (errors.length > 0) {
+      throw new BadRequestException(errors);
+    }
+
+    return this.matchesService.applyTaxonomyNormalization(id, payload);
   }
 
   @Delete(':id')
