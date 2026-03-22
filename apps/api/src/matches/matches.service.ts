@@ -11,8 +11,11 @@ import type {
   MatchListResponse,
   MatchReviewSummary,
   PositionType,
+  TaxonomyGuardrailResult,
+  TaxonomyNormalizationRequest,
+  TaxonomyNormalizationResult,
 } from '@scrambleiq/shared';
-import { POSITION_TYPES } from '@scrambleiq/shared';
+import { CANONICAL_EVENT_TYPES, POSITION_TYPES } from '@scrambleiq/shared';
 
 import {
   DATASET_VALIDATION_REPOSITORY,
@@ -39,6 +42,20 @@ export class MatchesService {
     private readonly datasetValidationRepository: DatasetValidationRepository,
     @Inject(DatasetValidationService) private readonly datasetValidationService: DatasetValidationService,
   ) {}
+
+  private toEventTypeKey(value: string): string {
+    return value
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+  }
+
+  private resolveCanonicalEventType(value: string): string | null {
+    const candidateKey = this.toEventTypeKey(value);
+    const match = CANONICAL_EVENT_TYPES.find((canonicalValue) => this.toEventTypeKey(canonicalValue) === candidateKey);
+    return match ?? null;
+  }
 
   async create(input: CreateMatchDto): Promise<Match> {
     const errors = validateCreateMatchPayload(input);
@@ -156,6 +173,103 @@ export class MatchesService {
         issueCount: validation.issueCount,
         issueCountsBySeverity,
       },
+    };
+  }
+
+  async getTaxonomyGuardrails(id: string): Promise<TaxonomyGuardrailResult> {
+    const match = await this.matchRepository.findById(id);
+
+    if (!match) {
+      throw new NotFoundException(`Match with id ${id} was not found.`);
+    }
+
+    const events = await this.eventRepository.findByMatchId(id);
+    const groupedObservedEventTypes = new Map<string, number>();
+
+    events.forEach((event) => {
+      groupedObservedEventTypes.set(event.eventType, (groupedObservedEventTypes.get(event.eventType) ?? 0) + 1);
+    });
+
+    const warnings = Array
+      .from(groupedObservedEventTypes.entries())
+      .sort(([leftValue], [rightValue]) => leftValue.localeCompare(rightValue))
+      .flatMap(([observedValue, usageCount]) => {
+        const canonicalValue = this.resolveCanonicalEventType(observedValue);
+
+        if (!canonicalValue || observedValue === canonicalValue) {
+          return [];
+        }
+
+        return [{
+          field: 'eventType' as const,
+          observedValue,
+          canonicalValue,
+          severity: 'WARNING' as const,
+          message: `Normalize "${observedValue}" to canonical "${canonicalValue}" (${usageCount} event${usageCount === 1 ? '' : 's'}).`,
+        }];
+      });
+
+    return {
+      hasWarnings: warnings.length > 0,
+      warningCount: warnings.length,
+      warnings,
+    };
+  }
+
+  async applyTaxonomyNormalization(id: string, request: TaxonomyNormalizationRequest): Promise<TaxonomyNormalizationResult> {
+    const match = await this.matchRepository.findById(id);
+
+    if (!match) {
+      throw new NotFoundException(`Match with id ${id} was not found.`);
+    }
+
+    if (request.field !== 'eventType') {
+      throw new BadRequestException(['field must be eventType']);
+    }
+
+    if (request.action !== 'apply_canonical') {
+      throw new BadRequestException(['action must be apply_canonical']);
+    }
+
+    const canonicalValue = this.resolveCanonicalEventType(request.fromValue);
+
+    if (!canonicalValue) {
+      throw new BadRequestException([`fromValue "${request.fromValue}" does not map to a supported canonical event type`]);
+    }
+
+    if (request.toValue !== canonicalValue) {
+      throw new BadRequestException([`toValue must equal canonical value "${canonicalValue}" for fromValue "${request.fromValue}"`]);
+    }
+
+    const matchEvents = (await this.eventRepository.findByMatchId(id))
+      .slice()
+      .sort((left, right) => left.timestamp - right.timestamp || left.id.localeCompare(right.id));
+
+    let updatedEventCount = 0;
+
+    for (const event of matchEvents) {
+      if (event.eventType !== request.fromValue) {
+        continue;
+      }
+
+      const updatedEvent = await this.eventRepository.update(event.id, {
+        eventType: request.toValue,
+      });
+
+      if (!updatedEvent) {
+        throw new NotFoundException(`Timeline event with id ${event.id} was not found.`);
+      }
+
+      updatedEventCount += 1;
+    }
+
+    return {
+      field: 'eventType',
+      action: request.action,
+      matchId: id,
+      fromValue: request.fromValue,
+      toValue: request.toValue,
+      updatedEventCount,
     };
   }
 

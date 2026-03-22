@@ -8,6 +8,7 @@ import { MatchMetadataSection } from '../features/match-metadata/MatchMetadataSe
 import { MatchReviewSummaryPanel } from '../features/review-summary/MatchReviewSummaryPanel';
 import { SavedReviewPresetPanel } from '../features/review-presets/SavedReviewPresetPanel';
 import { ReviewTemplatePanel } from '../features/review-templates/ReviewTemplatePanel';
+import { TaxonomyGuardrailsPanel } from '../features/taxonomy-guardrails/TaxonomyGuardrailsPanel';
 import { useMatchMetadata } from '../features/match-metadata/useMatchMetadata';
 import { PositionPanel } from '../features/positions/PositionPanel';
 import { VideoPanel } from '../features/video/VideoPanel';
@@ -150,6 +151,12 @@ export function MatchDetailPage({ api, matchId }: { api: MatchesApi; matchId: st
 
             <section aria-labelledby="data-quality-tools-heading" ref={dataQualityToolsRef}>
               <h3 id="data-quality-tools-heading">Data Quality Tools</h3>
+              <TaxonomyGuardrailsPanel
+                api={api}
+                matchId={matchId}
+                refreshTrigger={workspaceRefreshTrigger}
+                onTaxonomyNormalized={refreshWorkspaceData}
+              />
               <DatasetToolsPanel api={api} matchId={matchId} refreshTrigger={workspaceRefreshTrigger} />
             </section>
           </div>

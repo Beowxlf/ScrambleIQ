@@ -10,6 +10,8 @@ import type {
   MatchDatasetExport,
   MatchReviewSummary,
   MatchVideo,
+  TaxonomyGuardrailResult,
+  TaxonomyNormalizationResult,
   SavedReviewPreset,
   SavedReviewPresetMetadata,
   ReviewTemplate,
@@ -96,6 +98,13 @@ export interface MatchesApi {
   getMatchReviewSummary?(matchId: string): Promise<MatchReviewSummary>;
   exportMatchDataset(matchId: string): Promise<MatchDatasetExport>;
   validateMatchDataset(matchId: string): Promise<DatasetValidationReport>;
+  getTaxonomyGuardrails?(matchId: string): Promise<TaxonomyGuardrailResult>;
+  applyTaxonomyNormalization?(matchId: string, payload: {
+    field: 'eventType';
+    fromValue: string;
+    toValue: string;
+    action: 'none' | 'apply_canonical';
+  }): Promise<TaxonomyNormalizationResult>;
   getMatchVideo(matchId: string): Promise<MatchVideo>;
   updateMatchVideo(id: string, payload: UpdateMatchVideoDto): Promise<MatchVideo>;
   deleteMatchVideo(id: string): Promise<void>;
@@ -552,6 +561,40 @@ export function createHttpMatchesApi(options: HttpMatchesApiOptions = {}): Match
       }
 
       return (await response.json()) as DatasetValidationReport;
+    },
+
+    async getTaxonomyGuardrails(matchId) {
+      const response = await authedFetch(`${baseUrl}/matches/${encodeURIComponent(matchId)}/taxonomy-guardrails`);
+
+      if (response.status === 404) {
+        throw new MatchNotFoundError(matchId);
+      }
+
+      if (!response.ok) {
+        await throwHttpRequestError(response, 'Failed to load taxonomy guardrails.');
+      }
+
+      return (await response.json()) as TaxonomyGuardrailResult;
+    },
+
+    async applyTaxonomyNormalization(matchId, payload) {
+      const response = await authedFetch(`${baseUrl}/matches/${encodeURIComponent(matchId)}/taxonomy-normalization`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.status === 404) {
+        throw new MatchNotFoundError(matchId);
+      }
+
+      if (!response.ok) {
+        await throwHttpRequestError(response, 'Failed to apply taxonomy normalization.');
+      }
+
+      return (await response.json()) as TaxonomyNormalizationResult;
     },
 
     async getMatchVideo(matchId) {
