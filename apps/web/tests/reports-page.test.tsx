@@ -19,6 +19,7 @@ function createReportingApiMock(overrides: Partial<ReportingApi> = {}): Reportin
       },
       eventTypeDistribution: [],
       positionTimeDistribution: [],
+      insights: [],
       isEmpty: true,
       emptyStateMessage: 'No collection data available.',
     }),
@@ -43,6 +44,7 @@ function createReportingApiMock(overrides: Partial<ReportingApi> = {}): Reportin
       ],
       eventTypeDeltas: [{ eventType: 'guard_pass', currentCount: 2, previousCount: 1, deltaCount: 1 }],
       positionTimeDeltas: [{ position: 'half_guard', currentDurationSeconds: 10, previousDurationSeconds: 4, deltaDurationSeconds: 6 }],
+      insights: [],
       dataSufficiency: {
         minimumMatchCount: 2,
         observedMatchCount: 2,
@@ -56,6 +58,7 @@ function createReportingApiMock(overrides: Partial<ReportingApi> = {}): Reportin
       issueCount: 3,
       issueCountsBySeverity: { info: 1, warning: 1, error: 1 },
       issueCountsByType: [{ type: 'MISSING_VIDEO', count: 1 }],
+      insights: [],
       matches: [
         {
           matchId: 'match-2',
@@ -83,6 +86,7 @@ function createReportingApiMock(overrides: Partial<ReportingApi> = {}): Reportin
         },
         eventTypeDistribution: [{ eventType: 'guard_pass', count: 2 }],
         positionTimeDistribution: [{ position: 'half_guard', durationSeconds: 10 }],
+        insights: [],
         isEmpty: false,
       },
       validation: {
@@ -92,6 +96,7 @@ function createReportingApiMock(overrides: Partial<ReportingApi> = {}): Reportin
         issueCountsBySeverity: { info: 0, warning: 0, error: 0 },
         issueCountsByType: [],
         matches: [],
+        insights: [],
       },
       matches: [
         {

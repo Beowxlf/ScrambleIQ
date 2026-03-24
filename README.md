@@ -70,6 +70,35 @@ npm run start --workspace @scrambleiq/api
   - If omitted, the frontend falls back to `http://localhost:3000`.
 - `VITE_API_AUTH_TOKEN` (optional): Token sent as `x-api-key` on API requests. Defaults to `scrambleiq-local-dev-token`.
 
+### Insight engine behavior (Phase 4)
+
+Reporting responses now include an additive `insights: string[]` field in:
+
+- `CollectionReviewSummary`
+- `CompetitorTrendSummary`
+- `CollectionValidationReport`
+
+Insight statements are deterministic and rule-based (no ML, no randomness). Each message follows an observation → context → implication pattern.
+
+Current backend thresholds:
+
+- **Collection summary**
+  - dominant event type / position time insight when share is **>= 40%** and at least **2 matches** are in scope
+  - unusual activity insight when average events per match is **<= 1.5** (low) or **>= 6.0** (high), with at least **3 matches**
+- **Competitor trends**
+  - trend insight only when current-window sample size is at least **3 matches**
+  - event/position change insight only when baseline (`previous`) volume is at least **4** and absolute change is **>= 15%**
+  - each trend insight includes explicit previous/current date window context
+- **Validation**
+  - reliability insight when at least **25%** of matches include errors
+  - recurring issue insight when an issue type appears in at least **30%** of matches
+
+Example insight outputs:
+
+- `Guard Retention accounts for 42.0 percent of tagged events, indicating concentrated tactical emphasis.`
+- `Takedown decreased 25.0 percent between 2026-03-01 to 2026-03-07 and 2026-03-08 to 2026-03-14, indicating a meaningful shift in event execution volume.`
+- `30.0 percent of matches include validation errors, indicating reduced dataset reliability for this collection.`
+
 ### Backend (`apps/api`)
 
 - `PORT` (optional): API port (default: `3000`).
@@ -330,9 +359,9 @@ The reporting page gives coaches a manual-first collection review workflow power
 
 Sections on `/reports`:
 
-- **Collection Summary**: runs `GET /reports/collection/summary` with date range + optional competitor/ruleset filters, then shows totals, event distribution, and position-time distribution.
-- **Competitor Trends**: runs `GET /reports/competitors/:competitorId/trends` and presents current window vs previous window plus explicit event/position deltas and data sufficiency guidance.
-- **Collection Validation**: runs `GET /reports/collection/validation` and highlights issue counts by severity/type plus per-match validation status so coaches can quickly identify problematic matches.
+- **Collection Summary**: runs `GET /reports/collection/summary` with date range + optional competitor/ruleset filters, then shows totals, event distribution, position-time distribution, and deterministic summary insights.
+- **Competitor Trends**: runs `GET /reports/competitors/:competitorId/trends` and presents current window vs previous window plus explicit event/position deltas, data sufficiency guidance, and threshold-based trend insights.
+- **Collection Validation**: runs `GET /reports/collection/validation` and highlights issue counts by severity/type, per-match validation status, and deterministic validation insights for recurring dataset risks.
 - **Collection Export**: runs `GET /reports/collection/export`, displays metadata (`schemaVersion`, `matchOrder`, artifact details), and provides a structured preview with optional raw JSON inspection.
 
 Typical coach workflow:
@@ -342,6 +371,35 @@ Typical coach workflow:
 3. Use **Competitor Trends** to compare current vs previous behavior for a specific competitor.
 4. Use **Collection Validation** to identify and prioritize problematic matches.
 5. Use **Collection Export** to review the generated payload before downstream sharing or audit.
+
+### Insight engine behavior (Phase 4)
+
+Reporting responses now include an additive `insights: string[]` field in:
+
+- `CollectionReviewSummary`
+- `CompetitorTrendSummary`
+- `CollectionValidationReport`
+
+Insight statements are deterministic and rule-based (no ML, no randomness). Each message follows an observation → context → implication pattern.
+
+Current backend thresholds:
+
+- **Collection summary**
+  - dominant event type / position time insight when share is **>= 40%** and at least **2 matches** are in scope
+  - unusual activity insight when average events per match is **<= 1.5** (low) or **>= 6.0** (high), with at least **3 matches**
+- **Competitor trends**
+  - trend insight only when current-window sample size is at least **3 matches**
+  - event/position change insight only when baseline (`previous`) volume is at least **4** and absolute change is **>= 15%**
+  - each trend insight includes explicit previous/current date window context
+- **Validation**
+  - reliability insight when at least **25%** of matches include errors
+  - recurring issue insight when an issue type appears in at least **30%** of matches
+
+Example insight outputs:
+
+- `Guard Retention accounts for 42.0 percent of tagged events, indicating concentrated tactical emphasis.`
+- `Takedown decreased 25.0 percent between 2026-03-01 to 2026-03-07 and 2026-03-08 to 2026-03-14, indicating a meaningful shift in event execution volume.`
+- `30.0 percent of matches include validation errors, indicating reduced dataset reliability for this collection.`
 
 ### Backend (`apps/api`)
 
@@ -621,7 +679,7 @@ Validation behavior:
 
 ### `GET /reports/collection/summary`
 
-Returns `CollectionReviewSummary` with deterministic totals and distributions.
+Returns `CollectionReviewSummary` with deterministic totals/distributions plus additive `insights`.
 
 Example:
 
@@ -648,6 +706,7 @@ Example response shape:
   },
   "eventTypeDistribution": [{ "eventType": "guard_pass", "count": 5 }],
   "positionTimeDistribution": [{ "position": "half_guard", "durationSeconds": 90 }],
+  "insights": ["Half Guard accounts for 41.7 percent of tracked position time, indicating a dominant control phase in this collection."],
   "isEmpty": false
 }
 ```
@@ -659,6 +718,7 @@ Returns `CompetitorTrendSummary`, including:
 - deterministic `current` and `previous` windows
 - event/position deltas
 - explicit data sufficiency evaluation
+- additive `insights` based on threshold checks and minimum sample gates
 
 Example:
 
@@ -669,7 +729,7 @@ curl -H "x-api-key: scrambleiq-local-dev-token" \
 
 ### `GET /reports/collection/validation`
 
-Returns `CollectionValidationReport`, aggregating existing per-match dataset validation logic into collection rollups.
+Returns `CollectionValidationReport`, aggregating existing per-match dataset validation logic into collection rollups with additive `insights`.
 
 Example:
 

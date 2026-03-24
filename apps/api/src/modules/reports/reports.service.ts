@@ -9,6 +9,7 @@ import {
   type CollectionValidationReport,
   type CompetitorTrendSummary,
   type DatasetValidationIssue,
+  type DatasetValidationReport,
   type EventTypeDistributionEntry,
   type Match,
   type MatchDatasetExport,
@@ -35,6 +36,15 @@ interface LoadedMatchDataset {
 @Injectable()
 export class ReportsService {
   private readonly minimumTrendMatchCount = 3;
+  private readonly dominantShareThreshold = 0.4;
+  private readonly minimumCollectionInsightMatchCount = 2;
+  private readonly lowActivityEventsPerMatchThreshold = 1.5;
+  private readonly highActivityEventsPerMatchThreshold = 6;
+  private readonly activityPatternMinMatchCount = 3;
+  private readonly trendChangeThresholdPercent = 15;
+  private readonly minimumTrendBaselineCount = 4;
+  private readonly highValidationErrorRateThreshold = 0.25;
+  private readonly recurringValidationIssueRateThreshold = 0.3;
 
   constructor(
     @Inject(MATCH_REPOSITORY) private readonly matchRepository: MatchRepository,
@@ -154,6 +164,13 @@ export class ReportsService {
       ],
       eventTypeDeltas,
       positionTimeDeltas,
+      insights: this.buildTrendInsights({
+        currentWindow,
+        previousWindow,
+        eventTypeDeltas,
+        positionTimeDeltas,
+        observedMatchCount,
+      }),
       dataSufficiency: {
         minimumMatchCount: this.minimumTrendMatchCount,
         observedMatchCount,
@@ -180,6 +197,7 @@ export class ReportsService {
         },
         issueCountsByType: [],
         matches: [],
+        insights: [],
       };
     }
 
@@ -205,7 +223,7 @@ export class ReportsService {
 
     const issueCount = issueCountsBySeverity.info + issueCountsBySeverity.warning + issueCountsBySeverity.error;
 
-    return {
+    const collectionValidationReport: CollectionValidationReport = {
       filters,
       isValid: issueCountsBySeverity.error === 0,
       issueCount,
@@ -235,6 +253,12 @@ export class ReportsService {
           };
         })
         .sort((left, right) => left.matchId.localeCompare(right.matchId)),
+      insights: [],
+    };
+
+    return {
+      ...collectionValidationReport,
+      insights: this.buildValidationInsights(collectionValidationReport, matchReports),
     };
   }
 
@@ -327,6 +351,7 @@ export class ReportsService {
         },
         eventTypeDistribution: [],
         positionTimeDistribution: [],
+        insights: [],
         isEmpty: true,
         emptyStateMessage: 'No matches found for the provided filter range.',
       };
@@ -335,7 +360,7 @@ export class ReportsService {
     const eventTypeDistribution = this.buildEventTypeDistribution(datasets.flatMap((dataset) => dataset.events));
     const positionTimeDistribution = this.buildPositionTimeDistribution(datasets.flatMap((dataset) => dataset.positions));
 
-    return {
+    const summary: CollectionReviewSummary = {
       filters,
       totals: {
         matchCount: datasets.length,
@@ -346,8 +371,160 @@ export class ReportsService {
       },
       eventTypeDistribution,
       positionTimeDistribution,
+      insights: [],
       isEmpty: false,
     };
+
+    return {
+      ...summary,
+      insights: this.buildCollectionInsights(summary),
+    };
+  }
+
+  private buildCollectionInsights(summary: CollectionReviewSummary): string[] {
+    if (summary.isEmpty) {
+      return [];
+    }
+
+    const insights: string[] = [];
+
+    const dominantEvent = summary.eventTypeDistribution
+      .slice()
+      .sort((left, right) => right.count - left.count || left.eventType.localeCompare(right.eventType))[0];
+    if (dominantEvent && summary.totals.eventCount > 0 && summary.totals.matchCount >= this.minimumCollectionInsightMatchCount) {
+      const eventShare = (dominantEvent.count / summary.totals.eventCount) * 100;
+
+      if (eventShare >= this.dominantShareThreshold * 100) {
+        insights.push(
+          `${this.toSentenceCase(dominantEvent.eventType)} accounts for ${eventShare.toFixed(1)} percent of tagged events, indicating concentrated tactical emphasis.`,
+        );
+      }
+    }
+
+    const dominantPosition = summary.positionTimeDistribution
+      .slice()
+      .sort((left, right) => right.durationSeconds - left.durationSeconds || left.position.localeCompare(right.position))[0];
+
+    if (
+      dominantPosition
+      && summary.totals.trackedPositionTimeSeconds > 0
+      && summary.totals.matchCount >= this.minimumCollectionInsightMatchCount
+    ) {
+      const positionShare = (dominantPosition.durationSeconds / summary.totals.trackedPositionTimeSeconds) * 100;
+
+      if (positionShare >= this.dominantShareThreshold * 100) {
+        insights.push(
+          `${this.toSentenceCase(dominantPosition.position)} accounts for ${positionShare.toFixed(1)} percent of tracked position time, indicating a dominant control phase in this collection.`,
+        );
+      }
+    }
+
+    if (summary.totals.matchCount >= this.activityPatternMinMatchCount) {
+      const eventsPerMatch = summary.totals.eventCount / summary.totals.matchCount;
+
+      if (eventsPerMatch <= this.lowActivityEventsPerMatchThreshold) {
+        insights.push(
+          `Average event volume is ${eventsPerMatch.toFixed(1)} per match, indicating unusually low tagging activity for this time window.`,
+        );
+      } else if (eventsPerMatch >= this.highActivityEventsPerMatchThreshold) {
+        insights.push(
+          `Average event volume is ${eventsPerMatch.toFixed(1)} per match, indicating unusually high activity across the sampled matches.`,
+        );
+      }
+    }
+
+    return insights.sort((left, right) => left.localeCompare(right));
+  }
+
+  private buildTrendInsights(input: {
+    currentWindow: { startDate: string; endDate: string };
+    previousWindow: { startDate: string; endDate: string };
+    eventTypeDeltas: CompetitorTrendSummary['eventTypeDeltas'];
+    positionTimeDeltas: CompetitorTrendSummary['positionTimeDeltas'];
+    observedMatchCount: number;
+  }): string[] {
+    if (input.observedMatchCount < this.minimumTrendMatchCount) {
+      return [];
+    }
+
+    const insights: string[] = [];
+
+    input.eventTypeDeltas.forEach((delta) => {
+      if (delta.previousCount < this.minimumTrendBaselineCount) {
+        return;
+      }
+
+      const deltaPercent = ((delta.currentCount - delta.previousCount) / delta.previousCount) * 100;
+      if (Math.abs(deltaPercent) < this.trendChangeThresholdPercent) {
+        return;
+      }
+
+      const direction = deltaPercent > 0 ? 'increased' : 'decreased';
+      insights.push(
+        `${this.toSentenceCase(delta.eventType)} ${direction} ${Math.abs(deltaPercent).toFixed(1)} percent between ${input.previousWindow.startDate} to ${input.previousWindow.endDate} and ${input.currentWindow.startDate} to ${input.currentWindow.endDate}, indicating a meaningful shift in event execution volume.`,
+      );
+    });
+
+    input.positionTimeDeltas.forEach((delta) => {
+      if (delta.previousDurationSeconds < this.minimumTrendBaselineCount) {
+        return;
+      }
+
+      const deltaPercent = ((delta.currentDurationSeconds - delta.previousDurationSeconds) / delta.previousDurationSeconds) * 100;
+      if (Math.abs(deltaPercent) < this.trendChangeThresholdPercent) {
+        return;
+      }
+
+      const direction = deltaPercent > 0 ? 'increased' : 'decreased';
+      insights.push(
+        `${this.toSentenceCase(delta.position)} control time ${direction} ${Math.abs(deltaPercent).toFixed(1)} percent between ${input.previousWindow.startDate} to ${input.previousWindow.endDate} and ${input.currentWindow.startDate} to ${input.currentWindow.endDate}, indicating a positional control trend change.`,
+      );
+    });
+
+    return insights.sort((left, right) => left.localeCompare(right));
+  }
+
+  private buildValidationInsights(
+    report: CollectionValidationReport,
+    matchReports: DatasetValidationReport[],
+  ): string[] {
+    if (report.matches.length === 0) {
+      return [];
+    }
+
+    const insights: string[] = [];
+    const totalMatches = report.matches.length;
+    const errorMatches = report.matches.filter((entry) => entry.issueCountsBySeverity.error > 0).length;
+    const errorRate = errorMatches / totalMatches;
+
+    if (errorRate >= this.highValidationErrorRateThreshold) {
+      insights.push(
+        `${(errorRate * 100).toFixed(1)} percent of matches include validation errors, indicating reduced dataset reliability for this collection.`,
+      );
+    }
+
+    const matchesByIssueType = new Map<string, Set<string>>();
+    matchReports.forEach((matchReport) => {
+      const uniqueIssueTypes = new Set(matchReport.issues.map((issue) => issue.type));
+      uniqueIssueTypes.forEach((issueType) => {
+        const existing = matchesByIssueType.get(issueType) ?? new Set<string>();
+        existing.add(matchReport.matchId);
+        matchesByIssueType.set(issueType, existing);
+      });
+    });
+
+    matchesByIssueType.forEach((matchIds, issueType) => {
+      const rate = matchIds.size / totalMatches;
+      if (rate < this.recurringValidationIssueRateThreshold) {
+        return;
+      }
+
+      insights.push(
+        `${this.toSentenceCase(issueType)} appears in ${(rate * 100).toFixed(1)} percent of matches, indicating a recurring validation problem that should be resolved before deeper analysis.`,
+      );
+    });
+
+    return insights.sort((left, right) => left.localeCompare(right));
   }
 
   private buildEventTypeDistribution(events: TimelineEvent[]): EventTypeDistributionEntry[] {
@@ -404,6 +581,13 @@ export class ReportsService {
 
   private toIsoDate(value: Date): string {
     return value.toISOString().slice(0, 10);
+  }
+
+  private toSentenceCase(value: string): string {
+    return value
+      .replaceAll('_', ' ')
+      .trim()
+      .replace(/\b\w/g, (match) => match.toUpperCase());
   }
 
   private applySeverityIssueCount(

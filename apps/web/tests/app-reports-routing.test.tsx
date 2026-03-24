@@ -75,6 +75,7 @@ function createReportingApiMock(): ReportingApi {
       },
       eventTypeDistribution: [],
       positionTimeDistribution: [],
+      insights: [],
       isEmpty: true,
     }),
     getCompetitorTrends: async () => {
