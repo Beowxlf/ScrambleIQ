@@ -280,6 +280,7 @@ export interface CollectionReviewSummary {
   totals: CollectionReviewSummaryTotals;
   eventTypeDistribution: EventTypeDistributionEntry[];
   positionTimeDistribution: PositionTimeDistributionEntry[];
+  insights: string[];
   isEmpty: boolean;
   emptyStateMessage?: string;
 }
@@ -323,6 +324,7 @@ export interface CompetitorTrendSummary {
   windows: CompetitorTrendWindowSummary[];
   eventTypeDeltas: EventTypeTrendDelta[];
   positionTimeDeltas: PositionTimeTrendDelta[];
+  insights: string[];
   dataSufficiency: TrendDataSufficiency;
 }
 
@@ -351,6 +353,7 @@ export interface CollectionValidationReport {
   issueCountsBySeverity: CollectionValidationIssueCountsBySeverity;
   issueCountsByType: CollectionValidationIssueCountByType[];
   matches: CollectionMatchValidationStatus[];
+  insights: string[];
 }
 
 export const REPORT_ARTIFACT_TYPES = [

@@ -95,6 +95,7 @@ describe('ReportsController', () => {
       { position: 'standing', durationSeconds: 10 },
       { position: 'half_guard', durationSeconds: 20 },
     ]);
+    expect(Array.isArray(response.body.insights)).toBe(true);
   });
 
   it('returns empty-state safe collection summary', async () => {
@@ -110,6 +111,7 @@ describe('ReportsController', () => {
     });
     expect(response.body.eventTypeDistribution).toEqual([]);
     expect(response.body.positionTimeDistribution).toEqual([]);
+    expect(response.body.insights).toEqual([]);
   });
 
   it('returns competitor trend deltas and low sample sufficiency handling', async () => {
@@ -147,6 +149,7 @@ describe('ReportsController', () => {
       observedMatchCount: 2,
       isSufficient: false,
     });
+    expect(response.body.insights).toEqual([]);
   });
 
   it('handles trend requests with no previous data safely', async () => {
@@ -165,6 +168,7 @@ describe('ReportsController', () => {
         deltaCount: 1,
       },
     ]);
+    expect(Array.isArray(response.body.insights)).toBe(true);
   });
 
   it('aggregates collection validation report including mixed severities and no-issues case', async () => {
@@ -188,6 +192,7 @@ describe('ReportsController', () => {
     expect(noIssues.body.issueCount).toBe(0);
     expect(noIssues.body.matches).toEqual([]);
     expect(noIssues.body.isValid).toBe(true);
+    expect(noIssues.body.insights).toEqual([]);
   });
 
   it('returns deterministic export ordering, schema version, and complete payload', async () => {
