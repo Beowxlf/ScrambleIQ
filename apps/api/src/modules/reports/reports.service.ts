@@ -386,7 +386,7 @@ export class ReportsService {
       return [];
     }
 
-    const insights: string[] = [];
+    const prioritizedInsights: Array<{ message: string; priority: number }> = [];
 
     const dominantEvent = summary.eventTypeDistribution
       .slice()
@@ -395,9 +395,10 @@ export class ReportsService {
       const eventShare = (dominantEvent.count / summary.totals.eventCount) * 100;
 
       if (eventShare >= this.dominantShareThreshold * 100) {
-        insights.push(
-          `${this.toSentenceCase(dominantEvent.eventType)} accounts for ${eventShare.toFixed(1)} percent of tagged events, indicating concentrated tactical emphasis.`,
-        );
+        prioritizedInsights.push({
+          message: `${this.toSentenceCase(dominantEvent.eventType)} represents ${eventShare.toFixed(1)}% of tagged events. Prioritize counters and follow-up sequences around this recurring pattern.`,
+          priority: eventShare,
+        });
       }
     }
 
@@ -413,9 +414,10 @@ export class ReportsService {
       const positionShare = (dominantPosition.durationSeconds / summary.totals.trackedPositionTimeSeconds) * 100;
 
       if (positionShare >= this.dominantShareThreshold * 100) {
-        insights.push(
-          `${this.toSentenceCase(dominantPosition.position)} accounts for ${positionShare.toFixed(1)} percent of tracked position time, indicating a dominant control phase in this collection.`,
-        );
+        prioritizedInsights.push({
+          message: `${this.toSentenceCase(dominantPosition.position)} accounts for ${positionShare.toFixed(1)}% of tracked position time. Plan drills around entries, exits, and scoring decisions from this position.`,
+          priority: positionShare,
+        });
       }
     }
 
@@ -423,17 +425,19 @@ export class ReportsService {
       const eventsPerMatch = summary.totals.eventCount / summary.totals.matchCount;
 
       if (eventsPerMatch <= this.lowActivityEventsPerMatchThreshold) {
-        insights.push(
-          `Average event volume is ${eventsPerMatch.toFixed(1)} per match, indicating unusually low tagging activity for this time window.`,
-        );
+        prioritizedInsights.push({
+          message: `Average event volume is ${eventsPerMatch.toFixed(1)} per match, which is low for this window. Audit tagging consistency before acting on trend conclusions.`,
+          priority: (this.lowActivityEventsPerMatchThreshold - eventsPerMatch) * 10 + 10,
+        });
       } else if (eventsPerMatch >= this.highActivityEventsPerMatchThreshold) {
-        insights.push(
-          `Average event volume is ${eventsPerMatch.toFixed(1)} per match, indicating unusually high activity across the sampled matches.`,
-        );
+        prioritizedInsights.push({
+          message: `Average event volume is ${eventsPerMatch.toFixed(1)} per match, which is unusually high. Verify whether this reflects real pace change or over-tagging before planning adjustments.`,
+          priority: (eventsPerMatch - this.highActivityEventsPerMatchThreshold) * 10 + 10,
+        });
       }
     }
 
-    return insights.sort((left, right) => left.localeCompare(right));
+    return this.sortPrioritizedInsights(prioritizedInsights);
   }
 
   private buildTrendInsights(input: {
@@ -447,7 +451,7 @@ export class ReportsService {
       return [];
     }
 
-    const insights: string[] = [];
+    const prioritizedInsights: Array<{ message: string; priority: number }> = [];
 
     input.eventTypeDeltas.forEach((delta) => {
       if (delta.previousCount < this.minimumTrendBaselineCount) {
@@ -460,9 +464,10 @@ export class ReportsService {
       }
 
       const direction = deltaPercent > 0 ? 'increased' : 'decreased';
-      insights.push(
-        `${this.toSentenceCase(delta.eventType)} ${direction} ${Math.abs(deltaPercent).toFixed(1)} percent between ${input.previousWindow.startDate} to ${input.previousWindow.endDate} and ${input.currentWindow.startDate} to ${input.currentWindow.endDate}, indicating a meaningful shift in event execution volume.`,
-      );
+      prioritizedInsights.push({
+        message: `${this.toSentenceCase(delta.eventType)} ${direction} ${Math.abs(deltaPercent).toFixed(1)}% from ${input.previousWindow.startDate}–${input.previousWindow.endDate} to ${input.currentWindow.startDate}–${input.currentWindow.endDate}. Adjust game-planning focus for this action immediately.`,
+        priority: Math.abs(deltaPercent),
+      });
     });
 
     input.positionTimeDeltas.forEach((delta) => {
@@ -476,12 +481,13 @@ export class ReportsService {
       }
 
       const direction = deltaPercent > 0 ? 'increased' : 'decreased';
-      insights.push(
-        `${this.toSentenceCase(delta.position)} control time ${direction} ${Math.abs(deltaPercent).toFixed(1)} percent between ${input.previousWindow.startDate} to ${input.previousWindow.endDate} and ${input.currentWindow.startDate} to ${input.currentWindow.endDate}, indicating a positional control trend change.`,
-      );
+      prioritizedInsights.push({
+        message: `${this.toSentenceCase(delta.position)} control time ${direction} ${Math.abs(deltaPercent).toFixed(1)}% from ${input.previousWindow.startDate}–${input.previousWindow.endDate} to ${input.currentWindow.startDate}–${input.currentWindow.endDate}. Update positional strategy and training emphasis accordingly.`,
+        priority: Math.abs(deltaPercent),
+      });
     });
 
-    return insights.sort((left, right) => left.localeCompare(right));
+    return this.sortPrioritizedInsights(prioritizedInsights);
   }
 
   private buildValidationInsights(
@@ -492,15 +498,16 @@ export class ReportsService {
       return [];
     }
 
-    const insights: string[] = [];
+    const prioritizedInsights: Array<{ message: string; priority: number }> = [];
     const totalMatches = report.matches.length;
     const errorMatches = report.matches.filter((entry) => entry.issueCountsBySeverity.error > 0).length;
     const errorRate = errorMatches / totalMatches;
 
     if (errorRate >= this.highValidationErrorRateThreshold) {
-      insights.push(
-        `${(errorRate * 100).toFixed(1)} percent of matches include validation errors, indicating reduced dataset reliability for this collection.`,
-      );
+      prioritizedInsights.push({
+        message: `${(errorRate * 100).toFixed(1)}% of matches include validation errors. Resolve error-level issues before using this report for tactical decisions.`,
+        priority: errorRate * 100 + 100,
+      });
     }
 
     const matchesByIssueType = new Map<string, Set<string>>();
@@ -519,12 +526,20 @@ export class ReportsService {
         return;
       }
 
-      insights.push(
-        `${this.toSentenceCase(issueType)} appears in ${(rate * 100).toFixed(1)} percent of matches, indicating a recurring validation problem that should be resolved before deeper analysis.`,
-      );
+      prioritizedInsights.push({
+        message: `${this.toSentenceCase(issueType)} appears in ${(rate * 100).toFixed(1)}% of matches. Address this recurring issue type in the data capture process.`,
+        priority: rate * 100,
+      });
     });
 
-    return insights.sort((left, right) => left.localeCompare(right));
+    return this.sortPrioritizedInsights(prioritizedInsights);
+  }
+
+  private sortPrioritizedInsights(prioritizedInsights: Array<{ message: string; priority: number }>): string[] {
+    return prioritizedInsights
+      .slice()
+      .sort((left, right) => right.priority - left.priority || left.message.localeCompare(right.message))
+      .map((entry) => entry.message);
   }
 
   private buildEventTypeDistribution(events: TimelineEvent[]): EventTypeDistributionEntry[] {

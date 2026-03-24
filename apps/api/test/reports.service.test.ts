@@ -165,6 +165,7 @@ describe('ReportsService insight engine', () => {
     expect(report.insights.length).toBeGreaterThan(0);
     expect(report.insights.join(' ')).toContain('Guard Retention');
     expect(report.insights.join(' ')).toContain('Half Guard');
+    expect(report.insights[0]).toContain('Plan drills around entries, exits, and scoring decisions');
 
     const reportAgain = await service.getCollectionSummary(baseFilters);
     expect(reportAgain.insights).toEqual(report.insights);
@@ -222,8 +223,8 @@ describe('ReportsService insight engine', () => {
     });
 
     expect(report.insights.length).toBeGreaterThan(0);
-    expect(report.insights.join(' ')).toContain('2026-03-07 to 2026-03-09');
-    expect(report.insights.join(' ')).toContain('2026-03-10 to 2026-03-12');
+    expect(report.insights.join(' ')).toContain('2026-03-07–2026-03-09');
+    expect(report.insights.join(' ')).toContain('2026-03-10–2026-03-12');
   });
 
   it('suppresses trend insights on low sample size and keeps field present', async () => {
@@ -267,6 +268,7 @@ describe('ReportsService insight engine', () => {
     const withInsights = await serviceWithIssues.getCollectionValidationReport(baseFilters);
     expect(withInsights.insights.length).toBeGreaterThan(0);
     expect(withInsights.insights.join(' ')).toContain('POSITION OVERLAP');
+    expect(withInsights.insights[0]).toContain('Resolve error-level issues before using this report');
 
     const serviceWithoutIssues = createFixture({ matches });
     const withoutInsights = await serviceWithoutIssues.getCollectionValidationReport(baseFilters);
