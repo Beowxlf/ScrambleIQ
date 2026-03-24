@@ -246,6 +246,135 @@ export interface MatchReviewSummary {
   };
 }
 
+export interface CollectionDateRange {
+  startDate: string;
+  endDate: string;
+}
+
+export interface CollectionReportFilters {
+  dateRange: CollectionDateRange;
+  competitor?: string;
+  ruleset?: string;
+}
+
+export interface EventTypeDistributionEntry {
+  eventType: string;
+  count: number;
+}
+
+export interface PositionTimeDistributionEntry {
+  position: PositionType;
+  durationSeconds: number;
+}
+
+export interface CollectionReviewSummaryTotals {
+  matchCount: number;
+  eventCount: number;
+  positionCount: number;
+  trackedPositionTimeSeconds: number;
+  videoAttachedCount: number;
+}
+
+export interface CollectionReviewSummary {
+  filters: CollectionReportFilters;
+  totals: CollectionReviewSummaryTotals;
+  eventTypeDistribution: EventTypeDistributionEntry[];
+  positionTimeDistribution: PositionTimeDistributionEntry[];
+  isEmpty: boolean;
+  emptyStateMessage?: string;
+}
+
+export const COMPETITOR_TREND_WINDOWS = ['current', 'previous'] as const;
+
+export type CompetitorTrendWindow = (typeof COMPETITOR_TREND_WINDOWS)[number];
+
+export interface CompetitorTrendWindowSummary {
+  window: CompetitorTrendWindow;
+  dateRange: CollectionDateRange;
+  matchCount: number;
+  eventTypeDistribution: EventTypeDistributionEntry[];
+  positionTimeDistribution: PositionTimeDistributionEntry[];
+}
+
+export interface EventTypeTrendDelta {
+  eventType: string;
+  currentCount: number;
+  previousCount: number;
+  deltaCount: number;
+}
+
+export interface PositionTimeTrendDelta {
+  position: PositionType;
+  currentDurationSeconds: number;
+  previousDurationSeconds: number;
+  deltaDurationSeconds: number;
+}
+
+export interface TrendDataSufficiency {
+  minimumMatchCount: number;
+  observedMatchCount: number;
+  isSufficient: boolean;
+  message: string;
+}
+
+export interface CompetitorTrendSummary {
+  filters: CollectionReportFilters;
+  competitor: string;
+  windows: CompetitorTrendWindowSummary[];
+  eventTypeDeltas: EventTypeTrendDelta[];
+  positionTimeDeltas: PositionTimeTrendDelta[];
+  dataSufficiency: TrendDataSufficiency;
+}
+
+export interface CollectionValidationIssueCountByType {
+  type: DatasetValidationIssueType;
+  count: number;
+}
+
+export interface CollectionValidationIssueCountsBySeverity {
+  info: number;
+  warning: number;
+  error: number;
+}
+
+export interface CollectionMatchValidationStatus {
+  matchId: string;
+  isValid: boolean;
+  issueCount: number;
+  issueCountsBySeverity: CollectionValidationIssueCountsBySeverity;
+}
+
+export interface CollectionValidationReport {
+  filters: CollectionReportFilters;
+  isValid: boolean;
+  issueCount: number;
+  issueCountsBySeverity: CollectionValidationIssueCountsBySeverity;
+  issueCountsByType: CollectionValidationIssueCountByType[];
+  matches: CollectionMatchValidationStatus[];
+}
+
+export const REPORT_ARTIFACT_TYPES = [
+  'period_summary',
+  'competitor_snapshot',
+  'readiness_summary',
+] as const;
+
+export type ReportArtifactType = (typeof REPORT_ARTIFACT_TYPES)[number];
+
+export interface ReportArtifactMetadata {
+  schemaVersion: 'phase4.v1';
+  artifactType: ReportArtifactType;
+  filters: CollectionReportFilters;
+  matchOrder: 'date_then_match_id';
+}
+
+export interface CollectionExportPayload {
+  metadata: ReportArtifactMetadata;
+  summary: CollectionReviewSummary;
+  validation: CollectionValidationReport;
+  matches: MatchDatasetExport[];
+}
+
 export const TAXONOMY_GUARDRAIL_SEVERITIES = ['INFO', 'WARNING'] as const;
 
 export type TaxonomyGuardrailSeverity = (typeof TAXONOMY_GUARDRAIL_SEVERITIES)[number];
