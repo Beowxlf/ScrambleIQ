@@ -39,7 +39,7 @@ Instructions:
 | QG-2 | `npm run typecheck` passes from repository root. | Quality and Reliability Criteria 2 | Complete | Local command output (2026-03-22): PASS. |
 | QG-3 | `npm run test` passes from repository root. | Quality and Reliability Criteria 2 | Complete | Local command output (2026-03-22): PASS. |
 | QG-4 | `npm run build` passes from repository root. | Quality and Reliability Criteria 2 | Complete | Local command output (2026-03-22): PASS. |
-| QG-5 | `npm run test:integration` has reproducible evidence for PostgreSQL runtime parity. | Quality and Reliability Criteria 3 | Incomplete | Local run blocked by missing Docker in this environment; CI run artifact retrieval blocked in this checkout (no `gh` CLI and no Git remote metadata). See `Guidelines/Phase-3-DB-Evidence.md`. |
+| QG-5 | `npm run test:integration` has reproducible evidence for PostgreSQL runtime parity. | Quality and Reliability Criteria 3 | Complete | 2026-03-22 attached operator transcript: Docker integration environment came up healthy and `npm run test:integration` passed (`Test Files 2 passed`, `Tests 14 passed`). See `Guidelines/Phase-3-DB-Evidence.md`. |
 
 ---
 
@@ -57,4 +57,4 @@ Instructions:
 
 **Phase 3 is formally complete only when every gate above is marked `Complete`.**
 
-Current closeout decision (2026-03-22): **Incomplete** (pending attached reproducible integration gate evidence for this closeout pass via CI `integration-postgres` or local Docker run).
+Current closeout decision (2026-03-22): **Complete** (all closeout gates are complete, including attached passing PostgreSQL integration evidence for this closeout pass).
