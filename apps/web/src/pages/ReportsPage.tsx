@@ -21,6 +21,7 @@ interface ReportsPageProps {
 }
 
 const artifactTypeOptions: ReportArtifactType[] = ['period_summary', 'competitor_snapshot', 'readiness_summary'];
+const emptyInsightsMessage = 'No significant patterns detected for the selected range';
 
 function formatPosition(position: string): string {
   return position.replaceAll('_', ' ');
@@ -99,6 +100,30 @@ function PositionDeltas({ deltas }: { deltas: PositionTimeTrendDelta[] }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+interface InsightListProps {
+  insights: string[];
+  contextMessage?: string;
+  emptyMessage?: string;
+}
+
+function InsightList({ insights, contextMessage, emptyMessage = emptyInsightsMessage }: InsightListProps) {
+  return (
+    <article aria-label="Insights">
+      <h4>Insights</h4>
+      {contextMessage ? <p className="muted">{contextMessage}</p> : null}
+      {insights.length > 0 ? (
+        <ul>
+          {insights.map((insight, index) => (
+            <li key={`${insight}-${index}`}>{insight}</li>
+          ))}
+        </ul>
+      ) : (
+        <p>{emptyMessage}</p>
+      )}
+    </article>
   );
 }
 
@@ -236,6 +261,7 @@ export function ReportsPage({ reportingApi }: ReportsPageProps) {
         </div>
         {summaryInputError ? <p className="status-error">{summaryInputError}</p> : null}
         {summaryRequest.error ? <p className="status-error">{summaryRequest.error}</p> : null}
+        {summaryRequest.data ? <InsightList insights={summaryRequest.data.insights} /> : null}
         {summaryRequest.data?.isEmpty ? <p>{summaryRequest.data.emptyStateMessage ?? 'No collection data for these filters.'}</p> : null}
         {summaryRequest.data && !summaryRequest.data.isEmpty ? (
           <>
@@ -275,9 +301,14 @@ export function ReportsPage({ reportingApi }: ReportsPageProps) {
         {trendsRequest.error ? <p className="status-error">{trendsRequest.error}</p> : null}
         {trendsRequest.data ? (
           <>
-            <p>
-              Data sufficiency: {trendsRequest.data.dataSufficiency.isSufficient ? 'Sufficient' : 'Insufficient'} ({trendsRequest.data.dataSufficiency.message})
-            </p>
+            <InsightList
+              insights={trendsRequest.data.insights}
+              contextMessage={`Competitor ${trendsRequest.data.competitor} · ${trendsRequest.data.windows[0]?.dateRange.startDate ?? dateFrom} to ${
+                trendsRequest.data.windows[0]?.dateRange.endDate ?? dateTo
+              } · Data sufficiency: ${trendsRequest.data.dataSufficiency.isSufficient ? 'Sufficient' : 'Insufficient'} (${
+                trendsRequest.data.dataSufficiency.message
+              })`}
+            />
             <div className="two-column-layout">
               {trendsRequest.data.windows.map((window) => (
                 <TrendWindow key={window.window} summary={window} />
@@ -320,6 +351,7 @@ export function ReportsPage({ reportingApi }: ReportsPageProps) {
           <>
             <p>Collection valid: {validationRequest.data.isValid ? 'Yes' : 'No'}</p>
             <p>Total issues: {validationRequest.data.issueCount}</p>
+            <InsightList insights={validationRequest.data.insights} />
             <h4>Issue counts by severity</h4>
             <ul>
               <li>Errors: {validationRequest.data.issueCountsBySeverity.error}</li>

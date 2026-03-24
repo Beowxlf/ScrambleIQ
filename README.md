@@ -99,6 +99,25 @@ Example insight outputs:
 - `Takedown decreased 25.0 percent between 2026-03-01 to 2026-03-07 and 2026-03-08 to 2026-03-14, indicating a meaningful shift in event execution volume.`
 - `30.0 percent of matches include validation errors, indicating reduced dataset reliability for this collection.`
 
+### Insight visibility in the reporting UI (Phase 4)
+
+The `/reports` workspace now renders backend-provided `insights` directly in each reporting panel so coaches can act on conclusions without manually interpreting raw distributions first:
+
+- **Collection Summary**: includes an **Insights** section near top-level totals and distributions.
+- **Competitor Trends**: includes an **Insights** section tied to selected competitor/date window context and the data sufficiency message.
+- **Collection Validation**: includes an **Insights** section near validity/severity summaries to highlight readiness and quality concerns.
+
+UI behavior is deterministic and additive:
+
+- Insight strings are rendered exactly as returned by the backend (no frontend rewriting).
+- If a panel returns an empty `insights` array, the UI still shows the section with:
+  - `No significant patterns detected for the selected range`
+
+Example UI behavior:
+
+- When trend volume is sufficient and backend returns a shift insight, coaches will see that exact sentence in the Competitor Trends insights list.
+- When no significant insight conditions are met, coaches still see the Insights section with the empty-state message, making "no insight" explicit rather than hidden.
+
 ### Backend (`apps/api`)
 
 - `PORT` (optional): API port (default: `3000`).
