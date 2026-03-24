@@ -208,6 +208,7 @@ The app uses route-based navigation:
 
 - `/`: create match form + match list
 - `/matches/:id`: single match detail view + timeline event tools
+- `/reports`: collection-level reporting workspace for coaches
 
 The web app includes a **Create Match** form with required-field validation for:
 
@@ -322,6 +323,25 @@ Timeline event form validation requires:
 - competitor (`A` or `B`)
 
 `notes` is optional.
+
+### Reporting workspace (`/reports`)
+
+The reporting page gives coaches a manual-first collection review workflow powered by the Phase 4 reporting endpoints.
+
+Sections on `/reports`:
+
+- **Collection Summary**: runs `GET /reports/collection/summary` with date range + optional competitor/ruleset filters, then shows totals, event distribution, and position-time distribution.
+- **Competitor Trends**: runs `GET /reports/competitors/:competitorId/trends` and presents current window vs previous window plus explicit event/position deltas and data sufficiency guidance.
+- **Collection Validation**: runs `GET /reports/collection/validation` and highlights issue counts by severity/type plus per-match validation status so coaches can quickly identify problematic matches.
+- **Collection Export**: runs `GET /reports/collection/export`, displays metadata (`schemaVersion`, `matchOrder`, artifact details), and provides a structured preview with optional raw JSON inspection.
+
+Typical coach workflow:
+
+1. Set shared date filters (and optional competitor/ruleset narrowing).
+2. Use **Collection Summary** to assess volume and annotation coverage.
+3. Use **Competitor Trends** to compare current vs previous behavior for a specific competitor.
+4. Use **Collection Validation** to identify and prioritize problematic matches.
+5. Use **Collection Export** to review the generated payload before downstream sharing or audit.
 
 ### Backend (`apps/api`)
 
