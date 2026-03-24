@@ -152,16 +152,19 @@ describe('ReportsPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Load collection summary' }));
     expect(await screen.findByText('No collection data available.')).toBeInTheDocument();
+    expect(screen.getByText('No significant patterns detected for the selected range')).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Competitor ID'), { target: { value: 'c-1' } });
     fireEvent.click(screen.getByRole('button', { name: 'Load competitor trends' }));
-    expect(await screen.findByText('Data sufficiency: Sufficient (Sufficient data.)')).toBeInTheDocument();
+    expect(await screen.findByText(/Competitor c-1/)).toBeInTheDocument();
+    expect(screen.getByText(/Data sufficiency: Sufficient \(Sufficient data\.\)/)).toBeInTheDocument();
     expect(screen.getByText('Current window')).toBeInTheDocument();
     expect(screen.getByText('Previous window')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Load collection validation' }));
     expect(await screen.findByText('Collection valid: No')).toBeInTheDocument();
     expect(screen.getByText('MISSING_VIDEO: 1')).toBeInTheDocument();
+    expect(screen.getAllByText('No significant patterns detected for the selected range')).toHaveLength(3);
 
     fireEvent.click(screen.getByRole('button', { name: 'Load collection export' }));
     expect(await screen.findByText('Schema version: phase4.v1')).toBeInTheDocument();
@@ -194,5 +197,35 @@ describe('ReportsPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Unable to load collection summary right now.')).toBeInTheDocument();
     });
+  });
+
+  it('renders backend insights in summary, trends, and validation sections', async () => {
+    const api = createReportingApiMock({
+      getCollectionSummary: async () => ({
+        ...(await createReportingApiMock().getCollectionSummary({ dateFrom: '2026-03-01', dateTo: '2026-03-31' })),
+        isEmpty: false,
+        insights: ['Summary insight example.'],
+      }),
+      getCompetitorTrends: async () => ({
+        ...(await createReportingApiMock().getCompetitorTrends({ competitorId: 'c-1', dateFrom: '2026-03-01', dateTo: '2026-03-31' })),
+        insights: ['Trend insight example.'],
+      }),
+      getCollectionValidation: async () => ({
+        ...(await createReportingApiMock().getCollectionValidation({ dateFrom: '2026-03-01', dateTo: '2026-03-31' })),
+        insights: ['Validation insight example.'],
+      }),
+    });
+
+    render(<ReportsPage reportingApi={api} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Load collection summary' }));
+    expect(await screen.findByText('Summary insight example.')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Competitor ID'), { target: { value: 'c-1' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Load competitor trends' }));
+    expect(await screen.findByText('Trend insight example.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Load collection validation' }));
+    expect(await screen.findByText('Validation insight example.')).toBeInTheDocument();
   });
 });
