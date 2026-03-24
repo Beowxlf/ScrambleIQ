@@ -5,11 +5,18 @@ export type AppRoute =
   | {
       page: 'detail';
       matchId: string;
+    }
+  | {
+      page: 'reports';
     };
 
 export function parseRoute(pathname: string): AppRoute {
   if (pathname === '/') {
     return { page: 'list' };
+  }
+
+  if (pathname === '/reports') {
+    return { page: 'reports' };
   }
 
   const detailPathMatch = pathname.match(/^\/matches\/([^/]+)$/);
