@@ -60,6 +60,12 @@ p {
   margin: 0;
 }
 
+ol,
+ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
 a {
   color: var(--color-accent);
 }
@@ -279,6 +285,11 @@ button:disabled {
   font-size: 0.875rem;
 }
 
+.muted {
+  color: var(--color-text-secondary);
+  margin-top: 0.25rem;
+}
+
 ul {
   margin: 0.75rem 0 0;
   padding-left: 1.25rem;
@@ -286,10 +297,6 @@ ul {
 
 li + li {
   margin-top: 0.5rem;
-}
-
-.muted {
-  color: var(--color-text-secondary);
 }
 
 @media (width <= 900px) {

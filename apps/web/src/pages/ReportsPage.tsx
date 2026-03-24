@@ -21,7 +21,7 @@ interface ReportsPageProps {
 }
 
 const artifactTypeOptions: ReportArtifactType[] = ['period_summary', 'competitor_snapshot', 'readiness_summary'];
-const emptyInsightsMessage = 'No significant patterns detected for the selected range';
+const emptyInsightsMessage = 'No high-priority insights were generated for this view and date range.';
 
 function formatPosition(position: string): string {
   return position.replaceAll('_', ' ');
@@ -105,21 +105,27 @@ function PositionDeltas({ deltas }: { deltas: PositionTimeTrendDelta[] }) {
 
 interface InsightListProps {
   insights: string[];
+  heading?: string;
   contextMessage?: string;
   emptyMessage?: string;
 }
 
-function InsightList({ insights, contextMessage, emptyMessage = emptyInsightsMessage }: InsightListProps) {
+function InsightList({
+  insights,
+  heading = 'Key insights',
+  contextMessage,
+  emptyMessage = emptyInsightsMessage,
+}: InsightListProps) {
   return (
-    <article aria-label="Insights">
-      <h4>Insights</h4>
+    <article aria-label={`${heading} panel`}>
+      <h4>{heading}</h4>
       {contextMessage ? <p className="muted">{contextMessage}</p> : null}
       {insights.length > 0 ? (
-        <ul>
+        <ol>
           {insights.map((insight, index) => (
             <li key={`${insight}-${index}`}>{insight}</li>
           ))}
-        </ul>
+        </ol>
       ) : (
         <p>{emptyMessage}</p>
       )}
@@ -228,11 +234,12 @@ export function ReportsPage({ reportingApi }: ReportsPageProps) {
     <main className="section-stack" aria-label="Reports workspace">
       <header className="app-header">
         <h2>Collection Reporting</h2>
-        <p>Use collection-level reporting to review annotation output quality and coach-facing trend summaries.</p>
+        <p>Review what is going well, what is declining, and what needs intervention across your selected date range.</p>
       </header>
 
       <section aria-labelledby="report-filters-heading">
         <h3 id="report-filters-heading">Shared report filters</h3>
+        <p>Step 1: Set your date range once, then load each section in order to complete a full coaching review pass.</p>
         <div className="match-filters-grid">
           <div>
             <label htmlFor="reports-date-from">Date from</label>
@@ -252,8 +259,8 @@ export function ReportsPage({ reportingApi }: ReportsPageProps) {
       </section>
 
       <section aria-labelledby="collection-summary-heading">
-        <h3 id="collection-summary-heading">Collection Summary</h3>
-        <p>Aggregate match, event, and position volumes for the selected date range.</p>
+        <h3 id="collection-summary-heading">1. Collection Summary</h3>
+        <p>Snapshot of overall activity and concentration patterns for the selected range.</p>
         <div className="button-row">
           <button type="button" onClick={() => void onLoadSummary()} disabled={summaryRequest.isLoading}>
             {summaryRequest.isLoading ? 'Loading summary...' : 'Load collection summary'}
@@ -261,10 +268,18 @@ export function ReportsPage({ reportingApi }: ReportsPageProps) {
         </div>
         {summaryInputError ? <p className="status-error">{summaryInputError}</p> : null}
         {summaryRequest.error ? <p className="status-error">{summaryRequest.error}</p> : null}
-        {summaryRequest.data ? <InsightList insights={summaryRequest.data.insights} /> : null}
-        {summaryRequest.data?.isEmpty ? <p>{summaryRequest.data.emptyStateMessage ?? 'No collection data for these filters.'}</p> : null}
+        {summaryRequest.data ? (
+          <InsightList
+            insights={summaryRequest.data.insights}
+            emptyMessage="No major summary shifts were detected. Continue to trend and validation review for risk checks."
+          />
+        ) : null}
+        {summaryRequest.data?.isEmpty ? (
+          <p>{summaryRequest.data.emptyStateMessage ?? 'No collection data is available for the selected filters.'}</p>
+        ) : null}
         {summaryRequest.data && !summaryRequest.data.isEmpty ? (
           <>
+            <h4>Supporting data</h4>
             <p>Total matches: {summaryRequest.data.totals.matchCount}</p>
             <p>Total events: {summaryRequest.data.totals.eventCount}</p>
             <p>Total positions: {summaryRequest.data.totals.positionCount}</p>
@@ -289,7 +304,8 @@ export function ReportsPage({ reportingApi }: ReportsPageProps) {
       </section>
 
       <section aria-labelledby="competitor-trends-heading">
-        <h3 id="competitor-trends-heading">Competitor Trends</h3>
+        <h3 id="competitor-trends-heading">2. Competitor Trends</h3>
+        <p>Compare current versus previous window performance for one competitor.</p>
         <label htmlFor="reports-competitor-id">Competitor ID</label>
         <input id="reports-competitor-id" value={competitorId} onChange={(event) => setCompetitorId(event.target.value)} />
         <div className="button-row">
@@ -303,12 +319,15 @@ export function ReportsPage({ reportingApi }: ReportsPageProps) {
           <>
             <InsightList
               insights={trendsRequest.data.insights}
+              heading="Trend insights"
               contextMessage={`Competitor ${trendsRequest.data.competitor} · ${trendsRequest.data.windows[0]?.dateRange.startDate ?? dateFrom} to ${
                 trendsRequest.data.windows[0]?.dateRange.endDate ?? dateTo
               } · Data sufficiency: ${trendsRequest.data.dataSufficiency.isSufficient ? 'Sufficient' : 'Insufficient'} (${
                 trendsRequest.data.dataSufficiency.message
               })`}
+              emptyMessage="No trend changes crossed alert thresholds. Maintain current plan and continue monitoring."
             />
+            <h4>Supporting data</h4>
             <div className="two-column-layout">
               {trendsRequest.data.windows.map((window) => (
                 <TrendWindow key={window.window} summary={window} />
@@ -339,7 +358,8 @@ export function ReportsPage({ reportingApi }: ReportsPageProps) {
       </section>
 
       <section aria-labelledby="collection-validation-heading">
-        <h3 id="collection-validation-heading">Collection Validation</h3>
+        <h3 id="collection-validation-heading">3. Collection Validation</h3>
+        <p>Confirm whether the underlying dataset is reliable before making tactical decisions.</p>
         <div className="button-row">
           <button type="button" onClick={() => void onLoadValidation()} disabled={validationRequest.isLoading}>
             {validationRequest.isLoading ? 'Loading validation...' : 'Load collection validation'}
@@ -351,7 +371,12 @@ export function ReportsPage({ reportingApi }: ReportsPageProps) {
           <>
             <p>Collection valid: {validationRequest.data.isValid ? 'Yes' : 'No'}</p>
             <p>Total issues: {validationRequest.data.issueCount}</p>
-            <InsightList insights={validationRequest.data.insights} />
+            <InsightList
+              insights={validationRequest.data.insights}
+              heading="Validation insights"
+              emptyMessage="No recurring reliability risks were detected in this range."
+            />
+            <h4>Supporting data</h4>
             <h4>Issue counts by severity</h4>
             <ul>
               <li>Errors: {validationRequest.data.issueCountsBySeverity.error}</li>
@@ -368,20 +393,21 @@ export function ReportsPage({ reportingApi }: ReportsPageProps) {
                 ))}
               </ul>
             ) : (
-              <p>No validation issues found for these filters.</p>
+              <p>No validation issues were found for these filters.</p>
             )}
             <h4>Per-match validation status</h4>
             {validationRequest.data.matches.length > 0 ? (
               <MatchValidationList matches={validationRequest.data.matches} />
             ) : (
-              <p>No matches found for validation in this date range.</p>
+              <p>No matches were returned for validation in this date range.</p>
             )}
           </>
         ) : null}
       </section>
 
       <section aria-labelledby="collection-export-heading">
-        <h3 id="collection-export-heading">Collection Export</h3>
+        <h3 id="collection-export-heading">4. Collection Export</h3>
+        <p>Optional: export a deterministic payload once your review and validation pass is complete.</p>
         <label htmlFor="reports-artifact-type">Artifact type</label>
         <select id="reports-artifact-type" value={artifactType} onChange={(event) => setArtifactType(event.target.value as ReportArtifactType)}>
           {artifactTypeOptions.map((option) => (
@@ -417,7 +443,7 @@ export function ReportsPage({ reportingApi }: ReportsPageProps) {
                 ))}
               </ul>
             ) : (
-              <p>No matches available in export payload for these filters.</p>
+              <p>The export completed, but no matches were included for the selected filters.</p>
             )}
             {showRawExportJson ? <pre>{JSON.stringify(exportRequest.data, null, 2)}</pre> : null}
           </>

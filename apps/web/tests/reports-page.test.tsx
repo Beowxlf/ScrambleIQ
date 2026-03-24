@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { CollectionExportPayload, CollectionReviewSummary, CollectionValidationReport, CompetitorTrendSummary } from '@scrambleiq/shared';
@@ -21,7 +21,7 @@ function createReportingApiMock(overrides: Partial<ReportingApi> = {}): Reportin
       positionTimeDistribution: [],
       insights: [],
       isEmpty: true,
-      emptyStateMessage: 'No collection data available.',
+      emptyStateMessage: 'No collection data is available for the selected filters.',
     }),
     getCompetitorTrends: async (): Promise<CompetitorTrendSummary> => ({
       filters: { dateRange: { startDate: '2026-03-01', endDate: '2026-03-31' } },
@@ -151,8 +151,8 @@ describe('ReportsPage', () => {
     render(<ReportsPage reportingApi={api} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Load collection summary' }));
-    expect(await screen.findByText('No collection data available.')).toBeInTheDocument();
-    expect(screen.getByText('No significant patterns detected for the selected range')).toBeInTheDocument();
+    expect(await screen.findByText('No collection data is available for the selected filters.')).toBeInTheDocument();
+    expect(screen.getByText('No major summary shifts were detected. Continue to trend and validation review for risk checks.')).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Competitor ID'), { target: { value: 'c-1' } });
     fireEvent.click(screen.getByRole('button', { name: 'Load competitor trends' }));
@@ -164,7 +164,8 @@ describe('ReportsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Load collection validation' }));
     expect(await screen.findByText('Collection valid: No')).toBeInTheDocument();
     expect(screen.getByText('MISSING_VIDEO: 1')).toBeInTheDocument();
-    expect(screen.getAllByText('No significant patterns detected for the selected range')).toHaveLength(3);
+    expect(screen.getByText('No trend changes crossed alert thresholds. Maintain current plan and continue monitoring.')).toBeInTheDocument();
+    expect(screen.getByText('No recurring reliability risks were detected in this range.')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Load collection export' }));
     expect(await screen.findByText('Schema version: phase4.v1')).toBeInTheDocument();
@@ -227,5 +228,33 @@ describe('ReportsPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Load collection validation' }));
     expect(await screen.findByText('Validation insight example.')).toBeInTheDocument();
+  });
+
+  it('renders insights in priority order with the highest-priority item first', async () => {
+    const api = createReportingApiMock({
+      getCollectionSummary: async () => ({
+        ...(await createReportingApiMock().getCollectionSummary({ dateFrom: '2026-03-01', dateTo: '2026-03-31' })),
+        isEmpty: false,
+        insights: ['Most critical insight first.', 'Secondary insight second.'],
+      }),
+    });
+
+    render(<ReportsPage reportingApi={api} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Load collection summary' }));
+    const insightPanel = await screen.findByLabelText('Key insights panel');
+    const items = within(insightPanel).getAllByRole('listitem');
+
+    expect(items[0]?.textContent).toBe('Most critical insight first.');
+    expect(items[1]?.textContent).toBe('Secondary insight second.');
+  });
+
+  it('renders section headings independently for summary, trends, and validation', () => {
+    render(<ReportsPage reportingApi={createReportingApiMock()} />);
+
+    expect(screen.getByRole('heading', { name: '1. Collection Summary' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '2. Competitor Trends' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '3. Collection Validation' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '4. Collection Export' })).toBeInTheDocument();
   });
 });

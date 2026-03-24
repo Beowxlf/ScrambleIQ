@@ -99,24 +99,28 @@ Example insight outputs:
 - `Takedown decreased 25.0 percent between 2026-03-01 to 2026-03-07 and 2026-03-08 to 2026-03-14, indicating a meaningful shift in event execution volume.`
 - `30.0 percent of matches include validation errors, indicating reduced dataset reliability for this collection.`
 
-### Insight visibility in the reporting UI (Phase 4)
+### Reporting workflow and insight interpretation (Phase 4)
 
-The `/reports` workspace now renders backend-provided `insights` directly in each reporting panel so coaches can act on conclusions without manually interpreting raw distributions first:
+Use `/reports` in this order for a natural coach workflow:
 
-- **Collection Summary**: includes an **Insights** section near top-level totals and distributions.
-- **Competitor Trends**: includes an **Insights** section tied to selected competitor/date window context and the data sufficiency message.
-- **Collection Validation**: includes an **Insights** section near validity/severity summaries to highlight readiness and quality concerns.
+1. Set shared date filters.
+2. Load **1. Collection Summary** to understand broad activity and concentration.
+3. Load **2. Competitor Trends** for current vs previous window movement.
+4. Load **3. Collection Validation** to confirm data reliability before tactical conclusions.
+5. Optionally load **4. Collection Export** for deterministic payload handoff/archive.
 
-UI behavior is deterministic and additive:
+Insight interpretation guidance:
 
-- Insight strings are rendered exactly as returned by the backend (no frontend rewriting).
-- If a panel returns an empty `insights` array, the UI still shows the section with:
-  - `No significant patterns detected for the selected range`
+- Insights are deterministic and prioritized by impact in backend service logic.
+- The first insight in each list is the highest-priority statement for that panel.
+- Insight wording is direct and action-oriented so each item implies a coaching or data-quality decision.
+- Empty insight states are explicit and professional; absence of insights means threshold conditions were not met, not that the UI failed.
 
-Example UI behavior:
+Expected UI behavior:
 
-- When trend volume is sufficient and backend returns a shift insight, coaches will see that exact sentence in the Competitor Trends insights list.
-- When no significant insight conditions are met, coaches still see the Insights section with the empty-state message, making "no insight" explicit rather than hidden.
+- Each report section renders independently with its own controls, errors, insights, and supporting data.
+- Insights appear directly in each panel once data is loaded (no additional interaction required).
+- Empty data states are explicit (for example, no matches in range, no validation issues, or export with zero matches).
 
 ### Backend (`apps/api`)
 
