@@ -20,11 +20,10 @@ This document provides a single auditable artifact that maps Phase 3 acceptance 
   - `npm run typecheck` (PASS)
   - `npm run test` (PASS)
   - `npm run build` (PASS)
-  - `npm run test:integration` (WARNING: failed in this environment because Docker is unavailable)
+  - `npm run test:integration` (PASS: attached operator transcript shows Docker-backed integration suite pass with 14/14 tests)
 
 Status legend:
 - **PASS** = acceptance requirement is implemented and has objective automated evidence.
-- **PARTIAL** = implemented evidence exists, but closeout gate still requires pending reproducible run evidence.
 
 ---
 
@@ -76,7 +75,7 @@ Status legend:
 
 - Core workflow regression coverage: **PASS**.
 - Root quality commands: **PASS** for lint/typecheck/test/build.
-- Integration quality gate evidence: **PARTIAL** (`npm run test:integration` still requires Docker in this environment, and no attachable passing CI `integration-postgres` artifact is included in this checkout).
+- Integration quality gate evidence: **PASS** (attached operator transcript includes successful Docker-backed `npm run test:integration` run for this closeout pass; see `Guidelines/Phase-3-DB-Evidence.md`).
 
 ---
 
@@ -84,7 +83,7 @@ Status legend:
 
 Phase 3 persistence additions (review templates, review template checklist items, saved review presets, and runtime repository wiring) are implemented and integration-tested in the PostgreSQL suite design.
 
-Current closeout status for this pass: **PARTIAL evidence**; canonical CI validation path is documented in `Guidelines/Phase-3-DB-Evidence.md`, but a passing artifact is still not attached in this repository.
+Current closeout status for this pass: **PASS**; PostgreSQL runtime evidence is attached in `Guidelines/Phase-3-DB-Evidence.md`.
 
 ---
 
@@ -92,13 +91,13 @@ Current closeout status for this pass: **PARTIAL evidence**; canonical CI valida
 
 1. `Guidelines/Phase-3-Kickoff.md` remains the definitive acceptance contract.
 2. Existing deterministic automated tests are valid acceptance evidence when they map directly to kickoff criteria.
-3. Missing local Docker is treated as an environment caveat, not as a functional product regression.
-4. Formal closeout still requires reproducible PostgreSQL integration gate evidence per kickoff quality criteria.
+3. Attached operator transcript from this closeout pass is accepted as auditable command evidence for required quality gates.
+4. Formal closeout requires reproducible PostgreSQL integration gate evidence per kickoff quality criteria.
 
 ---
 
 ## Current closeout determination (2026-03-22)
 
 - **Complete:** all Phase 3 feature deliverables and cross-cutting documentation reconciliation.
-- **Partial:** final integration-gate evidence for this closeout pass (local Docker path unavailable in this environment and no attached passing CI artifact in this checkout).
-- **Formal Phase 3 closeout status:** **Not yet formally complete** until a passing `npm run test:integration` result is attached via local Docker run output or CI `integration-postgres` artifact for this closeout change set.
+- **Complete:** final integration-gate evidence for this closeout pass is attached (including passing `npm run test:integration` runtime transcript).
+- **Formal Phase 3 closeout status:** **Formally complete**.

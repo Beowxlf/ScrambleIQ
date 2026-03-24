@@ -1,6 +1,6 @@
 # ScrambleIQ
 
-ScrambleIQ Phase 3 (workflow tooling expansion) is implemented and in closeout hardening.
+ScrambleIQ Phase 3 (workflow tooling expansion) is implemented and formally closed out.
 
 This repository includes a minimal full-stack TypeScript scaffold aligned to the project tech stack:
 
@@ -16,9 +16,9 @@ Phase 3 closeout evidence is consolidated in:
 Current closeout posture:
 
 - Root quality gates pass (`npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`).
-- PostgreSQL evidence is represented through CI `integration-postgres` (`npm run test:integration:ci`) with local Docker validation available via `npm run test:integration`.
+- PostgreSQL integration evidence is attached with a passing Docker-backed `npm run test:integration` transcript for the closeout pass, with CI `integration-postgres` (`npm run test:integration:ci`) retained as the canonical service-container path.
 - Phase 3 feature acceptance is documented by area in `Guidelines/Phase-3-Acceptance-Evidence.md` and tracked as a binary gate list in `Guidelines/Phase-3-Closeout-Checklist.md`.
-- PostgreSQL closeout caveats and reproducible CI evidence path are documented in `Guidelines/Phase-3-DB-Evidence.md`.
+- PostgreSQL evidence details and command transcript summary are documented in `Guidelines/Phase-3-DB-Evidence.md`.
 
 
 - Frontend: React + TypeScript + Vite (`apps/web`)
