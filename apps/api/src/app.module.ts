@@ -6,9 +6,10 @@ import { AppController } from './app.controller';
 import { MatchesModule } from './matches/matches.module';
 import { ReviewTemplatesModule } from './review-templates/review-templates.module';
 import { ReviewPresetsModule } from './review-presets/review-presets.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
-  imports: [MatchesModule, ReviewTemplatesModule, ReviewPresetsModule],
+  imports: [MatchesModule, ReviewTemplatesModule, ReviewPresetsModule, ReportsModule],
   controllers: [AppController],
   providers: [
     {
