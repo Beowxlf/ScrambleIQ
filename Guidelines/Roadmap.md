@@ -84,7 +84,7 @@ Phase 3 detailed scope and acceptance contract: `Guidelines/Phase-3-Kickoff.md`.
 
 - Core Phase 3 workstreams are implemented (templates, presets, single-match review summary, taxonomy guardrails, and PostgreSQL persistence expansion).
 - Closeout hardening/evidence artifacts are tracked in `Guidelines/Phase-3-Closeout-Checklist.md`, `Guidelines/Phase-3-Acceptance-Evidence.md`, and `Guidelines/Phase-3-DB-Evidence.md`.
-- Formal closeout remains pending the final reproducible PostgreSQL integration-gate evidence attachment for this closeout pass.
+- Phase 3 closeout is formally complete for the documented 2026-03-22 closeout pass.
 
 ### Objectives
 
