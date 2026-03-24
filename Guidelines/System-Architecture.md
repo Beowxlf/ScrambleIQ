@@ -1,108 +1,107 @@
-# ScrambleIQ
-## System Architecture
+# ScrambleIQ System Architecture
 
-> **Status: Current source of truth (implemented V1 manual-first baseline).**
+> Status: Current source of truth for **Prototype 1** (end-of-prototype state).
 
-### Document Purpose
+## 1) High-level architecture
 
-This document describes the architecture currently implemented in ScrambleIQ Version 1.
+ScrambleIQ is a TypeScript monorepo with three implemented layers:
 
-Version 1 is a manual-first annotation platform. It does **not** include a video upload pipeline, AI/ML inference, automated event detection, or 3D replay.
+1. **Frontend (`apps/web`)** – React application for coach-facing workflow screens.
+2. **Backend (`apps/api`)** – NestJS REST API for match workflows, reporting, and validation.
+3. **Shared package (`packages/shared`)** – common TypeScript interfaces/constants used by both layers.
 
----
+The architecture is intentionally simple and direct for prototype learning velocity.
 
-## Architecture Summary
+## 2) Monorepo structure
 
-ScrambleIQ is implemented as a TypeScript monorepo with three primary layers:
+- `apps/web`
+  - Route-level pages for match list, match detail, and reporting
+  - Feature modules for events, positions, video metadata, analytics, dataset tools, templates, presets, guardrails, and reporting requests
+- `apps/api`
+  - Nest modules/controllers/services for matches, reporting, review templates, and review presets
+  - Repository abstraction with in-memory and PostgreSQL-backed implementations
+  - SQL migrations for relational schema when using PostgreSQL
+- `packages/shared`
+  - Match, event, position, video, analytics, validation, review template/preset, and reporting contracts
 
-1. **Frontend app (`apps/web`)**: React + TypeScript + Vite UI for manual review and annotation.
-2. **Backend API (`apps/api`)**: NestJS REST API for matches, events, positions, video metadata, analytics, validation, and export.
-3. **Shared contract (`packages/shared`)**: shared TypeScript types and constants for consistent frontend/backend behavior.
+## 3) Key domain entities (implemented)
 
-Persistence supports two runtime modes behind the same API contract:
+Core entities currently modeled in code:
 
-- **PostgreSQL mode** when `DATABASE_URL` is configured.
-- **In-memory mode** when `DATABASE_URL` is not configured.
+- `Match`
+- `TimelineEvent`
+- `PositionState`
+- `MatchVideo` (metadata reference for one attached video per match)
+- `ReviewTemplate` and checklist items
+- `SavedReviewPreset`
 
----
+Derived/reporting entities include:
 
-## Implemented V1 Data and Interaction Model
+- `MatchAnalyticsSummary`
+- `DatasetValidationReport`
+- `MatchReviewSummary`
+- `CollectionReviewSummary`
+- `CompetitorTrendSummary`
+- `CollectionValidationReport`
+- `CollectionExportPayload`
 
-### 1. Match management
+## 4) Data flow between layers
 
-- Create, list/filter, read, update, and delete matches.
-- Match records are the anchor entity for all annotations and review operations.
+### Match workflow flow
 
-### 2. Manual event timeline annotation
+1. User interacts with React feature panel (events/positions/video/templates/etc.).
+2. Frontend hook calls API client (`matchesApi`/`reportingApi`).
+3. Nest controller validates request DTO/query and routes to service.
+4. Service reads/writes through repository interfaces.
+5. Response is returned as shared contract shapes and rendered in UI.
 
-- Create, list, update, and delete timestamped events.
-- Events are user-entered (manual), not machine-detected.
+### Persistence flow
 
-### 3. Manual position timeline annotation
+- If `DATABASE_URL` is set: PostgreSQL repositories + migrations are used.
+- If `DATABASE_URL` is unset: in-memory repositories are used.
 
-- Create, list, update, and delete position segments.
-- Position overlaps are validated in the API.
+The API surface is the same in both modes.
 
-### 4. Video metadata attachment + synchronized playback
+## 5) Reporting and insight generation (high level)
 
-- One video metadata record can be attached per match.
-- Metadata can be created, edited, or removed.
-- Frontend playback sync behavior:
-  - selecting an event seeks playback to `timestamp`
-  - selecting a position seeks playback to `timestampStart`
+Reporting is implemented in backend `ReportsService` and exposed under `/reports/*` routes.
 
-### 5. Derived analytics + dataset tools
+Implemented sequence:
 
-- Analytics are computed from stored manual annotations.
-- Dataset validation reports deterministic issues from stored data.
-- Dataset export returns deterministic JSON from stored data.
+1. Filter matches by date range and optional competitor/ruleset filters.
+2. Load related events, positions, and video-presence status.
+3. Build deterministic aggregates (counts, distributions, deltas, validation rollups).
+4. Generate deterministic `insights: string[]` using rule thresholds (no ML/no randomness).
+5. Return panel-specific payloads for frontend sections:
+   - Collection Summary
+   - Competitor Trends
+   - Collection Validation
+   - Collection Export
 
----
+## 6) Intentional vs prototype-sufficient choices
 
-## Monorepo Structure (Implemented)
+### Intentional choices for this stage
 
-- `apps/web`: UI routes and manual annotation/review workflows
-- `apps/api`: REST endpoints, services, repositories, and migrations
-- `packages/shared`: shared DTO/domain types used across workspaces
-- root `package.json`: workspace scripts for lint/typecheck/test/build
+- Shared contracts package to reduce frontend/backend drift.
+- Deterministic output logic to keep coach review behavior explainable.
+- Repository abstraction to preserve runtime flexibility (in-memory vs PostgreSQL).
+- Workspace-level lint/typecheck/test/build gates.
 
----
+### Prototype-sufficient (not final) choices
 
-## Runtime Boundaries and Exclusions
+- Manual competitor ID entry in competitor trend UI.
+- In-memory fallback for convenience despite non-persistent behavior.
+- Minimal auth model (single shared API token).
+- No job queue/event bus for reporting and validation; all request/response synchronous.
 
-The following are explicitly out of scope for implemented V1:
+## 7) Explicit non-goals for Prototype 1
 
-1. video upload pipeline
-2. cloud object storage/transcoding pipeline
-3. pose estimation
-4. automated event detection
-5. AI-generated commentary
-6. 3D reconstruction/replay
+Not implemented in architecture/runtime:
 
-Any references to those capabilities in legacy docs are future-state or historical only.
+- video upload/transcoding pipeline
+- cloud media storage integration
+- automated event detection
+- predictive/ML analytics
+- real-time live ingestion or streaming analysis
 
----
-
-## Operational Validation
-
-The architecture is validated through root workspace commands:
-
-- `npm run lint`
-- `npm run typecheck`
-- `npm run test`
-- `npm run build`
-
-Integration tests further validate PostgreSQL behavior when available.
-
----
-
-## Terminology Rules
-
-- Use **video metadata attachment** for implemented V1 behavior.
-- Use **video upload pipeline** only for explicitly future-state planning.
-
----
-
-## Summary
-
-ScrambleIQ Version 1 is a manual-first, deterministic annotation and review system implemented as a React + NestJS + shared-types monorepo with PostgreSQL/in-memory persistence modes and no AI/ML or upload-pipeline runtime features.
+These remain post-feedback considerations, not current functionality.

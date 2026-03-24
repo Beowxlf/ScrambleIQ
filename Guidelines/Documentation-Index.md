@@ -1,56 +1,49 @@
-# ScrambleIQ
-## Documentation Index and Status Matrix
+# ScrambleIQ Documentation Index
 
-This index defines documentation status labels used across `Guidelines/` and prevents scope drift.
+This index identifies which documents reflect the current implemented product state at end of **Prototype 1**.
 
 Status labels:
 
-- **Current source of truth**: reflects implemented behavior for the current manual-first baseline.
-- **Future-state planning**: intentional forward-looking planning; not implemented now.
-- **Historical / legacy**: kept for context only; does not describe implemented V1 behavior.
-- **Needs rewrite**: known mismatch requiring update before being used for implementation.
-
-Terminology standard:
-
-- Use **video metadata attachment** for current implemented V1 behavior.
-- Use **video upload pipeline** only when describing explicit future-state plans.
+- **Current source of truth**: reflects implemented behavior or active prototype governance.
+- **Transitional**: retained for continuity but not authoritative for current scope.
+- **Future-state planning**: intentionally forward-looking; not implemented now.
+- **Historical / legacy**: context only; not implementation authority.
+- **Needs rewrite**: known mismatch and should not drive implementation.
 
 | Document | Status | Notes |
 |---|---|---|
-| `README.md` | Current source of truth | Setup, runtime modes, and implemented feature behavior. |
-| `Guidelines/Version-1-Scope.md` | Current source of truth | Implemented V1 boundaries and explicit out-of-scope list. |
-| `Guidelines/Roadmap.md` | Current source of truth | Phased future direction anchored on manual-first V1 baseline. |
-| `Guidelines/Phase-2-Kickoff.md` | Current source of truth | Phase 2 acceptance contract and exclusions. |
-| `Guidelines/Phase-3-Kickoff.md` | Current source of truth | Phase 3 acceptance contract and closeout gate definition. |
-| `Guidelines/Phase-3-Closeout-Checklist.md` | Current source of truth | Binary closeout gate tracker for Phase 3. |
-| `Guidelines/Phase-3-Acceptance-Evidence.md` | Current source of truth | Acceptance evidence mapping for implemented Phase 3 workstreams. |
-| `Guidelines/Phase-3-DB-Evidence.md` | Current source of truth | PostgreSQL integration evidence path for Phase 3 closeout. |
-| `Guidelines/Phase-4-Kickoff.md` | Current source of truth | Phase 4 scope contract and constrained implementation plan. |
-| `Guidelines/Tech-Stack.md` | Current source of truth | Architecture/stack decisions with future ML clearly scoped as future. |
-| `Guidelines/System-Architecture.md` | Current source of truth | Rewritten to implemented manual-first architecture. |
-| `Guidelines/User-Flow-Doc.md` | Current source of truth | Rewritten to implemented manual-first user journey. |
-| `Guidelines/Functional-Requirements-Specs.md` | Current source of truth | Rewritten to implemented manual-first FRS and constraints. |
-| `Guidelines/Statement-of-Purpose.md` | Current source of truth | Rewritten to manual-first product purpose and scope boundaries. |
-| `Guidelines/Frontend-Architecture-Refactor-Plan.md` | Current source of truth | Internal architecture plan aligned to current app behavior. |
-| `Guidelines/Phase-1-Closeout-Checklist.md` | Current source of truth | Validation checklist for implemented baseline. |
-| `Guidelines/Test-Suite-Review-2026-03-19.md` | Current source of truth | Point-in-time technical review for test suite. |
-| `Guidelines/Backend-API-Code-Review-2026-03-19.md` | Current source of truth | Point-in-time backend review document. |
-| `Guidelines/Frontend-Code-Review-2026-03-19.md` | Current source of truth | Point-in-time frontend review document. |
-| `Guidelines/Security-Review-2026-03-19.md` | Current source of truth | Point-in-time security assessment. |
-| `Guidelines/Security-Baseline-Audit.md` | Current source of truth | Security baseline gaps and recommendations. |
-| `Guidelines/Security-Remediation-Plan.md` | Current source of truth | Security remediation plan and sequencing. |
-| `Guidelines/Shared-Types-Contract-Review.md` | Current source of truth | Shared-types contract review of implemented behavior. |
-| `Guidelines/AI-ML-Requirments.md` | Historical / legacy | Legacy planned AI/ML requirements; not implemented in V1. |
-| `Guidelines/Event-Detection-Taxonomy.md` | Historical / legacy | Legacy event-detection taxonomy for future exploration. |
-| `Guidelines/Known-Limitations.md` | Historical / legacy | Describes limits of non-implemented AI/ML pipeline. |
-| `Guidelines/Problem-Statement.md` | Historical / legacy | Earlier framing tied to upload + AI/ML + 3D assumptions. |
-| `Guidelines/Target-User-Profile.md` | Historical / legacy | Mixed with non-implemented pipeline assumptions. |
-| `Guidelines/Testing-Validation-Plan.md` | Needs rewrite | Broadly references non-implemented upload/AI/ML/3D testing scope. |
-| `Guidelines/Leverage.md` | Historical / legacy | Legacy strategy narrative anchored on non-implemented AI/ML assumptions. |
+| `README.md` | Current source of truth | Prototype 1 overview, setup, workflow, limits, and path to 1.0. |
+| `Guidelines/System-Architecture.md` | Current source of truth | Implemented monorepo/layer architecture and reporting flow. |
+| `Guidelines/Product-Scope-Prototype-1.md` | Current source of truth | Prototype product scope boundary and validation questions. |
+| `Guidelines/Reporting-Prototype-1.md` | Current source of truth | Implemented reporting behavior and interpretation guidance. |
+| `Guidelines/Prototype-1-Status.md` | Current source of truth | Completion status and pre-1.0 next steps. |
+| `Guidelines/Tech-Stack.md` | Current source of truth | Implemented stack and deferred capabilities. |
+| `Guidelines/Version-1-Scope.md` | Transitional | Retained placeholder; 1.0 scope intentionally not finalized. |
+| `Guidelines/Roadmap.md` | Future-state planning | Directional planning, not guaranteed implementation. |
+| `Guidelines/Phase-1-Closeout-Checklist.md` | Historical / legacy | Phase checkpoint evidence. |
+| `Guidelines/Phase-2-Kickoff.md` | Historical / legacy | Phase planning checkpoint. |
+| `Guidelines/Phase-2-Acceptance-Evidence.md` | Historical / legacy | Evidence snapshot. |
+| `Guidelines/Phase-2-Closeout-Checklist.md` | Historical / legacy | Evidence snapshot. |
+| `Guidelines/Phase-2-DB-Evidence.md` | Historical / legacy | Evidence snapshot. |
+| `Guidelines/Phase-2-Discovery-Sorting-Decision.md` | Historical / legacy | Historical planning decision. |
+| `Guidelines/Phase-3-Kickoff.md` | Historical / legacy | Phase planning checkpoint. |
+| `Guidelines/Phase-3-Acceptance-Evidence.md` | Historical / legacy | Evidence snapshot. |
+| `Guidelines/Phase-3-Closeout-Checklist.md` | Historical / legacy | Evidence snapshot. |
+| `Guidelines/Phase-3-DB-Evidence.md` | Historical / legacy | Evidence snapshot. |
+| `Guidelines/Phase-4-Kickoff.md` | Historical / legacy | Phase planning checkpoint. |
+| `Guidelines/Functional-Requirements-Specs.md` | Needs rewrite | May include superseded framing; do not use as sole authority. |
+| `Guidelines/User-Flow-Doc.md` | Needs rewrite | May include superseded framing; reconcile before reuse. |
+| `Guidelines/Statement-of-Purpose.md` | Needs rewrite | Requires explicit Prototype 1 positioning review. |
+| `Guidelines/Known-Limitations.md` | Historical / legacy | Older limitation framing; README + prototype docs are current. |
+| `Guidelines/AI-ML-Requirments.md` | Historical / legacy | Not implemented in current prototype. |
+| `Guidelines/Event-Detection-Taxonomy.md` | Historical / legacy | Not implementation authority for current runtime. |
+| `Guidelines/Problem-Statement.md` | Historical / legacy | Earlier framing; not current scope authority. |
+| `Guidelines/Target-User-Profile.md` | Needs rewrite | Reconcile with validated prototype target user assumptions. |
+| `Guidelines/Testing-Validation-Plan.md` | Needs rewrite | Ensure alignment with current test commands and scope. |
+| `Guidelines/Leverage.md` | Historical / legacy | Legacy strategy narrative. |
 
-## Governance Rules
+## Governance rules
 
-1. If a document conflicts with a **Current source of truth** document, the current-source document wins.
-2. Historical/legacy docs must retain a banner stating they are non-implemented for V1.
-3. Future-state docs must explicitly label non-implemented capabilities as future.
-4. New docs must include status classification in this index when added.
+1. If two docs conflict, the newest **Current source of truth** doc wins.
+2. Prototype docs must separate implemented behavior from deferred ideas.
+3. Do not treat roadmap or historical phase docs as proof of current functionality.
