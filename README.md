@@ -576,3 +576,103 @@ Each domain table includes:
 - `DATABASE_URL` (optional for local tests, required for PostgreSQL persistence)
 - `PORT` (optional): API port (default: `3000`)
 - `WEB_ORIGIN` (optional): CORS origin (default: `http://localhost:5173`)
+
+## Reporting API (Phase 4 bridge endpoints)
+
+The backend now exposes collection-level reporting endpoints that aggregate existing match-level data into the Phase 4 shared contracts.
+
+All reporting routes are protected (same API token requirements as other protected routes).
+
+### Common reporting query filters
+
+All endpoints accept (or derive) `CollectionReportFilters`:
+
+- `dateFrom` (required, `YYYY-MM-DD`)
+- `dateTo` (required, `YYYY-MM-DD`)
+- `competitor` (optional)
+- `ruleset` (optional)
+
+Validation behavior:
+
+- missing `dateFrom`/`dateTo` returns `400`
+- invalid date formats return `400`
+- unknown query fields return `400`
+- invalid enum query values (for export `artifactType`) return `400`
+
+### `GET /reports/collection/summary`
+
+Returns `CollectionReviewSummary` with deterministic totals and distributions.
+
+Example:
+
+```bash
+curl -H "x-api-key: scrambleiq-local-dev-token" \
+  "http://localhost:3000/reports/collection/summary?dateFrom=2026-03-01&dateTo=2026-03-31&competitor=taylor&ruleset=folkstyle"
+```
+
+Example response shape:
+
+```json
+{
+  "filters": {
+    "dateRange": { "startDate": "2026-03-01", "endDate": "2026-03-31" },
+    "competitor": "taylor",
+    "ruleset": "folkstyle"
+  },
+  "totals": {
+    "matchCount": 2,
+    "eventCount": 17,
+    "positionCount": 9,
+    "trackedPositionTimeSeconds": 420,
+    "videoAttachedCount": 2
+  },
+  "eventTypeDistribution": [{ "eventType": "guard_pass", "count": 5 }],
+  "positionTimeDistribution": [{ "position": "half_guard", "durationSeconds": 90 }],
+  "isEmpty": false
+}
+```
+
+### `GET /reports/competitors/:competitorId/trends`
+
+Returns `CompetitorTrendSummary`, including:
+
+- deterministic `current` and `previous` windows
+- event/position deltas
+- explicit data sufficiency evaluation
+
+Example:
+
+```bash
+curl -H "x-api-key: scrambleiq-local-dev-token" \
+  "http://localhost:3000/reports/competitors/jordan%20trend/trends?dateFrom=2026-03-10&dateTo=2026-03-16"
+```
+
+### `GET /reports/collection/validation`
+
+Returns `CollectionValidationReport`, aggregating existing per-match dataset validation logic into collection rollups.
+
+Example:
+
+```bash
+curl -H "x-api-key: scrambleiq-local-dev-token" \
+  "http://localhost:3000/reports/collection/validation?dateFrom=2026-03-01&dateTo=2026-03-31"
+```
+
+### `GET /reports/collection/export`
+
+Returns `CollectionExportPayload` with:
+
+- `metadata.schemaVersion = "phase4.v1"`
+- deterministic match ordering (`date_then_match_id`)
+- full match dataset exports (`matches`, `events`, `positions`, `video`, `analytics`) plus collection summary and validation sections
+
+Optional query param:
+
+- `artifactType` enum: `period_summary | competitor_snapshot | readiness_summary` (defaults to `period_summary`)
+
+Example:
+
+```bash
+curl -H "x-api-key: scrambleiq-local-dev-token" \
+  "http://localhost:3000/reports/collection/export?dateFrom=2026-03-01&dateTo=2026-03-31&artifactType=period_summary"
+```

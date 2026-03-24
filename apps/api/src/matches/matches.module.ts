@@ -85,5 +85,13 @@ interface InMemoryState {
       inject: [DATABASE_CLIENT],
     },
   ],
+  exports: [
+    MatchesService,
+    DatasetValidationService,
+    MATCH_REPOSITORY,
+    EVENT_REPOSITORY,
+    POSITION_REPOSITORY,
+    VIDEO_REPOSITORY,
+  ],
 })
 export class MatchesModule {}
